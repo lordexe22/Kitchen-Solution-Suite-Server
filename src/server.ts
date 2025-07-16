@@ -3,7 +3,7 @@ import express from "express";
 import bodyParser from "body-parser";
 import cors from "cors";
 import { inicializarBase } from "./db/init";
-import rutasUsuarios from "./routes/usuarios";
+import userRouter from "./modules/users/users.routes";
 
 const app = express();
 const PUERTO = 4000;
@@ -11,7 +11,7 @@ const PUERTO = 4000;
 app.use(cors());
 app.use(bodyParser.json());
 
-app.use("/api/usuarios", rutasUsuarios);
+app.use("/api/usuarios", userRouter);
 
 app.get("/", (_req, res) => {
   res.send("Servidor activo.");

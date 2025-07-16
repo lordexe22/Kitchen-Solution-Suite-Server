@@ -1,58 +1,48 @@
-// src\routes\usuarios.ts
+import { Request, Response } from "express";
+import { User } from "./users.types";
+import { pool } from "../../db/pool";
 
-import { Router, Request, Response } from "express";
-import { pool } from "../db/pool";
-
-const router = Router();
-
-// #typedef UsuarioRegistro
-interface UsuarioRegistro {
-  name: string;
-  email: string;
-  password: string;
-  phone?: string;
-  companyName?: string;
-  registerDate: string;
-  role: "admin";
-  accountStatus: "free";
-}
-// #end-typedef
-
-router.post("/registrar", async (req: Request, res: Response) => {
-  const usuario: UsuarioRegistro = req.body;
-
+// #middleware registerUser - Add a new user into the database
+export const registerUser = async (req: Request, res: Response) => {
+  const user: User = req.body;
   try {
-    const resultado = await pool.query(`
+    // #step 1 - save user data into the pgSQL database
+    const queryResult = await pool.query(`
       INSERT INTO users
       (name, email, password, phone, company_name, register_date, role, account_status)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
       RETURNING id
     `, [
-      usuario.name,
-      usuario.email,
-      usuario.password,
-      usuario.phone || null,
-      usuario.companyName || null,
-      usuario.registerDate,
-      usuario.role,
-      usuario.accountStatus,
+      user.name,
+      user.email,
+      user.password,
+      user.phone || null,
+      user.companyName || null,
+      user.registerDate,
+      user.role,
+      user.accountStatus,
     ]);
-
+    // #end-step
+    // #step 2 - return user id and success message to the client
     return res.status(201).json({
       mensaje: "Usuario registrado correctamente",
-      id: resultado.rows[0].id,
+      id: queryResult.rows[0].id,
     });
-
+    // #end-step
   } catch (error: any) {
+    // #step 3 - handle exceptions
     console.error("❌ Error al registrar usuario:", error.message);
     return res.status(500).json({ error: "Error interno del servidor" });
+    // #end-step
   }
-});
-
-router.post("/login", async (req: Request, res: Response) => {
+};
+// #end-middleware
+// #middleware - Eval if current user exist into the database
+export const loginUser = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   try {
+    // #step 1 - Search into the database if the current user exists
     const resultado = await pool.query(`
       SELECT id, name, email, password, role FROM users WHERE email = $1
     `, [email]);
@@ -67,7 +57,9 @@ router.post("/login", async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: "Contraseña incorrecta." });
     }
 
-    // Aquí podrías generar y devolver un token (opcional, más adelante)
+    console.log("✔ Usuario autenticado:", usuario);
+    // #end-step
+    // #step 2 - Return existing user data
     return res.status(200).json({
       success: true,
       message: "Login exitoso.",
@@ -78,12 +70,12 @@ router.post("/login", async (req: Request, res: Response) => {
         role: usuario.role,
       }
     });
-
+    // #end-step
   } catch (error: any) {
+    // #step 3 - handle exceptions
     console.error("❌ Error en login:", error.message);
     return res.status(500).json({ success: false, message: "Error interno del servidor." });
+    // #end-step
   }
-});
-
-
-export default router;
+};
+// #end-middleware
