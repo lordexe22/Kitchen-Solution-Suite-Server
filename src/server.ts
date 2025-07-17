@@ -4,6 +4,7 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import { inicializarBase } from "./db/init";
 import userRouter from "./modules/users/users.routes";
+import authRouter from "./modules/auth/auth.routes";
 
 const app = express();
 const PUERTO = 4000;
@@ -12,6 +13,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 app.use("/api/usuarios", userRouter);
+app.use('/api/auth', authRouter);
 
 app.get("/", (_req, res) => {
   res.send("Servidor activo.");
