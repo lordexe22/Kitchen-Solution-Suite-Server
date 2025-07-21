@@ -128,3 +128,59 @@ export const getMyBusinesses = async (req: AuthenticatedRequest, res: Response) 
     return res.status(500).json({ error: "Error interno del servidor" });
   }
 };
+
+export const getBusinessSocials = async (req: AuthenticatedRequest, res: Response) => {
+  if (!req.user) {
+    console.log("🔒 Usuario no autenticado");
+    return res.status(401).json({ error: "Usuario no autenticado" });
+  }
+
+  const businessId = req.params.id;
+  const userId = req.user.id;
+
+  console.log("📥 Petición para obtener redes sociales");
+  console.log("🔑 Business ID:", businessId);
+  console.log("👤 User ID:", userId);
+
+  try {
+    const result = await pool.query(
+      `
+      SELECT 
+        facebook_url,
+        instagram_url,
+        x_url,
+        tiktok_url,
+        threads_url,
+        updated_at
+      FROM business_socials
+      WHERE business_id = $1
+      `,
+      [businessId]
+    );
+
+    console.log("📦 Resultado de query:", result.rows);
+
+    if (result.rows.length === 0) {
+      console.log("ℹ️ No se encontraron redes sociales para este negocio.");
+      return res.status(200).json({ socials: {}, lastUpdate: null });
+    }
+
+    const row = result.rows[0];
+
+    const socials = {
+      Facebook: row.facebook_url || "",
+      Instagram: row.instagram_url || "",
+      X: row.x_url || "",
+      "Tik Tok": row.tiktok_url || "",
+      Threads: row.threads_url || "",
+    };
+
+    console.log("✅ Datos formateados para frontend:", socials);
+    console.log("🕓 Última actualización:", row.updated_at);
+
+    return res.status(200).json({ socials, lastUpdate: row.updated_at });
+  } catch (error) {
+    console.error("❌ Error obteniendo redes sociales:", error);
+    return res.status(500).json({ error: "Error interno del servidor" });
+  }
+};
