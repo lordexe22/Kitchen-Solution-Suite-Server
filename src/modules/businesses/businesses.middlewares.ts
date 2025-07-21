@@ -76,7 +76,6 @@ export const updateBusinessSocials = async (req: AuthenticatedRequest, res: Resp
   }
 };
 
-
 export const createBusiness = async (req: AuthenticatedRequest, res: Response) => {
   if (!req.user) {
     return res.status(401).json({ error: "Usuario no autenticado" });
@@ -168,11 +167,11 @@ export const getBusinessSocials = async (req: AuthenticatedRequest, res: Respons
     const row = result.rows[0];
 
     const socials = {
-      Facebook: row.facebook_url || "",
-      Instagram: row.instagram_url || "",
-      X: row.x_url || "",
-      "Tik Tok": row.tiktok_url || "",
-      Threads: row.threads_url || "",
+      facebook_url: row.facebook_url || "",
+      instagram_url: row.instagram_url || "",
+      x_url: row.x_url || "",
+      tiktok_url: row.tiktok_url || "",
+      threads_url: row.threads_url || "",
     };
 
     console.log("✅ Datos formateados para frontend:", socials);
