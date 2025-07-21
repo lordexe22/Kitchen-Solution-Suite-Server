@@ -1,6 +1,5 @@
-// src\db\init.ts
+// src/db/init.ts
 
-// #section - Inicialización de base de datos y estructura
 import { Client } from "pg";
 import dotenv from "dotenv";
 
@@ -17,7 +16,6 @@ const {
 const dbBase = "postgres";
 
 export const inicializarBase = async () => {
-  // Conexión temporal a la base 'postgres' para crear la base real si no existe
   const clientTemp = new Client({
     user: PG_USER,
     password: PG_PASSWORD,
@@ -41,7 +39,6 @@ export const inicializarBase = async () => {
 
   await clientTemp.end();
 
-  // Ahora conectar a la base correcta
   const clientReal = new Client({
     user: PG_USER,
     password: PG_PASSWORD,
@@ -52,7 +49,7 @@ export const inicializarBase = async () => {
 
   await clientReal.connect();
 
-  // Crear tabla usuarios si no existe
+  // Tabla: users
   await clientReal.query(`
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
@@ -66,10 +63,9 @@ export const inicializarBase = async () => {
       account_status TEXT NOT NULL
     )
   `);
-
   console.log(`✅ Tabla 'users' verificada.`);
 
-  // Crear tabla businesses si no existe
+  // Tabla: businesses
   await clientReal.query(`
     CREATE TABLE IF NOT EXISTS businesses (
       id SERIAL PRIMARY KEY,
@@ -81,9 +77,21 @@ export const inicializarBase = async () => {
       is_active BOOLEAN NOT NULL DEFAULT TRUE
     )
   `);
-
   console.log(`✅ Tabla 'businesses' verificada.`);
+
+  // Tabla: business_socials
+  await clientReal.query(`
+    CREATE TABLE IF NOT EXISTS business_socials (
+      business_id INTEGER PRIMARY KEY REFERENCES businesses(id) ON DELETE CASCADE,
+      facebook_url TEXT,
+      instagram_url TEXT,
+      x_url TEXT,
+      tiktok_url TEXT,
+      threads_url TEXT,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  console.log(`✅ Tabla 'business_socials' verificada.`);
 
   await clientReal.end();
 };
-// #end-section
