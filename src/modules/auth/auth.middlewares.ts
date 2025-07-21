@@ -19,7 +19,7 @@ export const requireAuth = (req: AuthenticatedRequest, res: Response, next: Next
     return res.status(401).json({ error: 'Invalid or expired token' });
   }
 
-  const payload = getTokenPayload(token);
+  const payload = getTokenPayload(token) as AuthenticatedRequest['user'];
 
   if (!payload) {
     return res.status(401).json({ error: 'Failed to decode token payload' });

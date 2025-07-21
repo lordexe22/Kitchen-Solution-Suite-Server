@@ -1,3 +1,5 @@
+// src\db\init.ts
+
 // #section - Inicialización de base de datos y estructura
 import { Client } from "pg";
 import dotenv from "dotenv";
@@ -66,6 +68,21 @@ export const inicializarBase = async () => {
   `);
 
   console.log(`✅ Tabla 'users' verificada.`);
+
+  // Crear tabla businesses si no existe
+  await clientReal.query(`
+    CREATE TABLE IF NOT EXISTS businesses (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      alias TEXT,
+      owner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      is_active BOOLEAN NOT NULL DEFAULT TRUE
+    )
+  `);
+
+  console.log(`✅ Tabla 'businesses' verificada.`);
 
   await clientReal.end();
 };

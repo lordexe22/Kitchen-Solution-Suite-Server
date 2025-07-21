@@ -5,6 +5,7 @@ import cors from "cors";
 import { inicializarBase } from "./db/init";
 import userRouter from "./modules/users/users.routes";
 import authRouter from "./modules/auth/auth.routes";
+import businessRouter from "./modules/businesses/businesses.routes";
 
 const app = express();
 const PUERTO = 4000;
@@ -14,6 +15,7 @@ app.use(bodyParser.json());
 
 app.use("/api/usuarios", userRouter);
 app.use('/api/auth', authRouter);
+app.use("/api/businesses", businessRouter);
 
 app.get("/", (_req, res) => {
   res.send("Servidor activo.");
