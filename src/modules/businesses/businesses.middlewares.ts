@@ -1,26 +1,22 @@
 // src\modules\businesses\businesses.middlewares.ts
-
+// #section Imports
 import { Response } from "express";
 import { pool } from "../../db/pool";
 import { AuthenticatedRequest } from "../auth/auth.types";
-
+// #end-section
+// #function updateBusinessSocials - Actualiza los enlaces de redes sociales de un negocio específico.
 export const updateBusinessSocials = async (req: AuthenticatedRequest, res: Response) => {
-  if (!req.user) {
-    console.error("❌ Usuario no autenticado");
-    return res.status(401).json({ error: "Usuario no autenticado" });
-  }
-
-  const ownerId = req.user.id;
+  // #variable - ownerId, businessId
+  const ownerId = req.user!.id; // El ! indica que estamos seguros de que user no es undefined
   const businessId = Number(req.params.id);
-
+  // #end-variable
+  // #step 1 - Validar que el ID del negocio sea un número válido
   if (isNaN(businessId)) {
     console.error("❌ ID de negocio inválido:", req.params.id);
     return res.status(400).json({ error: "ID de negocio inválido" });
   }
-
-  console.log("➡️ Actualizando redes sociales para negocio:", businessId);
-  console.log("🧾 Datos recibidos:", req.body);
-
+  // #end-step
+  // #step 2 - Capturar los enlaces de redes sociales del cuerpo de la solicitud
   const {
     facebook_url,
     instagram_url,
@@ -28,9 +24,9 @@ export const updateBusinessSocials = async (req: AuthenticatedRequest, res: Resp
     tiktok_url,
     threads_url
   } = req.body;
-
+  // #end-step
   try {
-    // Verificar propiedad del negocio
+    // #step 3 - Verificar que el negocio pertenece al usuario autenticado
     const verify = await pool.query(
       `SELECT id FROM businesses WHERE id = $1 AND owner_id = $2`,
       [businessId, ownerId]
@@ -40,8 +36,14 @@ export const updateBusinessSocials = async (req: AuthenticatedRequest, res: Resp
       console.warn(`⚠️ El negocio ${businessId} no pertenece al usuario ${ownerId}`);
       return res.status(403).json({ error: "Negocio no encontrado o sin permisos" });
     }
-
-    // UPSERT
+    // #end-step
+    // #step 4 - Crear una consulta SQL con un UPSERT para la tabla business_socials >> upsertQuery
+    /* #note - Funcionamiento
+    * 1 - El comando INSERT INTO con ON CONFLICT funciona de la siguiente manera:
+    *   - Si el negocio no tiene redes sociales en la base de datos, se insertan los nuevos valores.
+    *   - Si el negocio ya tiene redes sociales en la base de datos, se actualizan los campos correspondientes.
+    * 2 - Utilizamos EXCLUDED para referirnos a los valores que se intentan insertar.
+    */
     const upsertQuery = `
       INSERT INTO business_socials (
         business_id, facebook_url, instagram_url, x_url, tiktok_url, threads_url, updated_at
@@ -54,7 +56,9 @@ export const updateBusinessSocials = async (req: AuthenticatedRequest, res: Resp
         threads_url = EXCLUDED.threads_url,
         updated_at = NOW()
     `;
-
+    // #end-step
+    // #step 5 - Preparar los valores para el UPSERT >> values[]
+    // #note - Un UPSERT es una operación que inserta un nuevo registro (si el mismo no existe) o actualiza uno existente.
     const values = [
       businessId,
       facebook_url || null,
@@ -63,85 +67,87 @@ export const updateBusinessSocials = async (req: AuthenticatedRequest, res: Resp
       tiktok_url || null,
       threads_url || null
     ];
-
-    console.log("💾 Ejecutando UPSERT con valores:", values);
-
+    // #end-step
+    // #step 6 - Ejecutar la consulta de UPSERT
     await pool.query(upsertQuery, values);
-
-    console.log("✅ Redes sociales actualizadas con éxito");
+    // #end-step
+    // #step 7 - Retornar una respuesta exitosa
     return res.status(200).json({ message: "Redes sociales actualizadas correctamente" });
-  } catch (error) {
+    // #end-step
+  } catch (error:unknown) {
+    // #step 8 - Manejo de excepciones
     console.error("❌ Error en la base de datos:", error);
     return res.status(500).json({ error: "Error interno del servidor" });
+    // #end-step
   }
 };
-
+// #end-function
+// #function createBusiness - Crea un nuevo negocio asociado al usuario autenticado y lo guarda en la base de datos.
 export const createBusiness = async (req: AuthenticatedRequest, res: Response) => {
-  if (!req.user) {
-    return res.status(401).json({ error: "Usuario no autenticado" });
-  }
-  const ownerId = req.user.id;
+  // #variable - ownerId, name, alias
+  const ownerId = req.user!.id;
   const { name, alias } = req.body;
-
+  // #end-variable
+  // #step 1 - Validar que el nombre del negocio exista y sea un string
   if (!name || typeof name !== "string") {
     return res.status(400).json({ error: "Nombre del negocio es obligatorio" });
   }
-
+  // #end-step
   try {
+    // #step 2 - Prepara una consulta SQL para insertar el negocio en la base de datos
     const insertQuery = `
       INSERT INTO businesses (name, alias, owner_id)
       VALUES ($1, $2, $3)
       RETURNING id, name, alias, owner_id, created_at, updated_at, is_active
     `;
-
+    // #end-step
+    // #step 3 - Prepara valores para la consulta SQL
     const values = [name.trim(), alias?.trim() || null, ownerId];
-
+    // #end-step
+    // #step 4 - Ejecuta la consulta para insertar el negocio a la base de datos y obtener el negocio creado >> newBusiness
     const result = await pool.query(insertQuery, values);
-
     const newBusiness = result.rows[0];
-
+    // #end-step
+    // #step 5 - Retornar respuesta con el negocio creado
     return res.status(201).json({ business: newBusiness });
-  } catch (error) {
-    console.error("Error creando negocio:", error);
+    // #end-step
+  } catch (error: unknown) {
+    // #step 6 - Manejo de excepciones
     return res.status(500).json({ error: "Error interno del servidor" });
+    // #end-step
   }
 };
-
-
+// #end-function
+// #function getMyBusinesses - Obtiene todos los negocios asociados al usuario autenticado
 export const getMyBusinesses = async (req: AuthenticatedRequest, res: Response) => {
-  if (!req.user) {
-    return res.status(401).json({ error: "Usuario no autenticado" });
-  }
-
-  const ownerId = req.user.id;
-
+  // #variable - ownerId
+  const ownerId = req.user!.id;
+  // #end-variable
   try {
+    // #step 1 - Consultar todos los negocios del usuario autenticado >> result
     const result = await pool.query(
       `SELECT id, name, alias, created_at, updated_at, is_active FROM businesses WHERE owner_id = $1`,
       [ownerId]
     );
-
+    // #end-step
+    // #step 2 - Devolver la lista de negocios
     return res.status(200).json({ businesses: result.rows });
-  } catch (error) {
-    console.error("Error obteniendo negocios:", error);
+    // #end-step
+  } catch (error: unknown) {
+    // #step 3 - Manejo de excepciones
     return res.status(500).json({ error: "Error interno del servidor" });
+    // #end-step
   }
 };
-
+// #end-function
+// #function getBusinessSocials - Obtiene las redes sociales asociadas a un negocio
 export const getBusinessSocials = async (req: AuthenticatedRequest, res: Response) => {
-  if (!req.user) {
-    console.log("🔒 Usuario no autenticado");
-    return res.status(401).json({ error: "Usuario no autenticado" });
-  }
-
+  // #variable - businessId, userId
   const businessId = req.params.id;
-  const userId = req.user.id;
-
-  console.log("📥 Petición para obtener redes sociales");
-  console.log("🔑 Business ID:", businessId);
-  console.log("👤 User ID:", userId);
-
+  const userId = req.user!.id;
+  // #end-variable
   try {
+    // #step 1 - Consultar las redes sociales del negocio indicado
     const result = await pool.query(
       `
       SELECT 
@@ -156,14 +162,13 @@ export const getBusinessSocials = async (req: AuthenticatedRequest, res: Respons
       `,
       [businessId]
     );
-
-    console.log("📦 Resultado de query:", result.rows);
-
+    // #end-step
+    // #step 2 - Verificar si se encontraron redes sociales o retornar un objeto vacío
     if (result.rows.length === 0) {
-      console.log("ℹ️ No se encontraron redes sociales para este negocio.");
       return res.status(200).json({ socials: {}, lastUpdate: null });
     }
-
+    // #end-step
+    // #step 3 - Formatear los datos para el frontend
     const row = result.rows[0];
 
     const socials = {
@@ -173,13 +178,14 @@ export const getBusinessSocials = async (req: AuthenticatedRequest, res: Respons
       tiktok_url: row.tiktok_url || "",
       threads_url: row.threads_url || "",
     };
-
-    console.log("✅ Datos formateados para frontend:", socials);
-    console.log("🕓 Última actualización:", row.updated_at);
-
+    // #end-step
+    // #step 4 - Retornar la respuesta con las redes sociales y la fecha de última actualización
     return res.status(200).json({ socials, lastUpdate: row.updated_at });
+    // #end-step
   } catch (error) {
-    console.error("❌ Error obteniendo redes sociales:", error);
+    // #step 5 - Manejo de excepciones
     return res.status(500).json({ error: "Error interno del servidor" });
+    // #end-step
   }
 };
+// #end-function

@@ -1,3 +1,4 @@
+/* src\modules\users\users.types.ts */
 // #typedef User
 export interface User {
   name: string;
