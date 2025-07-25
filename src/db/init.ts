@@ -93,5 +93,17 @@ export const inicializarBase = async () => {
   `);
   console.log(`✅ Tabla 'business_socials' verificada.`);
 
+  // Tabla: business_locations
+  await clientReal.query(`
+    CREATE TABLE IF NOT EXISTS business_locations (
+      business_id INTEGER PRIMARY KEY REFERENCES businesses(id) ON DELETE CASCADE,
+      address TEXT,
+      city TEXT,
+      province TEXT,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  console.log(`✅ Tabla 'business_locations' verificada.`);
+
   await clientReal.end();
 };

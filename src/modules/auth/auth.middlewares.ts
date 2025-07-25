@@ -12,7 +12,7 @@ export const requireAuth = (req: AuthenticatedRequest, res: Response, next: Next
   const isValid = isTokenValid(token);
   const payload = getTokenPayload(token) as AuthenticatedRequest['user'];
   // #end-variable
-   // #step 1 - Verifica la existencia del token
+  // #step 1 - Verifica la existencia del token
   if (!token) {
     return res.status(401).json({ error: 'Invalid or missing authorization header' });
   }

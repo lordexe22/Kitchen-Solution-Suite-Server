@@ -4,8 +4,8 @@ import { Response } from "express";
 import { pool } from "../../db/pool";
 import { AuthenticatedRequest } from "../auth/auth.types";
 // #end-section
-// #function updateBusinessSocials - Actualiza los enlaces de redes sociales de un negocio específico.
-export const updateBusinessSocials = async (req: AuthenticatedRequest, res: Response) => {
+// #function updateCompanySocialMedia - Actualiza los enlaces de redes sociales de un negocio específico.
+export const updateCompanySocialMedia = async (req: AuthenticatedRequest, res: Response) => {
   // #variable - ownerId, businessId
   const ownerId = req.user!.id; // El ! indica que estamos seguros de que user no es undefined
   const businessId = Number(req.params.id);
@@ -82,8 +82,8 @@ export const updateBusinessSocials = async (req: AuthenticatedRequest, res: Resp
   }
 };
 // #end-function
-// #function createBusiness - Crea un nuevo negocio asociado al usuario autenticado y lo guarda en la base de datos.
-export const createBusiness = async (req: AuthenticatedRequest, res: Response) => {
+// #function createCompany - Crea un nuevo negocio asociado al usuario autenticado y lo guarda en la base de datos.
+export const createCompany = async (req: AuthenticatedRequest, res: Response) => {
   // #variable - ownerId, name, alias
   const ownerId = req.user!.id;
   const { name, alias } = req.body;
@@ -118,8 +118,8 @@ export const createBusiness = async (req: AuthenticatedRequest, res: Response) =
   }
 };
 // #end-function
-// #function getMyBusinesses - Obtiene todos los negocios asociados al usuario autenticado
-export const getMyBusinesses = async (req: AuthenticatedRequest, res: Response) => {
+// #function getMyCompanies - Obtiene todos los negocios asociados al usuario autenticado
+export const getMyCompanies = async (req: AuthenticatedRequest, res: Response) => {
   // #variable - ownerId
   const ownerId = req.user!.id;
   // #end-variable
@@ -140,8 +140,8 @@ export const getMyBusinesses = async (req: AuthenticatedRequest, res: Response) 
   }
 };
 // #end-function
-// #function getBusinessSocials - Obtiene las redes sociales asociadas a un negocio
-export const getBusinessSocials = async (req: AuthenticatedRequest, res: Response) => {
+// #function getCompaniesSocialMedia - Obtiene las redes sociales asociadas a un negocio
+export const getCompaniesSocialMedia = async (req: AuthenticatedRequest, res: Response) => {
   // #variable - businessId, userId
   const businessId = req.params.id;
   const userId = req.user!.id;
@@ -186,6 +186,90 @@ export const getBusinessSocials = async (req: AuthenticatedRequest, res: Respons
     // #step 5 - Manejo de excepciones
     return res.status(500).json({ error: "Error interno del servidor" });
     // #end-step
+  }
+};
+// #end-function
+// #function getCompanyLocation - Obtiene la ubicación asociada a un negocio
+export const getCompanyLocation = async (req: AuthenticatedRequest, res: Response) => {
+  const businessId = req.params.id;
+  const userId = req.user!.id;
+
+  try {
+    const result = await pool.query(
+      `
+      SELECT 
+        address,
+        city,
+        province,
+        updated_at
+      FROM business_locations
+      WHERE business_id = $1
+      `,
+      [businessId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(200).json({ location: null, lastUpdate: null });
+    }
+
+    const row = result.rows[0];
+    const location = {
+      address: row.address || "",
+      city: row.city || "",
+      province: row.province || "",
+    };
+
+    return res.status(200).json({ location, lastUpdate: row.updated_at });
+  } catch (error) {
+    console.error("Error al obtener ubicación:", error);
+    return res.status(500).json({ error: "Error interno del servidor" });
+  }
+};
+// #end-function
+// #function updateCompanyLocation - Actualiza la ubicación de un negocio
+export const updateCompanyLocation = async (req: AuthenticatedRequest, res: Response) => {
+  const ownerId = req.user!.id;
+  const businessId = Number(req.params.id);
+
+  if (isNaN(businessId)) {
+    console.error("ID de negocio inválido:", req.params.id);
+    return res.status(400).json({ error: "ID de negocio inválido" });
+  }
+
+  const { address, city, province } = req.body;
+
+  try {
+    // Verificar que el negocio pertenece al usuario autenticado
+    const verify = await pool.query(
+      `SELECT id FROM businesses WHERE id = $1 AND owner_id = $2`,
+      [businessId, ownerId]
+    );
+
+    if (verify.rowCount === 0) {
+      console.warn(`Negocio ${businessId} no pertenece al usuario ${ownerId}`);
+      return res.status(403).json({ error: "Negocio no encontrado o sin permisos" });
+    }
+
+    // UPSERT ubicación
+    const upsertQuery = `
+      INSERT INTO business_locations (
+        business_id, address, city, province, updated_at
+      ) VALUES ($1, $2, $3, $4, NOW())
+      ON CONFLICT (business_id) DO UPDATE SET
+        address = EXCLUDED.address,
+        city = EXCLUDED.city,
+        province = EXCLUDED.province,
+        updated_at = NOW()
+    `;
+
+    const values = [businessId, address || null, city || null, province || null];
+
+    await pool.query(upsertQuery, values);
+
+    return res.status(200).json({ message: "Ubicación actualizada correctamente" });
+  } catch (error) {
+    console.error("Error al actualizar ubicación:", error);
+    return res.status(500).json({ error: "Error interno del servidor" });
   }
 };
 // #end-function
