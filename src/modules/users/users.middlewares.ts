@@ -1,23 +1,25 @@
+// src\modules\users\users.middlewares.ts
+// #section Imports
 import jwt from 'jsonwebtoken';
 import bcrypt from "bcrypt";
 import { Request, Response } from "express";
 import { User } from "./users.types";
 import { pool } from "../../db/pool";
-
-
+import { 
+  INSERT_USER,
+  SELECT_USER_BY_EMAIL
+} from './users.queries';
+// #end-section
 // #middleware registerUser - Add a new user into the database
 export const registerUser = async (req: Request, res: Response) => {
+  // #variable - user, saltRounds, hashedPassword
   const user: User = req.body;
   const saltRounds = 10;
   const hashedPassword = await bcrypt.hash(user.password, saltRounds);
+  // #end-variable
   try {
     // #step 1 - save user data into the pgSQL database
-    const queryResult = await pool.query(`
-      INSERT INTO users
-      (name, email, password, phone, company_name, register_date, role, account_status)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-      RETURNING id
-    `, [
+    await pool.query( INSERT_USER, [
       user.name,
       user.email,
       hashedPassword,
@@ -43,12 +45,12 @@ export const registerUser = async (req: Request, res: Response) => {
 // #end-middleware
 // #middleware loginUser - Eval if current user exist into the database
 export const loginUser = async (req: Request, res: Response) => {
+  // #variable - email, password
   const { email, password } = req.body;
+  // #end-variable
   try {
     // #step 1 - Search into the database if the current user exists by email
-    const resultado = await pool.query(`
-      SELECT id, name, email, password, role FROM users WHERE email = $1
-    `, [email]);
+    const resultado = await pool.query(SELECT_USER_BY_EMAIL, [email]);
 
     if (resultado.rowCount === 0) {
       return res.status(401).json({ success: false, message: "Correo no registrado." });
@@ -83,7 +85,6 @@ export const loginUser = async (req: Request, res: Response) => {
       }
     });
     // #end-step
-
   } catch (error: any) {
     // #step 5 - handle exceptions
     console.error("❌ Error en login:", error.message);

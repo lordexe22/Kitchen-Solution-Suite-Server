@@ -1,10 +1,10 @@
 // src/modules/auth/auth.middlewares.ts
-// #section imports
+// #section Imports
 import { Response, NextFunction } from 'express';
 import { AuthenticatedRequest } from './auth.types';
 import { getTokenFromHeader, isTokenValid, getTokenPayload } from './auth.utils';
 // #end-section
-// #function requireAuth - Valida el JWT, extrae el payload del usuario y lo asigna a req.user
+// #function requireAuth - Validates the JWT, extracts the user payload and assigns it to req.user
 export const requireAuth = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   // #variable - authHeader, token, isValid, payload
   const authHeader = req.headers.authorization;
@@ -12,25 +12,25 @@ export const requireAuth = (req: AuthenticatedRequest, res: Response, next: Next
   const isValid = isTokenValid(token);
   const payload = getTokenPayload(token) as AuthenticatedRequest['user'];
   // #end-variable
-  // #step 1 - Verifica la existencia del token
+  // #step 1 - Check for token existence
   if (!token) {
     return res.status(401).json({ error: 'Invalid or missing authorization header' });
   }
     // #end-step
-  // #step 2 - Verifica la validez del token
+  // #step 2 - Check token validity
   if (!isValid) {
     return res.status(401).json({ error: 'Invalid or expired token' });
   }
   // #end-step
-  // #step 3 - Verifica que el payload sea decodificable
+  // #step 3 - Check if the payload is decodable
   if (!payload) {
     return res.status(401).json({ error: 'Failed to decode token payload' });
   }
   // #end-step
-  // #step 4 - Asigna el payload a req.user
+  // #step 4 - Assign payload to req.user
   req.user = payload;
   // #end-step
-  // #step 5 - Llama a next() para continuar con la siguiente función middleware
+  // #step 5 - Call next() to proceed to the next middleware function
   next();
   // #end-step
 }

@@ -1,5 +1,5 @@
 /* src\modules\users\users.types.ts */
-// #typedef User
+// #type User
 export interface User {
   name: string;
   email: string;
@@ -10,4 +10,4 @@ export interface User {
   role: "admin";
   accountStatus: "free";
 }
-// #end-typedef
+// #end-type

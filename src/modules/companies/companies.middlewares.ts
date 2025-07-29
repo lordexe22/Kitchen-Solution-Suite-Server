@@ -1,22 +1,31 @@
-// src\modules\businesses\businesses.middlewares.ts
+/* src\modules\companies\companies.middlewares.ts */
 // #section Imports
 import { Response } from "express";
 import { pool } from "../../db/pool";
 import { AuthenticatedRequest } from "../auth/auth.types";
+import { 
+  VERIFY_COMPANY_OWNERSHIP,
+  UPSERT_COMPANY_SOCIALS,
+  GET_COMPANY_LOCATION,
+  GET_COMPANY_SOCIALS,
+  GET_MY_COMPANIES,
+  INSERT_COMPANY,
+  UPSERT_COMPANY_LOCATION
+} from "./companies.queries";
 // #end-section
-// #function updateCompanySocialMedia - Actualiza los enlaces de redes sociales de un negocio específico.
+// #function updateCompanySocialMedia - Updates the social media links of a specific business.
 export const updateCompanySocialMedia = async (req: AuthenticatedRequest, res: Response) => {
   // #variable - ownerId, businessId
   const ownerId = req.user!.id; // El ! indica que estamos seguros de que user no es undefined
   const businessId = Number(req.params.id);
   // #end-variable
-  // #step 1 - Validar que el ID del negocio sea un número válido
+  // #step 1 - Validate that the business ID is a valid number
   if (isNaN(businessId)) {
     console.error("❌ ID de negocio inválido:", req.params.id);
     return res.status(400).json({ error: "ID de negocio inválido" });
   }
   // #end-step
-  // #step 2 - Capturar los enlaces de redes sociales del cuerpo de la solicitud
+  // #step 2 - Capture the social media links from the request body
   const {
     facebook_url,
     instagram_url,
@@ -26,39 +35,18 @@ export const updateCompanySocialMedia = async (req: AuthenticatedRequest, res: R
   } = req.body;
   // #end-step
   try {
-    // #step 3 - Verificar que el negocio pertenece al usuario autenticado
-    const verify = await pool.query(
-      `SELECT id FROM businesses WHERE id = $1 AND owner_id = $2`,
-      [businessId, ownerId]
-    );
+    // #step 3 - Verify that the business belongs to the authenticated user
+    const verify = await pool.query(VERIFY_COMPANY_OWNERSHIP, [businessId, ownerId]);
 
     if (verify.rowCount === 0) {
       console.warn(`⚠️ El negocio ${businessId} no pertenece al usuario ${ownerId}`);
       return res.status(403).json({ error: "Negocio no encontrado o sin permisos" });
     }
     // #end-step
-    // #step 4 - Crear una consulta SQL con un UPSERT para la tabla business_socials >> upsertQuery
-    /* #note - Funcionamiento
-    * 1 - El comando INSERT INTO con ON CONFLICT funciona de la siguiente manera:
-    *   - Si el negocio no tiene redes sociales en la base de datos, se insertan los nuevos valores.
-    *   - Si el negocio ya tiene redes sociales en la base de datos, se actualizan los campos correspondientes.
-    * 2 - Utilizamos EXCLUDED para referirnos a los valores que se intentan insertar.
-    */
-    const upsertQuery = `
-      INSERT INTO business_socials (
-        business_id, facebook_url, instagram_url, x_url, tiktok_url, threads_url, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, NOW())
-      ON CONFLICT (business_id) DO UPDATE SET
-        facebook_url = EXCLUDED.facebook_url,
-        instagram_url = EXCLUDED.instagram_url,
-        x_url = EXCLUDED.x_url,
-        tiktok_url = EXCLUDED.tiktok_url,
-        threads_url = EXCLUDED.threads_url,
-        updated_at = NOW()
-    `;
+    // #step 4 - Create an SQL query with an UPSERT for the business_socials table >> upsertQuery
+    const upsertQuery = UPSERT_COMPANY_SOCIALS;
     // #end-step
-    // #step 5 - Preparar los valores para el UPSERT >> values[]
-    // #note - Un UPSERT es una operación que inserta un nuevo registro (si el mismo no existe) o actualiza uno existente.
+    // #step 5 - Prepare the values for the UPSERT >> values[]
     const values = [
       businessId,
       facebook_url || null,
@@ -68,109 +56,88 @@ export const updateCompanySocialMedia = async (req: AuthenticatedRequest, res: R
       threads_url || null
     ];
     // #end-step
-    // #step 6 - Ejecutar la consulta de UPSERT
+    // #step 6 - Execute the UPSERT query
     await pool.query(upsertQuery, values);
     // #end-step
-    // #step 7 - Retornar una respuesta exitosa
+    // #step 7 - Return a successful response
     return res.status(200).json({ message: "Redes sociales actualizadas correctamente" });
     // #end-step
   } catch (error:unknown) {
-    // #step 8 - Manejo de excepciones
+    // #step 8 - Exception handling
     console.error("❌ Error en la base de datos:", error);
     return res.status(500).json({ error: "Error interno del servidor" });
     // #end-step
   }
 };
 // #end-function
-// #function createCompany - Crea un nuevo negocio asociado al usuario autenticado y lo guarda en la base de datos.
+// #function createCompany - Creates a new company associated with the authenticated user and stores it in the database.
 export const createCompany = async (req: AuthenticatedRequest, res: Response) => {
   // #variable - ownerId, name, alias
   const ownerId = req.user!.id;
   const { name, alias } = req.body;
   // #end-variable
-  // #step 1 - Validar que el nombre del negocio exista y sea un string
+  // #step 1 - Validate that the business name exists and is a string
   if (!name || typeof name !== "string") {
     return res.status(400).json({ error: "Nombre del negocio es obligatorio" });
   }
   // #end-step
   try {
-    // #step 2 - Prepara una consulta SQL para insertar el negocio en la base de datos
-    const insertQuery = `
-      INSERT INTO businesses (name, alias, owner_id)
-      VALUES ($1, $2, $3)
-      RETURNING id, name, alias, owner_id, created_at, updated_at, is_active
-    `;
+    // #step 2 - Prepare an SQL query to insert the business into the database
+    const insertQuery = INSERT_COMPANY;
     // #end-step
-    // #step 3 - Prepara valores para la consulta SQL
+    // #step 3 - Prepare values for the SQL query
     const values = [name.trim(), alias?.trim() || null, ownerId];
     // #end-step
-    // #step 4 - Ejecuta la consulta para insertar el negocio a la base de datos y obtener el negocio creado >> newBusiness
+    // #step 4 - Execute the query to insert the business into the database and get the created business >> newBusiness
     const result = await pool.query(insertQuery, values);
     const newBusiness = result.rows[0];
     // #end-step
-    // #step 5 - Retornar respuesta con el negocio creado
-    return res.status(201).json({ business: newBusiness });
+    // #step 5 - Return response with the created business
+    return res.status(201).json({ companies: newBusiness });
     // #end-step
   } catch (error: unknown) {
-    // #step 6 - Manejo de excepciones
+    // #step 6 - Exception handling
     return res.status(500).json({ error: "Error interno del servidor" });
     // #end-step
   }
 };
 // #end-function
-// #function getMyCompanies - Obtiene todos los negocios asociados al usuario autenticado
+// #function getMyCompanies - Retrieves all companies associated with the authenticated user
 export const getMyCompanies = async (req: AuthenticatedRequest, res: Response) => {
   // #variable - ownerId
   const ownerId = req.user!.id;
   // #end-variable
   try {
-    // #step 1 - Consultar todos los negocios del usuario autenticado >> result
-    const result = await pool.query(
-      `SELECT id, name, alias, created_at, updated_at, is_active FROM businesses WHERE owner_id = $1`,
-      [ownerId]
-    );
+    // #step 1 - Query all businesses of the authenticated user >> result
+    const result = await pool.query(GET_MY_COMPANIES, [ownerId]);
     // #end-step
-    // #step 2 - Devolver la lista de negocios
-    return res.status(200).json({ businesses: result.rows });
+    // #step 2 - Return the list of companies
+    return res.status(200).json({ companies: result.rows });
     // #end-step
   } catch (error: unknown) {
-    // #step 3 - Manejo de excepciones
+    // #step 3 - Exception handling
     return res.status(500).json({ error: "Error interno del servidor" });
     // #end-step
   }
 };
 // #end-function
-// #function getCompaniesSocialMedia - Obtiene las redes sociales asociadas a un negocio
+// #function getCompaniesSocialMedia - Retrieves the social media associated with a business
 export const getCompaniesSocialMedia = async (req: AuthenticatedRequest, res: Response) => {
   // #variable - businessId, userId
   const businessId = req.params.id;
   const userId = req.user!.id;
   // #end-variable
   try {
-    // #step 1 - Consultar las redes sociales del negocio indicado
-    const result = await pool.query(
-      `
-      SELECT 
-        facebook_url,
-        instagram_url,
-        x_url,
-        tiktok_url,
-        threads_url,
-        updated_at
-      FROM business_socials
-      WHERE business_id = $1
-      `,
-      [businessId]
-    );
+    // #step 1 - Query the social media of the specified business
+    const result = await pool.query(GET_COMPANY_SOCIALS, [businessId]);
     // #end-step
-    // #step 2 - Verificar si se encontraron redes sociales o retornar un objeto vacío
+    // #step 2 - Check if social media was found or return an empty object
     if (result.rows.length === 0) {
       return res.status(200).json({ socials: {}, lastUpdate: null });
     }
     // #end-step
-    // #step 3 - Formatear los datos para el frontend
+    // #step 3 - Format the data for the frontend
     const row = result.rows[0];
-
     const socials = {
       facebook_url: row.facebook_url || "",
       instagram_url: row.instagram_url || "",
@@ -179,46 +146,30 @@ export const getCompaniesSocialMedia = async (req: AuthenticatedRequest, res: Re
       threads_url: row.threads_url || "",
     };
     // #end-step
-    // #step 4 - Retornar la respuesta con las redes sociales y la fecha de última actualización
+    // #step 4 - Return the response with social media and last update date
     return res.status(200).json({ socials, lastUpdate: row.updated_at });
     // #end-step
   } catch (error) {
-    // #step 5 - Manejo de excepciones
+    // #step 5 - Exception handling
     return res.status(500).json({ error: "Error interno del servidor" });
     // #end-step
   }
 };
 // #end-function
-// #function getCompanyLocation - Obtiene la ubicación asociada a un negocio
+// #function getCompanyLocation - Retrieves the location associated with a business
 export const getCompanyLocation = async (req: AuthenticatedRequest, res: Response) => {
   const businessId = req.params.id;
-  const userId = req.user!.id;
-
   try {
-    const result = await pool.query(
-      `
-      SELECT 
-        address,
-        city,
-        province,
-        updated_at
-      FROM business_locations
-      WHERE business_id = $1
-      `,
-      [businessId]
-    );
-
+    const result = await pool.query(GET_COMPANY_LOCATION, [businessId]);
     if (result.rows.length === 0) {
       return res.status(200).json({ location: null, lastUpdate: null });
     }
-
     const row = result.rows[0];
     const location = {
       address: row.address || "",
       city: row.city || "",
       province: row.province || "",
     };
-
     return res.status(200).json({ location, lastUpdate: row.updated_at });
   } catch (error) {
     console.error("Error al obtener ubicación:", error);
@@ -226,46 +177,24 @@ export const getCompanyLocation = async (req: AuthenticatedRequest, res: Respons
   }
 };
 // #end-function
-// #function updateCompanyLocation - Actualiza la ubicación de un negocio
+// #function updateCompanyLocation - Updates the location of a business
 export const updateCompanyLocation = async (req: AuthenticatedRequest, res: Response) => {
   const ownerId = req.user!.id;
   const businessId = Number(req.params.id);
-
   if (isNaN(businessId)) {
     console.error("ID de negocio inválido:", req.params.id);
     return res.status(400).json({ error: "ID de negocio inválido" });
   }
-
   const { address, city, province } = req.body;
-
   try {
-    // Verificar que el negocio pertenece al usuario autenticado
-    const verify = await pool.query(
-      `SELECT id FROM businesses WHERE id = $1 AND owner_id = $2`,
-      [businessId, ownerId]
-    );
-
+    const verify = await pool.query(VERIFY_COMPANY_OWNERSHIP, [businessId, ownerId]);
     if (verify.rowCount === 0) {
       console.warn(`Negocio ${businessId} no pertenece al usuario ${ownerId}`);
       return res.status(403).json({ error: "Negocio no encontrado o sin permisos" });
     }
-
-    // UPSERT ubicación
-    const upsertQuery = `
-      INSERT INTO business_locations (
-        business_id, address, city, province, updated_at
-      ) VALUES ($1, $2, $3, $4, NOW())
-      ON CONFLICT (business_id) DO UPDATE SET
-        address = EXCLUDED.address,
-        city = EXCLUDED.city,
-        province = EXCLUDED.province,
-        updated_at = NOW()
-    `;
-
+    const upsertQuery = UPSERT_COMPANY_LOCATION;
     const values = [businessId, address || null, city || null, province || null];
-
     await pool.query(upsertQuery, values);
-
     return res.status(200).json({ message: "Ubicación actualizada correctamente" });
   } catch (error) {
     console.error("Error al actualizar ubicación:", error);

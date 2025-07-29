@@ -1,9 +1,9 @@
 // src/modules/auth/auth.utils.ts
-// #section imports
+// #section Imports
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from './auth.config';
 // #end-section
-// #function isTokenValid - Retorna true si el jwt es válido, false en caso contrario
+// #function isTokenValid - Returns true if the JWT is valid, false otherwise
 export const isTokenValid = (token: string | null): boolean => {
   try {
     if (!token) return false;
@@ -14,7 +14,7 @@ export const isTokenValid = (token: string | null): boolean => {
   }
 }
 // #end-function
-// #function getTokenFromHeader - Extrae el jwt del encabezado Authorization y lo retorna
+// #function getTokenFromHeader - Extracts the JWT from the Authorization header and returns it
 export const getTokenFromHeader = (headerValue?: string): string | null => {
   if (!headerValue) return null;
   const [type, token] = headerValue.split(' ');
@@ -22,7 +22,7 @@ export const getTokenFromHeader = (headerValue?: string): string | null => {
   return token;
 }
 // #end-function
-// #function getTokenPayload - Retorna el payload (contenido) del jwt si es válido, o null en caso contrario
+// #function getTokenPayload - Returns the JWT payload if valid, or null otherwise
 export const getTokenPayload = <T = any>(token: string | null): T | null => {
   try {
     if (!token) return null;

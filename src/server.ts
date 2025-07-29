@@ -3,7 +3,7 @@
 import express from "express";
 import bodyParser from "body-parser";
 import cors from "cors";
-import { inicializarBase } from "./db/init";
+import { initializeDatabase } from "./db/init";
 import userRouter from "./modules/users/users.routes";
 import authRouter from "./modules/auth/auth.routes";
 import companiesRouter from "./modules/companies/companies.routes";
@@ -26,7 +26,7 @@ app.get("/", (_req, res) => {
 
 
 // #section Initialize database and start server
-inicializarBase().then(() => {
+initializeDatabase().then(() => {
   app.listen(PUERTO, () => {
     console.log(`🚀 Servidor escuchando en http://localhost:${PUERTO}`);
   });
