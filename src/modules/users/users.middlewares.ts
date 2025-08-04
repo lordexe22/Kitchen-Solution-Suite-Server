@@ -23,8 +23,6 @@ export const registerUser = async (req: Request, res: Response) => {
       user.name,
       user.email,
       hashedPassword,
-      user.phone || null,
-      user.companyName || null,
       user.registerDate,
       user.role,
       user.accountStatus,
@@ -71,7 +69,6 @@ export const loginUser = async (req: Request, res: Response) => {
       { expiresIn: "30d" }
     );
     // #end-step
-    console.log("[DEBUG] Token generado:", token);
     // #step 4 - Return jwt and success message
     return res.status(200).json({
       success: true,

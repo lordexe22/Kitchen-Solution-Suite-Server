@@ -6,7 +6,6 @@ export const CREATE_USER_TABLE = `
     name TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
     password TEXT NOT NULL,
-    phone TEXT,
     register_date TIMESTAMP NOT NULL,
     role TEXT NOT NULL,
     account_status TEXT NOT NULL

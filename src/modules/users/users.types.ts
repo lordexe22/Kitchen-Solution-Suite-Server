@@ -4,10 +4,8 @@ export interface User {
   name: string;
   email: string;
   password: string;
-  phone?: string;
-  companyName?: string;
   registerDate: string;
-  role: "admin";
-  accountStatus: "free";
+  role: "admin" | "employ";
+  accountStatus: "active" | "inactive";
 }
 // #end-type
