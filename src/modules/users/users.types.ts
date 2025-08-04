@@ -5,7 +5,7 @@ export interface User {
   email: string;
   password: string;
   registerDate: string;
-  role: "admin" | "employ";
+  role: "admin" | "employ" | "dev" | "visitor";
   accountStatus: "active" | "inactive";
 }
 // #end-type

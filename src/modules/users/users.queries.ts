@@ -2,8 +2,8 @@
 // #variable INSERT_USER
 export const INSERT_USER = `
   INSERT INTO users
-  (name, email, password, phone, company_name, register_date, role, account_status)
-  VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+  (name, email, password, register_date, role, account_status)
+  VALUES ($1,$2,$3,$4,$5,$6)
   RETURNING id
 `;
 // #end-variable
