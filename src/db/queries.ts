@@ -49,3 +49,13 @@ export const CREATE_LOCATION_TABLE = `
   )
 `;
 // #end-variable
+// #variable - CREATE_COMPANY_SCHEDULE_TABLE
+export const CREATE_COMPANY_SCHEDULE_TABLE = `
+  CREATE TABLE IF NOT EXISTS company_schedules (
+    company_id INTEGER PRIMARY KEY REFERENCES companies(id) ON DELETE CASCADE,
+    schedule JSONB NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+  )
+`;
+// #end-variable

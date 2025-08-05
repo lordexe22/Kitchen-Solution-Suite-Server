@@ -13,7 +13,7 @@ import {
   UPSERT_COMPANY_LOCATION
 } from "./companies.queries";
 // #end-section
-// #function updateCompanySocialMedia - Updates the social media links of a specific business.
+// #middleware updateCompanySocialMedia - Updates the social media links of a specific company.
 export const updateCompanySocialMedia = async (req: AuthenticatedRequest, res: Response) => {
   // #variable - ownerId, businessId
   const ownerId = req.user!.id; // El ! indica que estamos seguros de que user no es undefined
@@ -69,8 +69,8 @@ export const updateCompanySocialMedia = async (req: AuthenticatedRequest, res: R
     // #end-step
   }
 };
-// #end-function
-// #function createCompany - Creates a new company associated with the authenticated user and stores it in the database.
+// #end-middleware
+// #middleware createCompany - Creates a new company associated with the authenticated user and stores it in the database.
 export const createCompany = async (req: AuthenticatedRequest, res: Response) => {
   // #variable - ownerId, name, alias
   const ownerId = req.user!.id;
@@ -101,8 +101,8 @@ export const createCompany = async (req: AuthenticatedRequest, res: Response) =>
     // #end-step
   }
 };
-// #end-function
-// #function getMyCompanies - Retrieves all companies associated with the authenticated user
+// #end-middleware
+// #middleware getMyCompanies - Retrieves all companies associated with the authenticated user
 export const getMyCompanies = async (req: AuthenticatedRequest, res: Response) => {
   // #variable - ownerId
   const ownerId = req.user!.id;
@@ -120,8 +120,8 @@ export const getMyCompanies = async (req: AuthenticatedRequest, res: Response) =
     // #end-step
   }
 };
-// #end-function
-// #function getCompaniesSocialMedia - Retrieves the social media associated with a business
+// #end-middleware
+// #middleware getCompaniesSocialMedia - Retrieves the social media associated with a company
 export const getCompaniesSocialMedia = async (req: AuthenticatedRequest, res: Response) => {
   // #variable - businessId, userId
   const businessId = req.params.id;
@@ -155,8 +155,8 @@ export const getCompaniesSocialMedia = async (req: AuthenticatedRequest, res: Re
     // #end-step
   }
 };
-// #end-function
-// #function getCompanyLocation - Retrieves the location associated with a business
+// #end-middleware
+// #middleware getCompanyLocation - Retrieves the location associated with a company
 export const getCompanyLocation = async (req: AuthenticatedRequest, res: Response) => {
   const businessId = req.params.id;
   try {
@@ -176,8 +176,8 @@ export const getCompanyLocation = async (req: AuthenticatedRequest, res: Respons
     return res.status(500).json({ error: "Error interno del servidor" });
   }
 };
-// #end-function
-// #function updateCompanyLocation - Updates the location of a business
+// #end-middleware
+// #middleware updateCompanyLocation - Updates the location of a company
 export const updateCompanyLocation = async (req: AuthenticatedRequest, res: Response) => {
   const ownerId = req.user!.id;
   const businessId = Number(req.params.id);
@@ -201,4 +201,74 @@ export const updateCompanyLocation = async (req: AuthenticatedRequest, res: Resp
     return res.status(500).json({ error: "Error interno del servidor" });
   }
 };
-// #end-function
+// #end-middleware
+// #middleware getCompanySchedule - Retrieves the schedule associated with a company
+export const getCompanySchedule = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const ownerId = req.user!.id;
+    const companyId = Number(req.params.id);
+
+    // 1. Verificar que la compañía pertenezca al usuario
+    const companyCheck = await pool.query(
+      `SELECT id FROM companies WHERE id = $1 AND owner_id = $2`,
+      [companyId, ownerId]
+    );
+    if (companyCheck.rowCount === 0) {
+      return res.status(403).json({ message: "No tienes permiso para ver esta compañía" });
+    }
+
+    // 2. Buscar el horario
+    const scheduleResult = await pool.query(
+      `SELECT schedule FROM company_schedules WHERE company_id = $1`,
+      [companyId]
+    );
+
+    if (scheduleResult.rowCount === 0) {
+      return res.status(404).json({ message: "No se encontró un horario para esta compañía" });
+    }
+
+    // 3. Retornar el objeto JSON tal cual se guardó
+    return res.status(200).json(scheduleResult.rows[0].schedule);
+
+  } catch (error) {
+    console.error("Error obteniendo horario:", error);
+    return res.status(500).json({ message: "Error al obtener el horario" });
+  }
+};
+// #end-middleware
+// #middleware updateCompanySchedule - Updates the weekly schedule of a company
+export const updateCompanySchedule = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const ownerId = req.user!.id;
+    const companyId = Number(req.params.id);
+    const schedule = req.body; // Ya llega en formato WeeklySchedule
+
+    // 1. Verificar que la compañía pertenezca al usuario
+    const companyCheck = await pool.query(
+      `SELECT id FROM companies WHERE id = $1 AND owner_id = $2`,
+      [companyId, ownerId]
+    );
+    if (companyCheck.rowCount === 0) {
+      return res.status(403).json({ message: "No tienes permiso para modificar esta compañía" });
+    }
+
+    // 2. Insertar o actualizar el horario
+    await pool.query(
+      `
+      INSERT INTO company_schedules (company_id, schedule, created_at, updated_at)
+      VALUES ($1, $2, NOW(), NOW())
+      ON CONFLICT (company_id)
+      DO UPDATE SET schedule = EXCLUDED.schedule, updated_at = NOW()
+      `,
+      [companyId, schedule]
+    );
+
+    // 3. Responder éxito
+    return res.status(200).json({ message: "Horarios actualizados correctamente" });
+
+  } catch (error) {
+    console.error("Error actualizando horario:", error);
+    return res.status(500).json({ message: "Error al actualizar horarios" });
+  }
+};
+// #end-middleware

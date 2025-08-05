@@ -5,7 +5,8 @@ import {
   CREATE_USER_TABLE,
   CREATE_COMPANY_TABLE,
   CREATE_SOCIAL_MEDIA_TABLE,
-  CREATE_LOCATION_TABLE
+  CREATE_LOCATION_TABLE,
+  CREATE_COMPANY_SCHEDULE_TABLE
 } from "./queries";
 import dotenv from "dotenv";
 // #end-section
@@ -30,6 +31,7 @@ export const initializeDatabase = async () => {
   await pool.query(CREATE_COMPANY_TABLE);
   await pool.query(CREATE_SOCIAL_MEDIA_TABLE);
   await pool.query(CREATE_LOCATION_TABLE);
+  await pool.query(CREATE_COMPANY_SCHEDULE_TABLE);
   // #end-step
 };
 // #end-function
