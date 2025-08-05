@@ -224,7 +224,16 @@ export const getCompanySchedule = async (req: AuthenticatedRequest, res: Respons
     );
 
     if (scheduleResult.rowCount === 0) {
-      return res.status(404).json({ message: "No se encontró un horario para esta compañía" });
+      // Cambiar el 404 por un 200 con horario vacío por defecto
+      return res.status(200).json({
+        monday: { isClosed: false, turns: [] },
+        tuesday: { isClosed: false, turns: [] },
+        wednesday: { isClosed: false, turns: [] },
+        thursday: { isClosed: false, turns: [] },
+        friday: { isClosed: false, turns: [] },
+        saturday: { isClosed: false, turns: [] },
+        sunday: { isClosed: false, turns: [] },
+      });
     }
 
     // 3. Retornar el objeto JSON tal cual se guardó
