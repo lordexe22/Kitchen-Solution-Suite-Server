@@ -74,7 +74,7 @@ export const updateCompanySocialMedia = async (req: AuthenticatedRequest, res: R
 export const createCompany = async (req: AuthenticatedRequest, res: Response) => {
   // #variable - ownerId, name, alias
   const ownerId = req.user!.id;
-  const { name, alias } = req.body;
+  const { name, alias, logo_url } = req.body;
   // #end-variable
   // #step 1 - Validate that the business name exists and is a string
   if (!name || typeof name !== "string") {
@@ -86,7 +86,7 @@ export const createCompany = async (req: AuthenticatedRequest, res: Response) =>
     const insertQuery = INSERT_COMPANY;
     // #end-step
     // #step 3 - Prepare values for the SQL query
-    const values = [name.trim(), alias?.trim() || null, ownerId];
+    const values = [name.trim(), alias?.trim() || null, ownerId, logo_url?.trim() || null];
     // #end-step
     // #step 4 - Execute the query to insert the business into the database and get the created business >> newBusiness
     const result = await pool.query(insertQuery, values);

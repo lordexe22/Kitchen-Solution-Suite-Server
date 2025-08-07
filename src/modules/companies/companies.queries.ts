@@ -20,14 +20,14 @@ export const UPSERT_COMPANY_SOCIALS = `
 // #end-variable
 // #variable - INSERT_COMPANY
 export const INSERT_COMPANY = `
-  INSERT INTO companies (name, alias, owner_id)
-  VALUES ($1, $2, $3)
-  RETURNING id, name, alias, owner_id, created_at, updated_at, is_active
+  INSERT INTO companies (name, alias, owner_id, logo_url)
+  VALUES ($1, $2, $3, $4)
+  RETURNING id, name, alias, owner_id, logo_url, created_at, updated_at, is_active
 `;
 // #end-variable
 // #variable - GET_MY_COMPANIES
 export const GET_MY_COMPANIES = `
-  SELECT id, name, alias, created_at, updated_at, is_active
+  SELECT id, name, alias, logo_url, created_at, updated_at, is_active
   FROM companies
   WHERE owner_id = $1
 `;
