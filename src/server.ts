@@ -6,6 +6,7 @@ import cors from "cors";
 import { initializeDatabase } from "./db/init";
 import userRouter from "./modules/users/users.routes";
 import authRouter from "./modules/auth/auth.routes";
+import cloudinaryRouter from './APIs/cloudinary/cloudinary.routes';
 import companiesRouter from "./modules/companies/companies.routes";
 // #end-section
 
@@ -18,6 +19,7 @@ app.use(bodyParser.json());
 app.use("/api/usuarios", userRouter);
 app.use('/api/auth', authRouter);
 app.use("/api/companies", companiesRouter);
+app.use("/api/cloudinary", cloudinaryRouter);
 // #end-section
 
 app.get("/", (_req, res) => {

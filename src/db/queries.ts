@@ -18,6 +18,7 @@ export const CREATE_COMPANY_TABLE = `
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     alias TEXT,
+    logo_url TEXT,
     owner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
