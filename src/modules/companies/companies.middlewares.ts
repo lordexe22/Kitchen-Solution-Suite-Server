@@ -281,3 +281,101 @@ export const updateCompanySchedule = async (req: AuthenticatedRequest, res: Resp
   }
 };
 // #end-middleware
+// #middleware getCompanySchedule - Retrieves the schedule associated with a company
+export const getCompanyBasicData = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const ownerId = req.user!.id;
+    const companyId = Number(req.params.id);
+
+    // #step 1 - Verify that the company allows to the current userID
+    const companyCheck = await pool.query(
+      `SELECT id FROM companies WHERE id = $1 AND owner_id = $2`,
+      [companyId, ownerId]
+    );
+    if (companyCheck.rowCount === 0) {
+      return res.status(403).json({ message: "No tienes permiso para ver esta compañía" });
+    }
+    // #end-step
+
+    // #step 2 - Get the company basic data
+    const result = await pool.query(
+      `SELECT id, name, alias, logo_url
+       FROM companies
+       WHERE id = $1`,
+      [companyId]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: "Compañía no encontrada" });
+    }
+    const companyData = result.rows[0];
+    // #end-step
+
+    // #step 3 - Return the company basic data
+    console.log({companyData});
+    return res.status(200).json(companyData);
+    // #end-step
+
+  } catch (error) {
+    console.error("Error obteniendo la información base de la empresa:", error);
+    return res.status(500).json({ message: "Error al obtener la información base de la empresa" });
+  }
+};
+// #end-middleware
+// #middleware updateCompanySchedule - Updates the weekly schedule of a company
+export const updateCompanyBasicData = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const ownerId = req.user!.id;
+    const companyId = Number(req.params.id);
+    const { name, alias, logo_url } = req.body;
+
+    // Construir un array dinámico de campos y valores para actualizar
+    const fieldsToUpdate: string[] = [];
+    const values: any[] = [];
+
+    if (name !== undefined) {
+      values.push(name);
+      fieldsToUpdate.push(`name = $${values.length}`);
+    }
+    if (alias !== undefined) {
+      values.push(alias);
+      fieldsToUpdate.push(`alias = $${values.length}`);
+    }
+    if (logo_url !== undefined) {
+      values.push(logo_url);
+      fieldsToUpdate.push(`logo_url = $${values.length}`);
+    }
+
+    // Siempre actualizar updated_at a NOW()
+    fieldsToUpdate.push(`updated_at = NOW()`);
+
+    if (fieldsToUpdate.length === 1) {
+      // Solo updated_at, sin cambios en datos, no hacer nada
+      return res.status(400).json({ message: "No se recibieron datos para actualizar" });
+    }
+
+    // Agregar condiciones para actualizar sólo si owner_id y companyId coinciden
+    // Añadir companyId y ownerId a values
+    values.push(companyId);
+    values.push(ownerId);
+
+    const query = `
+      UPDATE companies
+      SET ${fieldsToUpdate.join(", ")}
+      WHERE id = $${values.length - 1} AND owner_id = $${values.length}
+      RETURNING id, name, alias, logo_url, updated_at
+    `;
+
+    const result = await pool.query(query, values);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: "Empresa no encontrada o no autorizada" });
+    }
+
+    res.status(200).json(result.rows[0]);
+
+  } catch (error) {
+    console.error("Error actualizando datos de la empresa:", error);
+    return res.status(500).json({ message: "Error al actualizar datos de la empresa" });
+  }
+};
+// #end-middleware

@@ -10,7 +10,9 @@ import {
   getCompanyLocation,
   updateCompanyLocation,
   getCompanySchedule,
-  updateCompanySchedule
+  updateCompanySchedule,
+  getCompanyBasicData,
+  updateCompanyBasicData
 } from "./companies.middlewares";
 // #end-section
 // #variable companiesRouter
@@ -39,5 +41,11 @@ companiesRouter.get("/:id/schedule", validateJWTAndGetPayload, getCompanySchedul
 // #end-route
 // #route PUT >> /:id/schedule - Updates the weekly schedule of a specific company.
 companiesRouter.put("/:id/schedule", validateJWTAndGetPayload, updateCompanySchedule);
+// #end-route
+// #route GET >> /:id/basic - Retrieves the basic data of a specific company.
+companiesRouter.get("/:id/basic", validateJWTAndGetPayload, getCompanyBasicData);
+// #end-route
+// #route PUT >> /:id/basic - Updates the basic data of a specific company.
+companiesRouter.put("/:id/basic", validateJWTAndGetPayload, updateCompanyBasicData);
 // #end-route
 export default companiesRouter;
