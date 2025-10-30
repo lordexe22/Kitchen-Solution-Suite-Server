@@ -2,7 +2,7 @@
 // #section Imports
 import { Request, Response, NextFunction } from "express";
 import { validateAndProcessName, validateAndProcessEmail, validatePassword } from "../../utils/authenticationValidations.utils";
-import { hashPassword } from "../../utils/password.utils";
+import { hashPassword, comparePassword } from "../../utils/password.utils";
 import { db } from "../../db/init";
 import { usersTable } from "../../db/schema";
 import { eq } from "drizzle-orm";
@@ -326,17 +326,23 @@ export const returnUserData = (
     const statusCode = isAuthenticated ? 200 : 201;
 
     res.status(statusCode).json({
-      user: {
-        firstName,
-        lastName,
-        email,
-        type,
-        state,
-        imageUrl,
+      success: true,  // ← AGREGAR ESTE CAMPO
+      data: {         // ← ENVOLVER EN "data"
+        user: {
+          firstName,
+          lastName,
+          email,
+          type,
+          state,
+          imageUrl,
+        },
       },
     });
   } catch {
-    res.status(500).json({ error: 'Error returning user data' });
+    res.status(500).json({ 
+      success: false,  // ← AGREGAR TAMBIÉN AQUÍ
+      error: 'Error returning user data' 
+    });
   }
 };
 // #end-middleware
@@ -404,6 +410,7 @@ export const validateLoginPayload = (
 
     return res.status(400).json({ error: "Invalid platform value" });
   } catch (err) {
+    console.error('Error in validateLoginPayload:', err);
     return res.status(400).json({ error: (err as Error).message });
   }
 };
@@ -422,45 +429,65 @@ export const getUserFromDB = async (
   next: NextFunction
 ): Promise<void> => {
   console.log('getUserFromDB');
+  console.log('📦 req.body:', req.body);
+  
   try {
     const { platformName, email, password, platformToken } = req.body;
+    
+    console.log('🔍 platformName:', platformName);
+    console.log('📧 email:', email);
 
-    if (platformName === 'local') {
-      // Buscar usuario por email
-      const [user] = await db
-        .select()
-        .from(usersTable)
-        .where(eq(usersTable.email, email))
-        .limit(1);
+if (platformName === 'local') {
+  console.log('🔑 Buscando usuario en DB con email:', email);
+  
+  // Buscar usuario por email
+  const [user] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.email, email))
+    .limit(1);
 
-      if (!user) {
-        res.status(401).json({ error: 'Invalid email or password' });
-        return;
-      }
+  console.log('👤 Usuario encontrado:', user ? 'SÍ' : 'NO');
+  
+  if (!user) {
+    console.log('❌ Usuario no encontrado');
+    res.status(401).json({ error: 'Invalid email or password' });
+    return;
+  }
 
-      // Verificar contraseña
-      const bcrypt = require('bcrypt');
-      const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+  console.log('🔐 Verificando password...');
+  console.log('🔐 user.passwordHash existe:', !!user.passwordHash);
 
-      if (!isPasswordValid) {
-        res.status(401).json({ error: 'Invalid email or password' });
-        return;
-      }
+  // Verificar contraseña usando la utilidad consistente
+  const isPasswordValid = await comparePassword(password, user.passwordHash);
 
-      // Preparar objeto UserDataStore
-      req.body.userDataStore = {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        imageUrl: user.imageUrl ?? null,
-        type: user.type,
-        state: user.state,
-        isAuthenticated: true,
-      };
+  console.log('✅ Password válido:', isPasswordValid);
 
-      next();
-    } else if (platformName === 'google') {
+  if (!isPasswordValid) {
+    console.log('❌ Password inválido');
+    res.status(401).json({ error: 'Invalid email or password' });
+    return;
+  }
+
+  console.log('✅ Usuario autenticado correctamente');
+
+  // Preparar objeto UserDataStore
+  req.body.userDataStore = {
+    id: user.id,
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    imageUrl: user.imageUrl ?? null,
+    type: user.type,
+    state: user.state,
+    isAuthenticated: true,
+  };
+
+  console.log('📤 userDataStore creado:', req.body.userDataStore);
+  console.log('➡️ Llamando a next()');
+
+  next();
+  } else if (platformName === 'google') {
       // Buscar usuario por platformToken en la tabla api_platforms
       const { apiPlatformsTable } = await import('../../db/schema');
       
@@ -501,12 +528,16 @@ export const getUserFromDB = async (
 
       next();
     } else {
+      console.log('❌ Platform inválido:', platformName);
       res.status(400).json({ error: 'Invalid platform' });
     }
   } catch (err) {
-    console.error('Error in getUserFromDB:', err);
+    console.error('💥 Error in getUserFromDB:', err);
     res.status(500).json({ error: 'Error fetching user from database' });
   }
 };
 // #end-middleware
+
+
+
 

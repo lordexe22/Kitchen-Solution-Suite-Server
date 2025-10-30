@@ -17,7 +17,7 @@ import {
 
 export const authRouter = Router();
 
-authRouter.post(`${API_ROUTES.REGISTER_URL}`,
+authRouter.post(API_ROUTES.REGISTER_URL,
   validateRegisterPayload, // validar los datos del usuario obtenidos desde el cliente
   hashPasswordMiddleware, // generar el hash de la contraseña antes de guardar en la base de datos
   addNewUserDataToDB, // se agregan los datos del usuario validados a la base de datos
