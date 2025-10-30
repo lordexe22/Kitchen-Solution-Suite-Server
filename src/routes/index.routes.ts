@@ -9,7 +9,9 @@ import {
   fetchUserDataFromDB,
   createJWT,
   setJWTonCookies,
-  returnUserData
+  returnUserData,
+  validateLoginPayload,
+  getUserFromDB
 } from "../middlewares/auth/auth.middlewares";
 // #end-section
 
@@ -25,12 +27,13 @@ authRouter.post(`${API_ROUTES.REGISTER_URL}`,
   returnUserData //  se retornan los datos del usuario al cliente
 )
 
-// authRouter.post(API_ROUTES.LOGIN_URL,
-  // validateUserData - validar los datos del usuario obtenidos desde el cliente
-  // getUserFromDB - busca al usuario en la base de datos (email + password | googleToken)  
-  // setJWTonCookies - se agrega el jwt a las cookies (consumo para HTTP only)
-  // returnUserData - se retornan los datos del usuario al cliente
-// )
+authRouter.post(API_ROUTES.LOGIN_URL,
+  validateLoginPayload, // validar los datos del usuario obtenidos desde el cliente
+  getUserFromDB, // busca al usuario en la base de datos (email + password | googleToken)  
+  createJWT, // se crea un JWT a partir de los datos del usuario
+  setJWTonCookies, // se agrega el jwt a las cookies (consumo para HTTP only)
+  returnUserData // se retornan los datos del usuario al cliente
+)
 
 // authRouter.post(API_ROUTES.AUTO_LOGIN_BY_TOKEN_URL,
   // validateJWTfromCookies - valida el JWT guardado en las cookies (fecha de expiracion, formato, etc)

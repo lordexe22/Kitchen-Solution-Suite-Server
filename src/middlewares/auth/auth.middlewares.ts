@@ -7,6 +7,7 @@ import { db } from "../../db/init";
 import { usersTable } from "../../db/schema";
 import { eq } from "drizzle-orm";
 import { signJWT } from "../../utils/jwt.utils";
+import bcrypt from "bcrypt";
 // #end-section
 // #middleware validateRegisterPayload
 /**
@@ -303,7 +304,8 @@ export const setJWTonCookies = (
 /**
  * Middleware: returnUserData
  *
- * Envía al cliente los datos esenciales del usuario recién registrado.
+ * Envía al cliente los datos esenciales del usuario.
+ * Detecta si es registro (201) o login (200) basándose en si existe userDataStore.isAuthenticated
  */
 export const returnUserData = (
   req: Request,
@@ -318,9 +320,12 @@ export const returnUserData = (
       return;
     }
 
-    const { firstName, lastName, email, type, state, imageUrl } = userDataStore;
+    const { firstName, lastName, email, type, state, imageUrl, isAuthenticated } = userDataStore;
 
-    res.status(201).json({
+    // Si isAuthenticated es true, es un login (200), si no, es registro (201)
+    const statusCode = isAuthenticated ? 200 : 201;
+
+    res.status(statusCode).json({
       user: {
         firstName,
         lastName,
@@ -335,3 +340,173 @@ export const returnUserData = (
   }
 };
 // #end-middleware
+// #middleware validateLoginPayload
+/**
+ * Middleware: validateLoginPayload
+ * Valida y normaliza los datos recibidos en el login según la plataforma.
+ * Si es válido, reemplaza los valores procesados en req.body.
+ */
+export const validateLoginPayload = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  console.log('validateLoginPayload');
+  try {
+    const data = req.body;
+
+    if (!data || typeof data !== "object") {
+      return res.status(400).json({ error: "Invalid request body" });
+    }
+
+    if (!data.platformName) {
+      return res.status(400).json({ error: "Missing field platformName in body" });
+    }
+
+    if (data.platformName === "local") {
+      const { email, password } = data;
+
+      // Validaciones básicas de presencia
+      if (!email || !password) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      // Validar formato de email
+      const processedEmail = validateAndProcessEmail(email);
+      
+      // Validar formato de password (no hash aquí, solo formato)
+      validatePassword(password);
+
+      // Reasignar datos normalizados
+      req.body = {
+        platformName: "local",
+        email: processedEmail,
+        password
+      };
+
+      return next();
+    }
+
+    if (data.platformName === "google") {
+      const { platformToken } = data;
+
+      if (!platformToken) {
+        return res.status(400).json({ error: "Missing platformToken" });
+      }
+
+      req.body = {
+        platformName: "google",
+        platformToken: platformToken.trim(),
+      };
+
+      return next();
+    }
+
+    return res.status(400).json({ error: "Invalid platform value" });
+  } catch (err) {
+    return res.status(400).json({ error: (err as Error).message });
+  }
+};
+// #end-middleware
+// #middleware getUserFromDB
+/**
+ * Middleware: getUserFromDB
+ *
+ * Busca al usuario en la base de datos según la plataforma (local o google).
+ * Para local: valida email y password.
+ * Para google: busca por token de plataforma.
+ */
+export const getUserFromDB = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  console.log('getUserFromDB');
+  try {
+    const { platformName, email, password, platformToken } = req.body;
+
+    if (platformName === 'local') {
+      // Buscar usuario por email
+      const [user] = await db
+        .select()
+        .from(usersTable)
+        .where(eq(usersTable.email, email))
+        .limit(1);
+
+      if (!user) {
+        res.status(401).json({ error: 'Invalid email or password' });
+        return;
+      }
+
+      // Verificar contraseña
+      const bcrypt = require('bcrypt');
+      const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+
+      if (!isPasswordValid) {
+        res.status(401).json({ error: 'Invalid email or password' });
+        return;
+      }
+
+      // Preparar objeto UserDataStore
+      req.body.userDataStore = {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        imageUrl: user.imageUrl ?? null,
+        type: user.type,
+        state: user.state,
+        isAuthenticated: true,
+      };
+
+      next();
+    } else if (platformName === 'google') {
+      // Buscar usuario por platformToken en la tabla api_platforms
+      const { apiPlatformsTable } = await import('../../db/schema');
+      
+      const [platform] = await db
+        .select()
+        .from(apiPlatformsTable)
+        .where(eq(apiPlatformsTable.platformToken, platformToken))
+        .limit(1);
+
+      if (!platform) {
+        res.status(401).json({ error: 'Invalid Google token or user not registered' });
+        return;
+      }
+
+      // Buscar datos del usuario
+      const [user] = await db
+        .select()
+        .from(usersTable)
+        .where(eq(usersTable.id, platform.userId))
+        .limit(1);
+
+      if (!user) {
+        res.status(401).json({ error: 'User not found' });
+        return;
+      }
+
+      // Preparar objeto UserDataStore
+      req.body.userDataStore = {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        imageUrl: user.imageUrl ?? null,
+        type: user.type,
+        state: user.state,
+        isAuthenticated: true,
+      };
+
+      next();
+    } else {
+      res.status(400).json({ error: 'Invalid platform' });
+    }
+  } catch (err) {
+    console.error('Error in getUserFromDB:', err);
+    res.status(500).json({ error: 'Error fetching user from database' });
+  }
+};
+// #end-middleware
+
