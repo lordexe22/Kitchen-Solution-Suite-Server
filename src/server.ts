@@ -3,23 +3,21 @@
 import express from "express";
 import bodyParser from "body-parser";
 import cors from "cors";
-import { initializeDatabase } from "./db/init";
-import userRouter from "./modules/users/users.routes";
-import authRouter from "./modules/auth/auth.routes";
-import cloudinaryRouter from './APIs/cloudinary/cloudinary.routes';
-import companiesRouter from "./modules/companies/companies.routes";
+import { authRouter } from "./routes/index.routes";
+import { db } from "./db/init";
+import * as serverConfig from './config/server.config'
 // #end-section
 
+
 const app = express();
-const PUERTO = 4000;
 
 // #section Use server middlewares
-app.use(cors());
+app.use(cors({
+  credentials: true, // permitir el uso de cookies
+  origin: 'http://localhost:5173' // ajustar al origen del cliente (quien recibira las cookies)
+}));
 app.use(bodyParser.json());
-app.use("/api/usuarios", userRouter);
-app.use('/api/auth', authRouter);
-app.use("/api/companies", companiesRouter);
-app.use("/api/cloudinary", cloudinaryRouter);
+app.use(authRouter);
 // #end-section
 
 app.get("/", (_req, res) => {
@@ -27,13 +25,6 @@ app.get("/", (_req, res) => {
 });
 
 
-// #section Initialize database and start server
-initializeDatabase().then(() => {
-  app.listen(PUERTO, () => {
-    console.log(`🚀 Servidor escuchando en http://localhost:${PUERTO}`);
-  });
-}).catch(err => {
-  console.error("❌ Error inicializando base de datos:", err);
-  process.exit(1);
-});
+// #section Start server
+app.listen(serverConfig.PORT, ()=>{console.log(`Server running on port ${serverConfig.PORT}`)})
 // #end-section
