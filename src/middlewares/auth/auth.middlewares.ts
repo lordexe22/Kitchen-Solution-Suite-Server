@@ -26,11 +26,17 @@ export const validateRegisterPayload = (
     const data = req.body;
 
     if (!data || typeof data !== "object") {
-      return res.status(400).json({ error: "Invalid request body" });
+      return res.status(400).json({ 
+        success: false,
+        error: "Invalid request body" 
+      });
     }
 
     if (!data.platformName) {
-      return res.status(400).json({ error: "Missing field platform in body" });
+      return res.status(400).json({ 
+        success: false,
+        error: "Missing field platform in body" 
+      });
     }
 
     if (data.platformName === "local") {
@@ -38,7 +44,10 @@ export const validateRegisterPayload = (
 
       // Validaciones básicas de presencia
       if (!firstName || !lastName || !email || !password ) {
-        return res.status(400).json({ error: "Missing required fields" });
+        return res.status(400).json({ 
+          success: false,
+          error: "Missing required fields" 
+        });
       }
 
       // Validaciones reutilizando las utilidades del frontend
@@ -63,7 +72,10 @@ export const validateRegisterPayload = (
       const { firstName, lastName, email, platformToken, imageUrl } = data;
 
       if (!firstName || !lastName || !email || !platformToken) {
-        return res.status(400).json({ error: "Missing required fields" });
+        return res.status(400).json({ 
+          success: false,
+          error: "Missing required fields" 
+        });
       }
 
       const processedName = validateAndProcessName(firstName);
@@ -82,9 +94,16 @@ export const validateRegisterPayload = (
       return next();
     }
 
-    return res.status(400).json({ error: "Invalid platform value" });
+    return res.status(400).json({ 
+      success: false,
+      error: "Invalid platform value" 
+    });
+
   } catch (err) {
-    return res.status(400).json({ error: (err as Error).message });
+    return res.status(400).json({ 
+      success: false,
+      error: (err as Error).message 
+    });
   }
 };
 // #end-middleware
@@ -162,7 +181,10 @@ export const addNewUserDataToDB = async (
       .limit(1);
 
     if (existingUser.length > 0) {
-      res.status(409).json({ error: 'Email address already in use' });
+      res.status(409).json({ 
+        success: false,
+        error: 'Email address already in use' 
+      });
       return;
     }
 
