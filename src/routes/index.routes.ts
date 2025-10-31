@@ -11,7 +11,8 @@ import {
   setJWTonCookies,
   returnUserData,
   validateLoginPayload,
-  getUserFromDB
+  getUserFromDB,
+  savePlatformToken
 } from "../middlewares/auth/auth.middlewares";
 // #end-section
 
@@ -21,6 +22,7 @@ authRouter.post(API_ROUTES.REGISTER_URL,
   validateRegisterPayload, // validar los datos del usuario obtenidos desde el cliente
   hashPasswordMiddleware, // generar el hash de la contraseña antes de guardar en la base de datos
   addNewUserDataToDB, // se agregan los datos del usuario validados a la base de datos
+  savePlatformToken, // se guarda el token de la plataforma (google, facebook, etc) en la base de datos
   fetchUserDataFromDB,  // se obtienen los datos del usuario recien creado desde la base de datos
   createJWT, // se crea un JWT a partir de los datos del usuario
   setJWTonCookies, // se agrega el jwt a las cookies (consumo para HTTP only)
