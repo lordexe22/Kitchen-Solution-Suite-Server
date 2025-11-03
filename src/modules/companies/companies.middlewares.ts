@@ -2,7 +2,7 @@
 // #section Imports
 import { Response } from "express";
 import { pool } from "../../db/pool";
-import { AuthenticatedRequest } from "../auth/auth.types";
+import { AuthenticatedRequest } from "../jwtManager/jwtManager.types";
 import { 
   VERIFY_COMPANY_OWNERSHIP,
   UPSERT_COMPANY_SOCIALS,

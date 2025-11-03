@@ -1,7 +1,7 @@
 // src\modules\companies\companies.routes.ts
 // #section Imports
 import { Router } from "express";
-import { validateJWTAndGetPayload } from "../auth/auth.middlewares";
+import { validateJWTAndGetPayload } from "../jwtManager/jwtManager.middlewares";
 import { 
   createCompany, 
   getMyCompanies,

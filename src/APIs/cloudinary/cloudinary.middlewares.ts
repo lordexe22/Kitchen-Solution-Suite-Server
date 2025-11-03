@@ -1,7 +1,7 @@
 // src/APIs/cloudinary/cloudinary.middlewares.ts
 import { Response } from "express";
 import { generateSignature } from "./cloudinary.utils";
-import { AuthenticatedRequest } from "../../modules/auth/auth.types";
+import { AuthenticatedRequest } from "../../modules/jwtManager/jwtManager.types";
 import { env } from "process";
 
 export const generateSignatureMiddleware = (req: AuthenticatedRequest, res: Response) => {
