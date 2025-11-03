@@ -2,6 +2,7 @@
 // #section Imports
 import { Router } from "express";
 import { API_ROUTES } from "../config/routes.config";
+import { jwtManagerRoutes } from "../modules/jwtManager";
 import { 
   validateRegisterPayload,
   hashPasswordMiddleware,
@@ -17,6 +18,8 @@ import {
 // #end-section
 
 export const authRouter = Router();
+
+authRouter.use('/jwt', jwtManagerRoutes); // Rutas: /api/auth/jwt/refresh, /api/auth/jwt/logout
 
 authRouter.post(API_ROUTES.REGISTER_URL,
   validateRegisterPayload, // validar los datos del usuario obtenidos desde el cliente

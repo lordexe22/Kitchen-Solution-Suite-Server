@@ -1,10 +1,7 @@
 // src/db/init.ts
 // #section - Imports
 import { drizzle } from 'drizzle-orm/node-postgres';
-import dotenv from 'dotenv';
 // #end-section
-
-dotenv.config();
 
 // #variable - DATABASE_URL
 const { DATABASE_URL } = process.env;

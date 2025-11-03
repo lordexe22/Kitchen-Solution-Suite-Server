@@ -6,8 +6,7 @@ import { hashPassword, comparePassword } from "../../utils/password.utils";
 import { db } from "../../db/init";
 import { usersTable } from "../../db/schema";
 import { eq } from "drizzle-orm";
-import { signJWT } from "../../utils/jwt.utils";
-import bcrypt from "bcrypt";
+import { signJWT, setJWTCookie } from "../../modules/jwtManager";
 // #end-section
 // #middleware validateRegisterPayload
 /**
@@ -221,7 +220,6 @@ export const fetchUserDataFromDB = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  console.log('fetchUserDataFromDB');
   try {
     const { email } = req.body;
 
@@ -230,7 +228,7 @@ export const fetchUserDataFromDB = async (
       .from(usersTable)
       .where(eq(usersTable.email, email))
       .limit(1);
-
+     
     if (!user) {
       res.status(500).json({ error: 'Failed to retrieve inserted user' });
       return;
@@ -275,8 +273,12 @@ export const createJWT = (
       return;
     }
 
-    const token = signJWT({ userId: userDataStore.id });
-    res.locals.jwtToken = token; // <- usar res.locals
+    // Usar el módulo jwtManager
+    const token = signJWT({ 
+      userId: userDataStore.id,
+      email: userDataStore.email 
+    });
+    res.locals.jwtToken = token;
 
     next();
   } catch {
@@ -298,23 +300,14 @@ export const setJWTonCookies = (
 ): void => {
   console.log('setJWTonCookies');
   try {
-    const jwtToken = res.locals.jwtToken; // <- usar res.locals
+    const jwtToken = res.locals.jwtToken;
     if (!jwtToken) {
       res.status(400).json({ error: 'Missing JWT token for cookie setup' });
       return;
     }
 
-    console.log({token: res.locals.jwtToken});
-
-    res.cookie('auth_token', jwtToken, {
-      httpOnly: true,
-      // secure: process.env.NODE_ENV === 'production',
-      secure: false,
-      // sameSite: 'strict',
-      sameSite: 'lax',
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-      path: '/',
-    });
+    // Usar el módulo jwtManager con configuración centralizada
+    setJWTCookie(res, jwtToken);
     next();
   } catch (err) {
     console.error('Error in setJWTonCookies:', err);
@@ -348,8 +341,8 @@ export const returnUserData = (
     const statusCode = isAuthenticated ? 200 : 201;
 
     res.status(statusCode).json({
-      success: true,  // ← AGREGAR ESTE CAMPO
-      data: {         // ← ENVOLVER EN "data"
+      success: true,  
+      data: {         
         user: {
           firstName,
           lastName,

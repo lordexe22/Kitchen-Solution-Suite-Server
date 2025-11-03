@@ -16,7 +16,7 @@ import {
 // #middleware updateCompanySocialMedia - Updates the social media links of a specific company.
 export const updateCompanySocialMedia = async (req: AuthenticatedRequest, res: Response) => {
   // #variable - ownerId, businessId
-  const ownerId = req.user!.id; // El ! indica que estamos seguros de que user no es undefined
+  const ownerId = req.user!.userId; // El ! indica que estamos seguros de que user no es undefined
   const businessId = Number(req.params.id);
   // #end-variable
   // #step 1 - Validate that the business ID is a valid number
@@ -73,7 +73,7 @@ export const updateCompanySocialMedia = async (req: AuthenticatedRequest, res: R
 // #middleware createCompany - Creates a new company associated with the authenticated user and stores it in the database.
 export const createCompany = async (req: AuthenticatedRequest, res: Response) => {
   // #variable - ownerId, name, alias
-  const ownerId = req.user!.id;
+  const ownerId = req.user!.userId;
   const { name, alias, logo_url } = req.body;
   // #end-variable
   // #step 1 - Validate that the business name exists and is a string
@@ -105,7 +105,7 @@ export const createCompany = async (req: AuthenticatedRequest, res: Response) =>
 // #middleware getMyCompanies - Retrieves all companies associated with the authenticated user
 export const getMyCompanies = async (req: AuthenticatedRequest, res: Response) => {
   // #variable - ownerId
-  const ownerId = req.user!.id;
+  const ownerId = req.user!.userId;
   // #end-variable
   try {
     // #step 1 - Query all businesses of the authenticated user >> result
@@ -125,7 +125,7 @@ export const getMyCompanies = async (req: AuthenticatedRequest, res: Response) =
 export const getCompaniesSocialMedia = async (req: AuthenticatedRequest, res: Response) => {
   // #variable - businessId, userId
   const businessId = req.params.id;
-  const userId = req.user!.id;
+  const userId = req.user!.userId;
   // #end-variable
   try {
     // #step 1 - Query the social media of the specified business
@@ -179,7 +179,7 @@ export const getCompanyLocation = async (req: AuthenticatedRequest, res: Respons
 // #end-middleware
 // #middleware updateCompanyLocation - Updates the location of a company
 export const updateCompanyLocation = async (req: AuthenticatedRequest, res: Response) => {
-  const ownerId = req.user!.id;
+  const ownerId = req.user!.userId;
   const businessId = Number(req.params.id);
   if (isNaN(businessId)) {
     console.error("ID de negocio inválido:", req.params.id);
@@ -205,7 +205,7 @@ export const updateCompanyLocation = async (req: AuthenticatedRequest, res: Resp
 // #middleware getCompanySchedule - Retrieves the schedule associated with a company
 export const getCompanySchedule = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const ownerId = req.user!.id;
+    const ownerId = req.user!.userId;
     const companyId = Number(req.params.id);
 
     // 1. Verificar que la compañía pertenezca al usuario
@@ -248,7 +248,7 @@ export const getCompanySchedule = async (req: AuthenticatedRequest, res: Respons
 // #middleware updateCompanySchedule - Updates the weekly schedule of a company
 export const updateCompanySchedule = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const ownerId = req.user!.id;
+    const ownerId = req.user!.userId;
     const companyId = Number(req.params.id);
     const schedule = req.body; // Ya llega en formato WeeklySchedule
 
@@ -284,7 +284,7 @@ export const updateCompanySchedule = async (req: AuthenticatedRequest, res: Resp
 // #middleware getCompanySchedule - Retrieves the schedule associated with a company
 export const getCompanyBasicData = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const ownerId = req.user!.id;
+    const ownerId = req.user!.userId;
     const companyId = Number(req.params.id);
 
     // #step 1 - Verify that the company allows to the current userID
@@ -324,7 +324,7 @@ export const getCompanyBasicData = async (req: AuthenticatedRequest, res: Respon
 // #middleware updateCompanySchedule - Updates the weekly schedule of a company
 export const updateCompanyBasicData = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const ownerId = req.user!.id;
+    const ownerId = req.user!.userId;
     const companyId = Number(req.params.id);
     const { name, alias, logo_url } = req.body;
 
