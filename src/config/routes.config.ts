@@ -2,7 +2,8 @@
 
 export const API_ROUTES = {
   BASE_URL:'http://localhost:4000',
-  REGISTER_URL: '/api/auth/register',
-  LOGIN_URL: '/api/auth/login',
-  AUTO_LOGIN_BY_TOKEN_URL: '/api/auth/auto-login-by-token',
+  REGISTER_URL: '/register',
+  LOGIN_URL: '/login',
+  AUTO_LOGIN_BY_TOKEN_URL: '/auto-login-by-token',
+  LOGOUT_URL: '/jwt/logout',
 };

@@ -21,7 +21,7 @@ app.use(cors({
   origin: 'http://localhost:5173' // ajustar al origen del cliente (quien recibira las cookies)
 }));
 app.use(bodyParser.json());
-app.use(authRouter);
+app.use('/api/auth', authRouter);
 // #end-section
 
 app.get("/", (_req, res) => {
