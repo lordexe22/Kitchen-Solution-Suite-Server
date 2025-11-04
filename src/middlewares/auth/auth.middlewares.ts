@@ -316,12 +316,6 @@ export const setJWTonCookies = (
 };
 // #end-middleware
 // #middleware returnUserData
-/**
- * Middleware: returnUserData
- *
- * Envía al cliente los datos esenciales del usuario.
- * Detecta si es registro (201) o login (200) basándose en si existe userDataStore.isAuthenticated
- */
 export const returnUserData = (
   req: Request,
   res: Response,
@@ -329,7 +323,9 @@ export const returnUserData = (
 ): void => {
   console.log('returnUserData');
   try {
-    const { userDataStore } = req.body;
+    // ← CAMBIO: buscar en req.body O en res.locals
+    const userDataStore = req.body?.userDataStore || res.locals.userDataStore;
+    
     if (!userDataStore) {
       res.status(400).json({ error: 'Missing user data for response' });
       return;
@@ -337,7 +333,6 @@ export const returnUserData = (
 
     const { firstName, lastName, email, type, state, imageUrl, isAuthenticated } = userDataStore;
 
-    // Si isAuthenticated es true, es un login (200), si no, es registro (201)
     const statusCode = isAuthenticated ? 200 : 201;
 
     res.status(statusCode).json({
@@ -355,7 +350,7 @@ export const returnUserData = (
     });
   } catch {
     res.status(500).json({ 
-      success: false,  // ← AGREGAR TAMBIÉN AQUÍ
+      success: false,
       error: 'Error returning user data' 
     });
   }
@@ -647,6 +642,59 @@ export const savePlatformToken = async (
   }
 };
 // #end-middleware
+// #middleware fetchUserDataByUserId
+export const fetchUserDataByUserId = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  console.log('fetchUserDataByUserId - START');
+  
+  try {
+    const userId = (req as any).user?.userId;
+    
+    console.log('📌 userId from JWT:', userId);
 
+    if (!userId) {
+      console.log('❌ Missing userId');
+      res.status(400).json({ error: 'Missing user ID from token' });
+      return;
+    }
 
+    console.log('🔍 Buscando usuario con ID:', userId);
 
+    const [user] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.id, userId))
+      .limit(1);
+    
+    console.log('👤 Usuario encontrado:', user ? 'SÍ' : 'NO');
+     
+    if (!user) {
+      console.log('❌ User not found');
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    // ← CAMBIO: usar res.locals en lugar de req.body
+    res.locals.userDataStore = {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      imageUrl: user.imageUrl ?? null,
+      type: user.type,
+      state: user.state,
+      isAuthenticated: true,
+    };
+
+    console.log('✅ userDataStore creado');
+
+    next();
+  } catch (err) {
+    console.error('💥 Error in fetchUserDataByUserId:', err);
+    res.status(500).json({ error: 'Error fetching user from database' });
+  }
+};
+// #end-middleware
