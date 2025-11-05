@@ -41,3 +41,15 @@ export const apiPlatformsTable = pgTable('api_platforms', {
   platformToken: text('token').notNull(),
   linkedAt: timestamp('linked_at').notNull().defaultNow(),
 });
+
+// Tabla de tokens de verificación de email
+export const emailVerificationTokensTable = pgTable('email_verification_tokens', {
+  id: serial('id').primaryKey(),
+  userId: serial('user_id').notNull().references(() => usersTable.id, { onDelete: 'cascade' }),
+  tokenHash: text('token_hash').notNull().unique(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  expiresAt: timestamp('expires_at').notNull(),
+  used: boolean('used').notNull().default(false),
+  resendCount: serial('resend_count').notNull().default(0),
+  lastResendAt: timestamp('last_resend_at'),
+});
