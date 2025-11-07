@@ -11,15 +11,15 @@ Need execute the following commands to upgrade the database schema:
 npx drizzle-kit push -> apply the migrations to the database
 npx drizzle-kit generate -> generate new migration files
 npx drizzle-kit migrate -> run pending migrations
-
+  
 */
 
-// Enumeraciones
+// #section Enumeraciones
 export const userTypeEnum = pgEnum('user_type', ['admin', 'employ', 'guest', 'dev']);
 export const userStateEnum = pgEnum('user_state', ['pending', 'active', 'suspended']);
 export const platformNameEnum = pgEnum('platform_name', ['local', 'google', 'facebook', 'x']);
-
-// Tabla de usuarios
+// #end-section
+// #variable usersTable - Tabla de usuarios
 export const usersTable = pgTable('users', {
   id: serial('id').primaryKey(), // ID autoincremental
   firstName: varchar('first_name', { length: 255 }).notNull(),
@@ -33,23 +33,53 @@ export const usersTable = pgTable('users', {
   state: userStateEnum('state').notNull().default('pending'),
   imageUrl: text('image_url'),
 });
-
-// Tabla para vincular usuarios con plataformas externas
+// #end-variable
+// #variable apiPlatformsTable - Tabla para vincular usuarios con plataformas externas
 export const apiPlatformsTable = pgTable('api_platforms', {
   userId: serial('user_id').notNull().references(() => usersTable.id), // FK a users
   platformName: platformNameEnum('platform_name').notNull(),
   platformToken: text('token').notNull(),
   linkedAt: timestamp('linked_at').notNull().defaultNow(),
 });
-
-// Tabla de tokens de verificación de email
-export const emailVerificationTokensTable = pgTable('email_verification_tokens', {
+// #end-variable
+// #variable companiesTable - Tabla de compañías (marcas corporativas)
+/**
+ * Tabla de compañías/marcas del sistema.
+ * 
+ * Esta tabla representa SOLO la marca/empresa corporativa.
+ * Los datos específicos de ubicación (sucursales) estarán en otras tablas.
+ * 
+ * Modelo: USER → COMPANIES → BRANCHES → (locations, socials, schedules, employees, products)
+ * 
+ * Características:
+ * - Un usuario puede crear múltiples compañías/marcas
+ * - El nombre de la compañía es único a nivel global
+ * - Implementa soft delete con período de 30 días
+ * - Minimalista: solo datos corporativos de la marca
+ * 
+ * Casos de uso:
+ * - Empresa con múltiples sucursales: "Grido" → [Sucursal Centro, Sucursal Norte, ...]
+ * - Negocio único: "Pizzería La Esquina" → [Sucursal Única]
+ * 
+ * @field id - Identificador único autoincremental
+ * @field name - Nombre único de la marca/empresa (255 caracteres máx)
+ * @field description - Descripción corporativa opcional (500 caracteres máx)
+ * @field ownerId - ID del usuario propietario (FK a users con cascade delete)
+ * @field logoUrl - URL del logo corporativo (pendiente integración con Cloudinary)
+ * @field createdAt - Fecha de creación
+ * @field updatedAt - Fecha de última actualización
+ * @field isActive - Estado activo/inactivo (false = soft deleted)
+ * @field deletedAt - Fecha de eliminación lógica (null = no eliminado)
+ */
+export const companiesTable = pgTable('companies', {
   id: serial('id').primaryKey(),
-  userId: serial('user_id').notNull().references(() => usersTable.id, { onDelete: 'cascade' }),
-  tokenHash: text('token_hash').notNull().unique(),
+  name: varchar('name', { length: 255 }).notNull().unique(),
+  description: varchar('description', { length: 500 }),
+  ownerId: serial('owner_id').notNull().references(() => usersTable.id, { onDelete: 'cascade' }),
+  logoUrl: text('logo_url'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  expiresAt: timestamp('expires_at').notNull(),
-  used: boolean('used').notNull().default(false),
-  resendCount: serial('resend_count').notNull().default(0),
-  lastResendAt: timestamp('last_resend_at'),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  isActive: boolean('is_active').notNull().default(true),
+  deletedAt: timestamp('deleted_at'),
 });
+// #end-variable

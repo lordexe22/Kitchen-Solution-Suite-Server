@@ -5,7 +5,8 @@ dotenv.config();
 import express from "express";
 import bodyParser from "body-parser";
 import cors from "cors";
-import { authRouter } from "./routes/index.routes";
+import { authRouter } from "./routes/auth.routes";
+import { companiesRouter } from './routes/companies.routes';
 import * as serverConfig from './config/server.config'
 import cookieParser from 'cookie-parser';
 import './db/init';
@@ -21,7 +22,10 @@ app.use(cors({
   origin: 'http://localhost:5173' // ajustar al origen del cliente (quien recibira las cookies)
 }));
 app.use(bodyParser.json());
+// #end-section
+// #section User server's routes
 app.use('/api/auth', authRouter);
+app.use('/api/companies', companiesRouter);
 // #end-section
 
 app.get("/", (_req, res) => {
