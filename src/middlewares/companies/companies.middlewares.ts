@@ -6,7 +6,6 @@ import { companiesTable } from "../../db/schema";
 import { eq, and } from "drizzle-orm";
 import type { AuthenticatedRequest } from "../../modules/jwtManager/jwtManager.types";
 // #end-section
-
 // #middleware validateCreateCompanyPayload
 /**
  * Middleware: validateCreateCompanyPayload
@@ -82,7 +81,6 @@ export const validateCreateCompanyPayload = (
   next();
 };
 // #end-middleware
-
 // #middleware validateUpdateCompanyPayload
 /**
  * Middleware: validateUpdateCompanyPayload
@@ -151,7 +149,6 @@ export const validateUpdateCompanyPayload = (
   next();
 };
 // #end-middleware
-
 // #middleware validateCompanyId
 /**
  * Middleware: validateCompanyId
@@ -180,7 +177,6 @@ export const validateCompanyId = (
   next();
 };
 // #end-middleware
-
 // #middleware verifyCompanyOwnership
 /**
  * Middleware: verifyCompanyOwnership
@@ -231,7 +227,6 @@ export const verifyCompanyOwnership = async (
   }
 };
 // #end-middleware
-
 // #middleware createCompany
 /**
  * Middleware: createCompany
@@ -290,7 +285,6 @@ export const createCompany = async (
   }
 };
 // #end-middleware
-
 // #middleware getUserCompanies
 /**
  * Middleware: getUserCompanies
@@ -333,7 +327,6 @@ export const getUserCompanies = async (
   }
 };
 // #end-middleware
-
 // #middleware getCompanyById
 /**
  * Middleware: getCompanyById
@@ -387,7 +380,6 @@ export const getCompanyById = async (
   }
 };
 // #end-middleware
-
 // #middleware updateCompany
 /**
  * Middleware: updateCompany
@@ -468,14 +460,12 @@ export const updateCompany = async (
   }
 };
 // #end-middleware
-
 // #middleware softDeleteCompany
 /**
  * Middleware: softDeleteCompany
  * 
- * Realiza un soft delete de la compañía.
- * Marca isActive = false y establece deletedAt.
- * Requiere que verifyCompanyOwnership se ejecute antes.
+ * Elimina lógicamente una compañía (soft delete).
+ * Renombra la compañía agregando timestamp para liberar el nombre.
  * 
  * @param {AuthenticatedRequest} req - Request con user autenticado
  * @param {Response} res - Response de Express
@@ -486,30 +476,36 @@ export const softDeleteCompany = async (
 ): Promise<void> => {
   try {
     const companyId = Number(req.params.id);
-    const ownerId = req.user!.userId;
 
-    const [deletedCompany] = await db
-      .update(companiesTable)
-      .set({
-        isActive: false,
-        deletedAt: new Date()
-      })
-      .where(
-        and(
-          eq(companiesTable.id, companyId),
-          eq(companiesTable.ownerId, ownerId),
-          eq(companiesTable.isActive, true)
-        )
-      )
-      .returning();
+    // Obtener la compañía actual
+    const [company] = await db
+      .select()
+      .from(companiesTable)
+      .where(eq(companiesTable.id, companyId))
+      .limit(1);
 
-    if (!deletedCompany) {
+    if (!company) {
       res.status(404).json({
         success: false,
         error: 'Compañía no encontrada'
       });
       return;
     }
+
+    // Generar nuevo nombre con timestamp para liberar el nombre original
+    const timestamp = Date.now();
+    const newName = `${company.name}_deleted_${timestamp}`;
+
+    // Soft delete con renombre
+    await db
+      .update(companiesTable)
+      .set({
+        name: newName,  // ✅ Renombrar para liberar el nombre
+        isActive: false,
+        deletedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(companiesTable.id, companyId));
 
     res.status(200).json({
       success: true,
@@ -524,7 +520,6 @@ export const softDeleteCompany = async (
   }
 };
 // #end-middleware
-
 // #middleware checkCompanyNameAvailability
 /**
  * Middleware: checkCompanyNameAvailability

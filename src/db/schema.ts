@@ -1,4 +1,4 @@
-import { pgTable, serial, text, varchar, boolean, timestamp, pgEnum } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, varchar, boolean, timestamp, pgEnum, decimal } from 'drizzle-orm/pg-core';
 
 
 /* #info 
@@ -81,5 +81,46 @@ export const companiesTable = pgTable('companies', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
   isActive: boolean('is_active').notNull().default(true),
   deletedAt: timestamp('deleted_at'),
+});
+// #end-variable
+// #variable branchesTable - Tabla de sucursales
+export const branchesTable = pgTable('branches', {
+  id: serial('id').primaryKey(),
+  companyId: serial('company_id')
+    .notNull()
+    .references(() => companiesTable.id, { onDelete: 'cascade' }),
+  
+  // Nombre personalizado (NULLABLE)
+  name: varchar('name', { length: 255 }), // ← PUEDE SER NULL
+  
+  // Metadata
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  deletedAt: timestamp('deleted_at'),
+});
+// #end-variable
+// #variable branchLocationsTable - Tabla de direcciones
+export const branchLocationsTable = pgTable('branch_locations', {
+  id: serial('id').primaryKey(),
+  branchId: serial('branch_id')
+    .notNull()
+    .references(() => branchesTable.id, { onDelete: 'cascade' })
+    .unique(), // UNA sucursal = UNA ubicación
+  
+  // Campos OBLIGATORIOS
+  address: varchar('address', { length: 500 }).notNull(),
+  city: varchar('city', { length: 100 }).notNull(),
+  state: varchar('state', { length: 100 }).notNull(),
+  country: varchar('country', { length: 100 }).notNull(),
+  
+  // Campos OPCIONALES
+  postalCode: varchar('postal_code', { length: 20 }), // ← INCLUIDO como opcional
+  latitude: decimal('latitude', { precision: 10, scale: 8 }),
+  longitude: decimal('longitude', { precision: 11, scale: 8 }),
+  
+  // Metadata
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 // #end-variable
