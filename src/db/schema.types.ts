@@ -128,3 +128,51 @@ export interface BranchLocation {
   updatedAt: Date;
 }
 // #end-interface
+// #interface BranchSocial
+/** 
+ * Tabla de redes sociales de sucursales.
+ * 
+ * Almacena los enlaces a redes sociales de cada sucursal.
+ * Una sucursal puede tener múltiples redes sociales.
+ */
+export interface BranchSocial {
+  /** Unique identifier for the social media entry */
+  id: number;
+  /** Reference to the branch */
+  branchId: number;
+  /** Social media platform name (facebook, instagram, twitter, etc.) */
+  platform: string;
+  /** URL to the social media profile */
+  url: string;
+  /** Timestamp of when the entry was created */
+  createdAt: Date;
+  /** Timestamp of the last update */
+  updatedAt: Date;
+}
+// #end-interface
+// #interface BranchSchedule
+/** 
+ * Tabla de horarios de atención de sucursales.
+ * 
+ * Almacena los horarios de apertura/cierre para cada día de la semana.
+ * Una sucursal puede tener múltiples horarios (uno por día).
+ */
+export interface BranchSchedule {
+  /** Unique identifier for the schedule entry */
+  id: number;
+  /** Reference to the branch */
+  branchId: number;
+  /** Day of the week (monday, tuesday, wednesday, thursday, friday, saturday, sunday) */
+  dayOfWeek: string;
+  /** Opening time in HH:MM format (24-hour) */
+  openTime?: string | null;
+  /** Closing time in HH:MM format (24-hour) */
+  closeTime?: string | null;
+  /** Indicates if the branch is closed on this day */
+  isClosed: boolean;
+  /** Timestamp of when the entry was created */
+  createdAt: Date;
+  /** Timestamp of the last update */
+  updatedAt: Date;
+}
+// #end-interface

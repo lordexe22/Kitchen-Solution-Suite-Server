@@ -18,6 +18,23 @@ import {
   getBranchLocation,
   deleteBranchLocation
 } from "../middlewares/branches/branches.middlewares";
+import { 
+  validateSocialId,
+  createBranchSocial,
+  deleteBranchSocial,
+  getBranchSocials,
+  updateBranchSocial,
+  validateCreateSocialPayload
+} from "../middlewares/branches/branchSociales.middlewares";
+import { 
+  validateScheduleId,
+  createBranchSchedule,
+  deleteBranchSchedule,
+  getBranchSchedules,
+  updateBranchSchedule,
+  upsertBranchSchedules,
+  validateCreateSchedulePayload
+} from "../middlewares/branches/branchSchedules.middlewares";
 // #end-section
 // #variable branchesRouter
 export const branchesRouter = Router();
@@ -157,5 +174,181 @@ branchesRouter.delete(
   validateBranchId,
   verifyBranchOwnership,
   deleteBranchLocation
+);
+// #end-route
+// #route POST /:id/socials - Crear red social
+/**
+ * Crea una nueva red social para una sucursal.
+ * 
+ * @route POST /api/branches/:id/socials
+ * @access Private
+ * 
+ * Body: {
+ *   platform: string,
+ *   url: string
+ * }
+ */
+branchesRouter.post(
+  "/:id/socials",
+  validateJWTAndGetPayload,
+  validateBranchId,
+  verifyBranchOwnership,
+  validateCreateSocialPayload,
+  createBranchSocial
+);
+// #end-route
+// #route GET /:id/socials - Obtener redes sociales
+/**
+ * Obtiene todas las redes sociales de una sucursal.
+ * 
+ * @route GET /api/branches/:id/socials
+ * @access Private
+ */
+branchesRouter.get(
+  "/:id/socials",
+  validateJWTAndGetPayload,
+  validateBranchId,
+  verifyBranchOwnership,
+  getBranchSocials
+);
+// #end-route
+// #route PUT /:id/socials/:socialId - Actualizar red social
+/**
+ * Actualiza una red social existente.
+ * 
+ * @route PUT /api/branches/:id/socials/:socialId
+ * @access Private
+ * 
+ * Body: {
+ *   url: string
+ * }
+ */
+branchesRouter.put(
+  "/:id/socials/:socialId",
+  validateJWTAndGetPayload,
+  validateBranchId,
+  verifyBranchOwnership,
+  validateSocialId,
+  validateCreateSocialPayload,
+  updateBranchSocial
+);
+// #end-route
+// #route DELETE /:id/socials/:socialId - Eliminar red social
+/**
+ * Elimina una red social.
+ * 
+ * @route DELETE /api/branches/:id/socials/:socialId
+ * @access Private
+ */
+branchesRouter.delete(
+  "/:id/socials/:socialId",
+  validateJWTAndGetPayload,
+  validateBranchId,
+  verifyBranchOwnership,
+  validateSocialId,
+  deleteBranchSocial
+);
+// #end-route
+// #route POST /:id/schedules - Crear horario
+/**
+ * Crea un nuevo horario para una sucursal.
+ * 
+ * @route POST /api/branches/:id/schedules
+ * @access Private
+ * 
+ * Body: {
+ *   dayOfWeek: string,
+ *   openTime: string,
+ *   closeTime: string,
+ *   isClosed: boolean
+ * }
+ */
+branchesRouter.post(
+  "/:id/schedules",
+  validateJWTAndGetPayload,
+  validateBranchId,
+  verifyBranchOwnership,
+  validateCreateSchedulePayload,
+  createBranchSchedule
+);
+// #end-route
+
+// #route GET /:id/schedules - Obtener horarios
+/**
+ * Obtiene todos los horarios de una sucursal.
+ * 
+ * @route GET /api/branches/:id/schedules
+ * @access Private
+ */
+branchesRouter.get(
+  "/:id/schedules",
+  validateJWTAndGetPayload,
+  validateBranchId,
+  verifyBranchOwnership,
+  getBranchSchedules
+);
+// #end-route
+
+// #route PUT /:id/schedules/batch - Actualizar múltiples horarios
+/**
+ * Crea o actualiza todos los horarios de una sucursal de una vez.
+ * 
+ * @route PUT /api/branches/:id/schedules/batch
+ * @access Private
+ * 
+ * Body: {
+ *   schedules: [
+ *     { dayOfWeek: 'monday', openTime: '09:00', closeTime: '18:00', isClosed: false },
+ *     { dayOfWeek: 'sunday', isClosed: true }
+ *   ]
+ * }
+ */
+branchesRouter.put(
+  "/:id/schedules/batch",
+  validateJWTAndGetPayload,
+  validateBranchId,
+  verifyBranchOwnership,
+  upsertBranchSchedules
+);
+// #end-route
+
+// #route PUT /:id/schedules/:scheduleId - Actualizar horario
+/**
+ * Actualiza un horario existente.
+ * 
+ * @route PUT /api/branches/:id/schedules/:scheduleId
+ * @access Private
+ * 
+ * Body: {
+ *   openTime: string,
+ *   closeTime: string,
+ *   isClosed: boolean
+ * }
+ */
+branchesRouter.put(
+  "/:id/schedules/:scheduleId",
+  validateJWTAndGetPayload,
+  validateBranchId,
+  verifyBranchOwnership,
+  validateScheduleId,
+  validateCreateSchedulePayload,
+  updateBranchSchedule
+);
+// #end-route
+
+// #route DELETE /:id/schedules/:scheduleId - Eliminar horario
+/**
+ * Elimina un horario.
+ * 
+ * @route DELETE /api/branches/:id/schedules/:scheduleId
+ * @access Private
+ */
+branchesRouter.delete(
+  "/:id/schedules/:scheduleId",
+  validateJWTAndGetPayload,
+  validateBranchId,
+  verifyBranchOwnership,
+  validateScheduleId,
+  deleteBranchSchedule
 );
 // #end-route

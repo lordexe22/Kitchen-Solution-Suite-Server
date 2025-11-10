@@ -124,3 +124,71 @@ export const branchLocationsTable = pgTable('branch_locations', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 // #end-variable
+// #variable branchSocialsTable - Tabla de redes sociales de sucursales
+/**
+ * Tabla de redes sociales de sucursales.
+ * 
+ * Almacena los enlaces a redes sociales de cada sucursal.
+ * Relación: Muchos-a-Uno con Branch (una sucursal puede tener múltiples redes).
+ * 
+ * Características:
+ * - Permite múltiples redes sociales por sucursal
+ * - Tipos de redes: facebook, instagram, twitter, linkedin, tiktok, youtube, whatsapp, website
+ * - URL obligatoria
+ * - Sin soft delete (eliminación física)
+ */
+export const branchSocialsTable = pgTable('branch_socials', {
+  id: serial('id').primaryKey(),
+  branchId: serial('branch_id')
+    .notNull()
+    .references(() => branchesTable.id, { onDelete: 'cascade' }),
+  
+  // Tipo de red social
+  platform: varchar('platform', { length: 50 }).notNull(),
+  
+  // URL de la red social
+  url: varchar('url', { length: 500 }).notNull(),
+  
+  // Metadata
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+// #end-variable
+// #variable branchSchedulesTable - Tabla de horarios de sucursales
+/**
+ * Tabla de horarios de atención de sucursales.
+ * 
+ * Almacena los horarios de apertura/cierre para cada día de la semana.
+ * Relación: Muchos-a-Uno con Branch (una sucursal puede tener múltiples horarios).
+ * 
+ * Características:
+ * - Un registro por día de la semana por sucursal
+ * - Permite marcar días como cerrados
+ * - Formato de hora: "HH:MM" (24 horas)
+ * - Sin soft delete (eliminación física)
+ * 
+ * Ejemplo:
+ * - branchId: 1, dayOfWeek: 'monday', openTime: '09:00', closeTime: '18:00', isClosed: false
+ * - branchId: 1, dayOfWeek: 'sunday', isClosed: true
+ */
+export const branchSchedulesTable = pgTable('branch_schedules', {
+  id: serial('id').primaryKey(),
+  branchId: serial('branch_id')
+    .notNull()
+    .references(() => branchesTable.id, { onDelete: 'cascade' }),
+  
+  // Día de la semana
+  dayOfWeek: varchar('day_of_week', { length: 20 }).notNull(),
+  
+  // Horarios (nullable para días cerrados)
+  openTime: varchar('open_time', { length: 5 }), // "09:00"
+  closeTime: varchar('close_time', { length: 5 }), // "18:00"
+  
+  // Indicador de cerrado
+  isClosed: boolean('is_closed').notNull().default(false),
+  
+  // Metadata
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+// #end-variable
