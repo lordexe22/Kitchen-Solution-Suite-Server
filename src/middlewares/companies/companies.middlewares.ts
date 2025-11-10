@@ -5,6 +5,8 @@ import { db } from "../../db/init";
 import { companiesTable } from "../../db/schema";
 import { eq, and } from "drizzle-orm";
 import type { AuthenticatedRequest } from "../../modules/jwtManager/jwtManager.types";
+import { branchesTable, branchSchedulesTable } from '../../db/schema';
+import { not } from 'drizzle-orm';
 // #end-section
 // #middleware validateCreateCompanyPayload
 /**
@@ -569,6 +571,106 @@ export const checkCompanyNameAvailability = async (
     res.status(500).json({
       success: false,
       error: 'Error al verificar disponibilidad del nombre'
+    });
+  }
+};
+// #end-middleware
+// #middleware applySchedulesToAllBranches
+/**
+ * Middleware: applySchedulesToAllBranches
+ * 
+ * Aplica los horarios de una sucursal origen a todas las demás sucursales de la compañía.
+ * Copia los horarios de la sucursal fuente y los aplica a las demás.
+ * 
+ * @param {AuthenticatedRequest} req - Request con user autenticado
+ * @param {Response} res - Response de Express
+ */
+export const applySchedulesToAllBranches = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const companyId = Number(req.params.companyId);
+    const sourceBranchId = Number(req.params.sourceBranchId);
+    const ownerId = req.user!.userId;
+
+    // 1. Verificar que la compañía pertenece al usuario
+    const [company] = await db
+      .select()
+      .from(companiesTable)
+      .where(
+        and(
+          eq(companiesTable.id, companyId),
+          eq(companiesTable.ownerId, ownerId),
+          eq(companiesTable.isActive, true)
+        )
+      )
+      .limit(1);
+
+    if (!company) {
+      res.status(403).json({
+        success: false,
+        error: 'No tienes permisos para acceder a esta compañía'
+      });
+      return;
+    }
+
+    // 2. Obtener los horarios de la sucursal origen
+    const sourceSchedules = await db
+      .select()
+      .from(branchSchedulesTable)
+      .where(eq(branchSchedulesTable.branchId, sourceBranchId));
+
+    if (sourceSchedules.length === 0) {
+      res.status(400).json({
+        success: false,
+        error: 'La sucursal origen no tiene horarios configurados'
+      });
+      return;
+    }
+
+    // 3. Obtener todas las sucursales activas de la compañía (excepto la origen)
+    const targetBranches = await db
+      .select()
+      .from(branchesTable)
+      .where(
+        and(
+          eq(branchesTable.companyId, companyId),
+          eq(branchesTable.isActive, true),
+          not(eq(branchesTable.id, sourceBranchId))
+        )
+      );
+
+    // 4. Para cada sucursal objetivo, eliminar horarios existentes y crear nuevos
+    for (const targetBranch of targetBranches) {
+      // Eliminar horarios existentes
+      await db
+        .delete(branchSchedulesTable)
+        .where(eq(branchSchedulesTable.branchId, targetBranch.id));
+
+      // Crear nuevos horarios (copia de los de origen)
+      await db
+        .insert(branchSchedulesTable)
+        .values(
+          sourceSchedules.map(s => ({
+            branchId: targetBranch.id,
+            dayOfWeek: s.dayOfWeek,
+            openTime: s.openTime,
+            closeTime: s.closeTime,
+            isClosed: s.isClosed
+          }))
+        );
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Horarios aplicados a ${targetBranches.length} sucursales`
+    });
+  } catch (error) {
+    console.error('Error aplicando horarios:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al aplicar horarios a las sucursales'
     });
   }
 };

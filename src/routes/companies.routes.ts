@@ -12,7 +12,8 @@ import {
   getCompanyById,
   updateCompany,
   softDeleteCompany,
-  checkCompanyNameAvailability
+  checkCompanyNameAvailability,
+  applySchedulesToAllBranches
 } from "../middlewares/companies/companies.middlewares";
 // #end-section
 // #variable companiesRouter
@@ -109,5 +110,18 @@ companiesRouter.delete(
   validateCompanyId,
   verifyCompanyOwnership,
   softDeleteCompany
+);
+// #end-route
+// #route POST /:companyId/apply-schedules/:sourceBranchId - Aplicar horarios a todas las sucursales
+/**
+ * Aplica los horarios de una sucursal a todas las sucursales de la misma compañía.
+ * 
+ * @route POST /api/companies/:companyId/apply-schedules/:sourceBranchId
+ * @access Private
+ */
+companiesRouter.post(
+  "/:companyId/apply-schedules/:sourceBranchId",
+  validateJWTAndGetPayload,
+  applySchedulesToAllBranches
 );
 // #end-route
