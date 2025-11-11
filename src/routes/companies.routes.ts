@@ -13,7 +13,8 @@ import {
   updateCompany,
   softDeleteCompany,
   checkCompanyNameAvailability,
-  applySchedulesToAllBranches
+  applySchedulesToAllBranches,
+  applySocialsToAllBranches
 } from "../middlewares/companies/companies.middlewares";
 // #end-section
 // #variable companiesRouter
@@ -123,5 +124,18 @@ companiesRouter.post(
   "/:companyId/apply-schedules/:sourceBranchId",
   validateJWTAndGetPayload,
   applySchedulesToAllBranches
+);
+// #end-route
+// #route POST /:companyId/apply-socials/:sourceBranchId - Aplicar redes sociales a todas las sucursales
+/**
+ * Aplica las redes sociales de una sucursal a todas las sucursales de la misma compañía.
+ * 
+ * @route POST /api/companies/:companyId/apply-socials/:sourceBranchId
+ * @access Private
+ */
+companiesRouter.post(
+  "/:companyId/apply-socials/:sourceBranchId",
+  validateJWTAndGetPayload,
+  applySocialsToAllBranches
 );
 // #end-route
