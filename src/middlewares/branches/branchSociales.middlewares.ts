@@ -15,6 +15,7 @@ const VALID_PLATFORMS = [
   'facebook',
   'instagram',
   'twitter',
+  'x',
   'linkedin',
   'tiktok',
   'youtube',
@@ -29,7 +30,7 @@ const VALID_PLATFORMS = [
  * 
  * Valida los datos para crear/actualizar una red social.
  * - platform: obligatorio, uno de los valores válidos
- * - url: obligatorio, string, máx 500 caracteres, formato URL
+ * - url: obligatorio, string, máx 500 caracteres, formato URL o número telefónico (para WhatsApp)
  * 
  * @param {AuthenticatedRequest} req - Request con user autenticado
  * @param {Response} res - Response de Express
@@ -51,7 +52,9 @@ export const validateCreateSocialPayload = (
     return;
   }
 
-  if (!VALID_PLATFORMS.includes(platform as any)) {
+  const normalizedPlatform = platform.toLowerCase().trim();
+
+  if (!VALID_PLATFORMS.includes(normalizedPlatform as any)) {
     res.status(400).json({
       success: false,
       error: `Plataforma no válida. Debe ser una de: ${VALID_PLATFORMS.join(', ')}`
@@ -76,21 +79,36 @@ export const validateCreateSocialPayload = (
     return;
   }
 
-  // Validar formato de URL básico
-  try {
-    new URL(url.trim());
-  } catch {
-    res.status(400).json({
-      success: false,
-      error: 'La URL no tiene un formato válido'
-    });
-    return;
+  // Validar formato según plataforma
+  const trimmedUrl = url.trim();
+
+  if (normalizedPlatform === 'whatsapp') {
+    // Para WhatsApp: validar formato de número telefónico E.164
+    const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+    if (!phoneRegex.test(trimmedUrl)) {
+      res.status(400).json({
+        success: false,
+        error: 'Para WhatsApp, ingresa un número telefónico válido (ej: +5491123456789)'
+      });
+      return;
+    }
+  } else {
+    // Para otras plataformas: validar formato URL
+    try {
+      new URL(trimmedUrl);
+    } catch {
+      res.status(400).json({
+        success: false,
+        error: 'La URL no tiene un formato válido'
+      });
+      return;
+    }
   }
 
   // Normalizar datos
   req.body = {
-    platform: platform.toLowerCase().trim(),
-    url: url.trim()
+    platform: normalizedPlatform,
+    url: trimmedUrl
   };
 
   next();
@@ -297,18 +315,9 @@ export const deleteBranchSocial = async (
   try {
     const socialId = Number(req.params.socialId);
 
-    const [deletedSocial] = await db
+    await db
       .delete(branchSocialsTable)
-      .where(eq(branchSocialsTable.id, socialId))
-      .returning();
-
-    if (!deletedSocial) {
-      res.status(404).json({
-        success: false,
-        error: 'Red social no encontrada'
-      });
-      return;
-    }
+      .where(eq(branchSocialsTable.id, socialId));
 
     res.status(200).json({
       success: true,
