@@ -8,6 +8,7 @@ import type { AuthenticatedRequest } from "../../modules/jwtManager/jwtManager.t
 import { branchesTable, branchSchedulesTable } from '../../db/schema';
 import { not } from 'drizzle-orm';
 import { branchSocialsTable } from "../../db/schema";
+import { uploadFile, deleteFile, loadConfig, CLOUDINARY_FOLDERS } from '../../modules/cloudinary';
 // #end-section
 // #middleware validateCreateCompanyPayload
 /**
@@ -770,6 +771,157 @@ export const applySocialsToAllBranches = async (
     res.status(500).json({
       success: false,
       error: 'Error al aplicar redes sociales a las sucursales'
+    });
+  }
+};
+// #end-middleware
+// #middleware Logo Management
+/**
+ * Middleware: uploadCompanyLogo
+ * 
+ * Sube o actualiza el logo de una compañía en Cloudinary.
+ * Actualiza el campo logoUrl en la base de datos.
+ * 
+ * Requiere:
+ * - validateJWTAndGetPayload (para obtener userId)
+ * - uploadSingleFile('logo') (para obtener req.file)
+ * - validateFileExists (para verificar que existe archivo)
+ * - validateCompanyId y verifyCompanyOwnership (para verificar permisos)
+ * 
+ * @param {AuthenticatedRequest} req - Request con user autenticado y file
+ * @param {Response} res - Response de Express
+ */
+export const uploadCompanyLogo = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const companyId = Number(req.params.id);
+
+    // Obtener rootFolder desde config
+    const config = loadConfig();
+    const rootFolder = config.rootFolder;
+
+    // Construir folder y publicId usando helper
+    const { folder, publicId } = CLOUDINARY_FOLDERS.companies.logos(
+      companyId,
+      rootFolder
+    );
+
+    // Subir archivo a Cloudinary
+    const uploadResult = await uploadFile(req.file!.buffer, {
+      folder,
+      publicId,
+      overwrite: true, // Sobrescribir si ya existe
+      resourceType: 'image',
+      tags: ['company-logo', `company-${companyId}`],
+    });
+
+    // Actualizar logoUrl en la base de datos
+    const [updatedCompany] = await db
+      .update(companiesTable)
+      .set({
+        logoUrl: uploadResult.secureUrl,
+        updatedAt: new Date(),
+      })
+      .where(eq(companiesTable.id, companyId))
+      .returning();
+
+    res.status(200).json({
+      success: true,
+      message: 'Logo uploaded successfully',
+      data: {
+        company: updatedCompany,
+        cloudinary: {
+          publicId: uploadResult.publicId,
+          url: uploadResult.secureUrl,
+        },
+      },
+    });
+  } catch (error: any) {
+    console.error('Error uploading company logo:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to upload logo',
+      details: error.message,
+    });
+  }
+};
+// #end-middleware
+// #middleware deleteCompanyLogo
+/**
+ * Middleware: deleteCompanyLogo
+ * 
+ * Elimina el logo de una compañía de Cloudinary y actualiza la BD.
+ * 
+ * Requiere:
+ * - validateJWTAndGetPayload (para obtener userId)
+ * - validateCompanyId y verifyCompanyOwnership (para verificar permisos)
+ * 
+ * @param {AuthenticatedRequest} req - Request con user autenticado
+ * @param {Response} res - Response de Express
+ */
+export const deleteCompanyLogo = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const companyId = Number(req.params.id);
+
+    // Verificar que la compañía tiene logo
+    const [company] = await db
+      .select()
+      .from(companiesTable)
+      .where(eq(companiesTable.id, companyId))
+      .limit(1);
+
+    if (!company || !company.logoUrl) {
+      res.status(400).json({
+        success: false,
+        error: 'Company does not have a logo',
+      });
+      return;
+    }
+
+    // Obtener rootFolder desde config
+    const config = loadConfig();
+    const rootFolder = config.rootFolder;
+
+    // Construir publicId completo
+    const { folder, publicId } = CLOUDINARY_FOLDERS.companies.logos(
+      companyId,
+      rootFolder
+    );
+    const fullPublicId = `${folder}/${publicId}`;
+
+    // Eliminar de Cloudinary
+    await deleteFile(fullPublicId, {
+      resourceType: 'image',
+    });
+
+    // Actualizar logoUrl en la base de datos (setear a null)
+    const [updatedCompany] = await db
+      .update(companiesTable)
+      .set({
+        logoUrl: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(companiesTable.id, companyId))
+      .returning();
+
+    res.status(200).json({
+      success: true,
+      message: 'Logo deleted successfully',
+      data: {
+        company: updatedCompany,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error deleting company logo:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to delete logo',
+      details: error.message,
     });
   }
 };

@@ -14,8 +14,15 @@ import {
   softDeleteCompany,
   checkCompanyNameAvailability,
   applySchedulesToAllBranches,
-  applySocialsToAllBranches
+  applySocialsToAllBranches,
+  deleteCompanyLogo,
+  uploadCompanyLogo
 } from "../middlewares/companies/companies.middlewares";
+import { 
+  uploadSingleFile,
+  handleFileUploadError,
+  validateFileExists,
+} from "../middlewares/fileUpload/fileUpload.middleware";
 // #end-section
 // #variable companiesRouter
 export const companiesRouter = Router();
@@ -137,5 +144,38 @@ companiesRouter.post(
   "/:companyId/apply-socials/:sourceBranchId",
   validateJWTAndGetPayload,
   applySocialsToAllBranches
+);
+// #end-route
+// #route POST /:id/logo - Subir/actualizar logo de compañía
+/**
+ * Sube o actualiza el logo de una compañía.
+ * 
+ * @route POST /api/companies/:id/logo
+ * @access Private
+ */
+companiesRouter.post(
+  '/:id/logo',
+  validateJWTAndGetPayload,
+  validateCompanyId,
+  verifyCompanyOwnership,
+  uploadSingleFile('logo'),
+  validateFileExists,
+  uploadCompanyLogo,
+  handleFileUploadError
+);
+// #end-route
+// #route DELETE /:id/logo - Eliminar logo de compañía
+/**
+ * Elimina el logo de una compañía.
+ * 
+ * @route DELETE /api/companies/:id/logo
+ * @access Private
+ */
+companiesRouter.delete(
+  '/:id/logo',
+  validateJWTAndGetPayload,
+  validateCompanyId,
+  verifyCompanyOwnership,
+  deleteCompanyLogo
 );
 // #end-route
