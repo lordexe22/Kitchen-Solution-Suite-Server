@@ -192,3 +192,42 @@ export const branchSchedulesTable = pgTable('branch_schedules', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 // #end-variable
+// #variable pendingDeletionsTable
+/**
+ * Tabla de eliminaciones programadas (soft deletes con período de gracia).
+ * 
+ * Almacena qué entidades están programadas para eliminación definitiva.
+ * Se usa para el cron job que ejecuta hard deletes.
+ * 
+ * Características:
+ * - Agnóstica a la entidad (users, companies, branches, etc.)
+ * - Permite auditoría (quién, cuándo, por qué)
+ * - Se limpia automáticamente después del hard delete
+ * 
+ * Flujo:
+ * 1. Usuario solicita eliminar cuenta → Se crea registro aquí
+ * 2. Cron job diario revisa `scheduledAt < now`
+ * 3. Ejecuta hard delete (elimina de Cloudinary + BD)
+ * 4. Elimina este registro
+ */
+export const pendingDeletionsTable = pgTable('pending_deletions', {
+  id: serial('id').primaryKey(),
+  
+  // Qué entidad se va a eliminar
+  entityType: varchar('entity_type', { length: 50 }).notNull(), // 'user' | 'company' | 'branch'
+  entityId: serial('entity_id').notNull(), // ID de la entidad
+  
+  // Cuándo se debe eliminar
+  scheduledAt: timestamp('scheduled_at').notNull(), // Fecha de eliminación definitiva
+  
+  // Metadata
+  createdAt: timestamp('created_at').notNull().defaultNow(), // Cuándo se programó
+  reason: varchar('reason', { length: 255 }), // Opcional: razón de eliminación
+  
+  // Para auditoría (opcional)
+  requestedBy: serial('requested_by').references(() => usersTable.id), // Quién lo solicitó
+});
+// #end-variable
+
+
+

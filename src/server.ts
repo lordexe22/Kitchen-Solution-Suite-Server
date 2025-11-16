@@ -8,6 +8,7 @@ import cors from "cors";
 import { authRouter } from "./routes/auth.routes";
 import { companiesRouter } from './routes/companies.routes';
 import { branchesRouter } from './routes/branch.routes';
+import { usersRouter }  from './routes/users.routes';
 import * as serverConfig from './config/server.config'
 import cookieParser from 'cookie-parser';
 import './db/init';
@@ -28,6 +29,7 @@ app.use(bodyParser.json());
 app.use('/api/auth', authRouter);
 app.use('/api/companies', companiesRouter);
 app.use('/api/branches', branchesRouter); 
+app.use('/api/users', usersRouter);
 // #end-section
 
 app.get("/", (_req, res) => {

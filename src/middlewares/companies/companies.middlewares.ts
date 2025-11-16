@@ -470,6 +470,7 @@ export const updateCompany = async (
  * 
  * Elimina lógicamente una compañía (soft delete).
  * Renombra la compañía agregando timestamp para liberar el nombre.
+ * Elimina el logo de Cloudinary si existe.
  * 
  * @param {AuthenticatedRequest} req - Request con user autenticado
  * @param {Response} res - Response de Express
@@ -496,6 +497,32 @@ export const softDeleteCompany = async (
       return;
     }
 
+    // Si la compañía tiene logo, intentar eliminarlo de Cloudinary
+    if (company.logoUrl) {
+      try {
+        const config = loadConfig();
+        const rootFolder = config.rootFolder;
+
+        const { folder, publicId } = CLOUDINARY_FOLDERS.companies.logos(
+          companyId,
+          rootFolder
+        );
+        const fullPublicId = `${folder}/${publicId}`;
+
+        await deleteFile(fullPublicId, {
+          resourceType: 'image',
+        });
+        console.log(`Logo eliminado de Cloudinary al borrar compañía: ${fullPublicId}`);
+      } catch (cloudinaryError: any) {
+        // No impedir el soft delete si falla Cloudinary
+        if (cloudinaryError.name === 'NotFoundError') {
+          console.warn(`Logo no encontrado en Cloudinary (ya fue eliminado)`);
+        } else {
+          console.error('Error eliminando logo de Cloudinary:', cloudinaryError.message);
+        }
+      }
+    }
+
     // Generar nuevo nombre con timestamp para liberar el nombre original
     const timestamp = Date.now();
     const newName = `${company.name}_deleted_${timestamp}`;
@@ -504,7 +531,8 @@ export const softDeleteCompany = async (
     await db
       .update(companiesTable)
       .set({
-        name: newName,  // ✅ Renombrar para liberar el nombre
+        name: newName,
+        logoUrl: null, // Limpiar URL del logo
         isActive: false,
         deletedAt: new Date(),
         updatedAt: new Date()
@@ -775,7 +803,7 @@ export const applySocialsToAllBranches = async (
   }
 };
 // #end-middleware
-// #middleware Logo Management
+// #middleware uploadCompanyLogo
 /**
  * Middleware: uploadCompanyLogo
  * 
@@ -853,6 +881,7 @@ export const uploadCompanyLogo = async (
  * Middleware: deleteCompanyLogo
  * 
  * Elimina el logo de una compañía de Cloudinary y actualiza la BD.
+ * Maneja casos donde la imagen no existe en Cloudinary (no falla).
  * 
  * Requiere:
  * - validateJWTAndGetPayload (para obtener userId)
@@ -894,12 +923,25 @@ export const deleteCompanyLogo = async (
     );
     const fullPublicId = `${folder}/${publicId}`;
 
-    // Eliminar de Cloudinary
-    await deleteFile(fullPublicId, {
-      resourceType: 'image',
-    });
+    // Intentar eliminar de Cloudinary (no falla si no existe)
+    try {
+      await deleteFile(fullPublicId, {
+        resourceType: 'image',
+      });
+      console.log(`Logo eliminado de Cloudinary: ${fullPublicId}`);
+    } catch (cloudinaryError: any) {
+      // Si el archivo no existe en Cloudinary, solo loggeamos el warning
+      // No impedimos que se limpie la BD
+      if (cloudinaryError.name === 'NotFoundError') {
+        console.warn(`Logo no encontrado en Cloudinary: ${fullPublicId} (ya fue eliminado)`);
+      } else {
+        // Otros errores de Cloudinary también solo se loggean
+        console.error('Error eliminando logo de Cloudinary:', cloudinaryError.message);
+      }
+    }
 
     // Actualizar logoUrl en la base de datos (setear a null)
+    // Esto siempre se ejecuta, incluso si falló Cloudinary
     const [updatedCompany] = await db
       .update(companiesTable)
       .set({
