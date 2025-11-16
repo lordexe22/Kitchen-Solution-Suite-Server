@@ -51,6 +51,7 @@ export function loadConfig(
     apiKey: process.env.CLOUDINARY_API_KEY,
     apiSecret: process.env.CLOUDINARY_API_SECRET,
     uploadPreset: process.env.CLOUDINARY_PRESET_NAME,
+    rootFolder: process.env.CLOUDINARY_ROOT_FOLDER, 
   };
 
   // Merge: defaults < env < overrides

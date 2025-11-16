@@ -1,16 +1,6 @@
 // src/modules/cloudinary/cloudinary.types.ts
 
-/**
- * Tipos para el módulo de Cloudinary.
- * Define contratos y estructuras de datos.
- */
-
-// #region Configuration Types
-
-/**
- * Configuración del cliente de Cloudinary.
- * Se carga desde variables de entorno o se puede inyectar.
- */
+//#region 
 export interface CloudinaryConfig {
   /** Nombre del cloud de Cloudinary */
   cloudName: string;
@@ -20,6 +10,8 @@ export interface CloudinaryConfig {
   apiSecret: string;
   /** Usar HTTPS (default: true) */
   secure?: boolean;
+  /** Carpeta raíz del proyecto (se lee desde env, opcional) */
+  rootFolder?: string;  // ← AGREGAR ESTA LÍNEA
   /** Carpeta por defecto para uploads */
   defaultFolder?: string;
   /** Upload preset (para unsigned uploads) */
@@ -29,7 +21,6 @@ export interface CloudinaryConfig {
   /** Máxima concurrencia para uploads múltiples (default: 3) */
   maxConcurrency?: number;
 }
-
 // #endregion
 
 // #region Upload Types
