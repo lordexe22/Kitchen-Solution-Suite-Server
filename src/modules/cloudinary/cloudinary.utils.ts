@@ -260,47 +260,4 @@ export function buildFullFolder(
   return `${cleanRoot}/${cleanSub}`;
 }
 
-/**
- * Generadores de estructura de carpetas y publicId para diferentes entidades.
- * 
- * NOTA: Estas son convenciones sugeridas. El proyecto puede usar otras.
- * El rootFolder debe pasarse explícitamente o ser undefined.
- * 
- * @example
- * const { folder, publicId } = CLOUDINARY_FOLDERS.companies.logos(5, 'my-project');
- * // { folder: 'my-project/companies/logos', publicId: 'company-5' }
- * 
- * const { folder, publicId } = CLOUDINARY_FOLDERS.companies.logos(5);
- * // { folder: 'companies/logos', publicId: 'company-5' }
- */
-export const CLOUDINARY_FOLDERS = {
-  users: {
-    avatars: (userId: number, rootFolder?: string) => ({
-      folder: buildFullFolder('users/avatars', rootFolder),
-      publicId: `user-${userId}`,
-    }),
-  },
-
-  companies: {
-    logos: (companyId: number, rootFolder?: string) => ({
-      folder: buildFullFolder('companies/logos', rootFolder),
-      publicId: `company-${companyId}`,
-    }),
-
-    banners: (companyId: number, rootFolder?: string) => ({
-      folder: buildFullFolder('companies/banners', rootFolder),
-      publicId: `company-${companyId}-banner`,
-    }),
-  },
-
-  branches: {
-    photos: (branchId: number, photoIndex?: number, rootFolder?: string) => ({
-      folder: buildFullFolder('branches/photos', rootFolder),
-      publicId: photoIndex
-        ? `branch-${branchId}-photo-${photoIndex}`
-        : `branch-${branchId}`,
-    }),
-  },
-} as const;
-
 // #endregion

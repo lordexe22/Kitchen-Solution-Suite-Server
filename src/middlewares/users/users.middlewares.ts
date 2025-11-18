@@ -6,7 +6,8 @@ import { db } from "../../db/init";
 import { usersTable, pendingDeletionsTable } from "../../db/schema";
 import { eq, and } from "drizzle-orm";
 import type { AuthenticatedRequest } from "../../modules/jwtManager/jwtManager.types";
-import { uploadFile, deleteFile, loadConfig, CLOUDINARY_FOLDERS, NotFoundError } from '../../modules/cloudinary';
+import { uploadFile, deleteFile, loadConfig, NotFoundError } from '../../modules/cloudinary';
+import { CLOUDINARY_FOLDERS } from "../../config/cloudinary-folders.config";
 // #end-section
 
 // #middleware uploadUserAvatar

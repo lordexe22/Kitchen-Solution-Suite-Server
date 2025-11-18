@@ -58,8 +58,4 @@ export {
   resetCache,
 } from './cloudinary.config';
 
-export {
-  CLOUDINARY_FOLDERS
-} from './cloudinary.utils'
-
 // #endregion

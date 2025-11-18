@@ -8,7 +8,8 @@ import type { AuthenticatedRequest } from "../../modules/jwtManager/jwtManager.t
 import { branchesTable, branchSchedulesTable } from '../../db/schema';
 import { not } from 'drizzle-orm';
 import { branchSocialsTable } from "../../db/schema";
-import { uploadFile, deleteFile, loadConfig, CLOUDINARY_FOLDERS } from '../../modules/cloudinary';
+import { uploadFile, deleteFile, loadConfig } from '../../modules/cloudinary';
+import { CLOUDINARY_FOLDERS } from "../../config/cloudinary-folders.config";
 // #end-section
 // #middleware validateCreateCompanyPayload
 /**
