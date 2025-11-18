@@ -176,3 +176,35 @@ export interface BranchSchedule {
   updatedAt: Date;
 }
 // #end-interface
+// #interface Category
+/** 
+ * Tabla de categorías de productos.
+ * 
+ * Almacena las categorías que organizan los productos de cada sucursal.
+ * Una categoría pertenece a una sucursal y contendrá productos.
+ */
+export interface Category {
+  /** Unique identifier for the category */
+  id: number;
+  /** Reference to the branch */
+  branchId: number;
+  /** Category name (required, max 100 chars) */
+  name: string;
+  /** Optional description (max 500 chars) */
+  description?: string | null;
+  /** Optional image URL (Cloudinary) */
+  imageUrl?: string | null;
+  /** Text color in hex format (default: #FFFFFF) */
+  textColor: string;
+  /** Background mode: 'solid' or 'gradient' */
+  backgroundMode: 'solid' | 'gradient';
+  /** Background color in hex format (default: #3B82F6) */
+  backgroundColor: string;
+  /** Gradient configuration (JSON string if backgroundMode is 'gradient') */
+  gradientConfig?: string | null;
+  /** Timestamp of when the category was created */
+  createdAt: Date;
+  /** Timestamp of the last update to the category */
+  updatedAt: Date;
+}
+// #end-interface

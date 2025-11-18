@@ -18,6 +18,8 @@ npx drizzle-kit migrate -> run pending migrations
 export const userTypeEnum = pgEnum('user_type', ['admin', 'employ', 'guest', 'dev']);
 export const userStateEnum = pgEnum('user_state', ['pending', 'active', 'suspended']);
 export const platformNameEnum = pgEnum('platform_name', ['local', 'google', 'facebook', 'x']);
+export const backgroundModeEnum = pgEnum('background_mode', ['solid', 'gradient']);
+export const gradientTypeEnum = pgEnum('gradient_type', ['linear', 'radial']);
 // #end-section
 // #variable usersTable - Tabla de usuarios
 export const usersTable = pgTable('users', {
@@ -228,6 +230,56 @@ export const pendingDeletionsTable = pgTable('pending_deletions', {
   requestedBy: serial('requested_by').references(() => usersTable.id), // Quién lo solicitó
 });
 // #end-variable
-
+// #variable categoriesTable - Tabla de categorías de productos
+/**
+ * Tabla de categorías de productos.
+ * 
+ * Almacena las categorías que organizan los productos de cada sucursal.
+ * Relación: Muchos-a-Uno con Branch (una sucursal puede tener múltiples categorías).
+ * 
+ * Características:
+ * - Una categoría pertenece a UNA sucursal específica
+ * - Nombre obligatorio (máx 100 caracteres)
+ * - Descripción opcional (máx 500 caracteres)
+ * - Imagen opcional (URL de Cloudinary)
+ * - Color de texto obligatorio (hex, default #FFFFFF)
+ * - Modo de fondo: sólido o gradiente
+ * - Si es gradiente, almacena configuración en JSONB
+ * - Hard delete (eliminación física)
+ * 
+ * Ejemplo:
+ * - branchId: 1, name: 'Pizzas', backgroundColor: '#FF6B6B', backgroundMode: 'solid'
+ * - branchId: 1, name: 'Bebidas', backgroundMode: 'gradient', gradientConfig: {...}
+ * 
+ * Relación futura:
+ * - BRANCH → CATEGORIES → PRODUCTS (una categoría tendrá muchos productos)
+ */
+export const categoriesTable = pgTable('categories', {
+  id: serial('id').primaryKey(),
+  branchId: serial('branch_id')
+    .notNull()
+    .references(() => branchesTable.id, { onDelete: 'cascade' }),
+  
+  // Información básica
+  name: varchar('name', { length: 100 }).notNull(),
+  description: varchar('description', { length: 500 }),
+  imageUrl: text('image_url'),
+  
+  // Configuración de color de texto
+  textColor: varchar('text_color', { length: 7 }).notNull().default('#FFFFFF'),
+  
+  // Configuración de fondo
+  backgroundMode: backgroundModeEnum('background_mode').notNull().default('solid'),
+  backgroundColor: varchar('background_color', { length: 7 }).notNull().default('#3B82F6'),
+  
+  // Configuración de gradiente (almacenada como JSON)
+  // { type: 'linear' | 'radial', angle: number, colors: string[] }
+  gradientConfig: text('gradient_config'), // Almacenaremos JSON stringificado
+  
+  // Metadata
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+// #end-variable
 
 
