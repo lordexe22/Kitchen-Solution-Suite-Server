@@ -21,6 +21,7 @@ import {
   handleFileUploadError,
   validateFileExists,
 } from "../middlewares/fileUpload/fileUpload.middleware";
+import { reorderCategories } from "../middlewares/categories/categories.middlewares";
 // #end-section
 
 // #variable categoriesRouter
@@ -161,3 +162,21 @@ categoriesRouter.delete(
 // #end-route
 
 export default categoriesRouter;
+
+// #route PATCH /reorder - Reordenar categorías
+/**
+ * Actualiza el sortOrder de múltiples categorías.
+ * 
+ * @route PATCH /api/categories/reorder
+ * @access Private
+ * 
+ * Body: {
+ *   updates: Array<{ id: number, sortOrder: number }>
+ * }
+ */
+categoriesRouter.patch(
+  "/reorder",
+  validateJWTAndGetPayload,
+  reorderCategories
+);
+// #end-route

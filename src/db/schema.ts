@@ -1,4 +1,4 @@
-import { pgTable, serial, text, varchar, boolean, timestamp, pgEnum, decimal } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, varchar, boolean, timestamp, pgEnum, decimal, integer } from 'drizzle-orm/pg-core';
 
 
 /* #info 
@@ -246,10 +246,11 @@ export const pendingDeletionsTable = pgTable('pending_deletions', {
  * - Modo de fondo: sólido o gradiente
  * - Si es gradiente, almacena configuración en JSONB
  * - Hard delete (eliminación física)
+ * - sortOrder: Orden de visualización (menor = primero)
  * 
  * Ejemplo:
- * - branchId: 1, name: 'Pizzas', backgroundColor: '#FF6B6B', backgroundMode: 'solid'
- * - branchId: 1, name: 'Bebidas', backgroundMode: 'gradient', gradientConfig: {...}
+ * - branchId: 1, name: 'Pizzas', backgroundColor: '#FF6B6B', backgroundMode: 'solid', sortOrder: 1
+ * - branchId: 1, name: 'Bebidas', backgroundMode: 'gradient', gradientConfig: {...}, sortOrder: 2
  * 
  * Relación futura:
  * - BRANCH → CATEGORIES → PRODUCTS (una categoría tendrá muchos productos)
@@ -275,6 +276,9 @@ export const categoriesTable = pgTable('categories', {
   // Configuración de gradiente (almacenada como JSON)
   // { type: 'linear' | 'radial', angle: number, colors: string[] }
   gradientConfig: text('gradient_config'), // Almacenaremos JSON stringificado
+  
+  // Orden de visualización (menor = primero)
+  sortOrder: integer('sort_order').notNull().default(0),
   
   // Metadata
   createdAt: timestamp('created_at').notNull().defaultNow(),

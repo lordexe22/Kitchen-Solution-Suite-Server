@@ -356,6 +356,7 @@ export const verifyCategoryOwnership = async (
  * Middleware: createCategory
  * 
  * Crea una nueva categoría para una sucursal.
+ * Automáticamente asigna sortOrder como el máximo + 1 de la sucursal.
  * 
  * Requiere:
  * - validateJWTAndGetPayload
@@ -387,6 +388,19 @@ export const createCategory = async (
       gradientConfigString = JSON.stringify(gradient);
     }
 
+    // Obtener el sortOrder máximo actual de la sucursal
+    const maxSortOrderResult = await db
+      .select({ maxOrder: categoriesTable.sortOrder })
+      .from(categoriesTable)
+      .where(eq(categoriesTable.branchId, Number(branchId)))
+      .orderBy(categoriesTable.sortOrder)
+      .limit(1);
+
+    // Calcular el nuevo sortOrder (máximo + 1, o 1 si no hay categorías)
+    const nextSortOrder = maxSortOrderResult.length > 0 
+      ? (maxSortOrderResult[0].maxOrder || 0) + 1 
+      : 1;
+
     // Crear la categoría
     const [newCategory] = await db
       .insert(categoriesTable)
@@ -398,7 +412,8 @@ export const createCategory = async (
         textColor: textColor || '#FFFFFF',
         backgroundMode: backgroundMode || 'solid',
         backgroundColor: backgroundColor || '#3B82F6',
-        gradientConfig: gradientConfigString
+        gradientConfig: gradientConfigString,
+        sortOrder: nextSortOrder
       })
       .returning();
 
@@ -423,7 +438,7 @@ export const createCategory = async (
  * Middleware: getBranchCategories
  * 
  * Obtiene todas las categorías de una sucursal.
- * Ordenadas por createdAt ASC (más antigua primero).
+ * Ordenadas por sortOrder ASC (menor primero).
  * 
  * @param {AuthenticatedRequest} req - Request con user autenticado
  * @param {Response} res - Response de Express
@@ -439,7 +454,7 @@ export const getBranchCategories = async (
       .select()
       .from(categoriesTable)
       .where(eq(categoriesTable.branchId, branchId))
-      .orderBy(categoriesTable.createdAt);
+      .orderBy(categoriesTable.sortOrder); // ← CAMBIO AQUÍ
 
     res.status(200).json({
       success: true,
@@ -456,7 +471,6 @@ export const getBranchCategories = async (
   }
 };
 // #end-middleware
-
 // #middleware getCategoryById
 /**
  * Middleware: getCategoryById
@@ -776,6 +790,140 @@ export const deleteCategoryImage = async (
       success: false,
       error: 'Failed to delete category image',
       details: error.message,
+    });
+  }
+};
+// #end-middleware
+
+// #middleware reorderCategories
+/**
+ * Middleware: reorderCategories
+ * 
+ * Actualiza el sortOrder de múltiples categorías en una transacción.
+ * Recibe un array de { id, sortOrder } y actualiza todas en batch.
+ * 
+ * Requiere:
+ * - validateJWTAndGetPayload
+ * - Body: { updates: Array<{ id: number, sortOrder: number }> }
+ * 
+ * @param {AuthenticatedRequest} req - Request con user autenticado
+ * @param {Response} res - Response de Express
+ */
+export const reorderCategories = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const { updates } = req.body;
+    const userId = req.user?.userId;
+
+    // Validar que existe userId
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        error: 'Usuario no autenticado'
+      });
+      return;
+    }
+
+    // Validar payload
+    if (!Array.isArray(updates) || updates.length === 0) {
+      res.status(400).json({
+        success: false,
+        error: 'Se requiere un array de actualizaciones'
+      });
+      return;
+    }
+
+    // Validar estructura de cada update
+    for (const update of updates) {
+      if (!update.id || typeof update.sortOrder !== 'number') {
+        res.status(400).json({
+          success: false,
+          error: 'Cada actualización debe tener id y sortOrder válidos'
+        });
+        return;
+      }
+    }
+
+    // Obtener el primer categoryId para verificar la branch
+    const firstCategoryId = updates[0].id;
+    
+    const categoryResult = await db
+      .select({
+        id: categoriesTable.id,
+        branchId: categoriesTable.branchId
+      })
+      .from(categoriesTable)
+      .where(eq(categoriesTable.id, firstCategoryId))
+      .limit(1);
+
+    if (categoryResult.length === 0) {
+      res.status(404).json({
+        success: false,
+        error: 'Categoría no encontrada'
+      });
+      return;
+    }
+
+    const branchId = categoryResult[0].branchId;
+
+    // Verificar ownership de la branch
+    const branchResult = await db
+      .select({
+        id: branchesTable.id,
+        companyId: branchesTable.companyId
+      })
+      .from(branchesTable)
+      .where(eq(branchesTable.id, branchId))
+      .limit(1);
+
+    if (branchResult.length === 0) {
+      res.status(404).json({
+        success: false,
+        error: 'Sucursal no encontrada'
+      });
+      return;
+    }
+
+    const companyResult = await db
+      .select({
+        ownerId: companiesTable.ownerId
+      })
+      .from(companiesTable)
+      .where(eq(companiesTable.id, branchResult[0].companyId))
+      .limit(1);
+
+    if (companyResult.length === 0 || companyResult[0].ownerId !== userId) {
+      res.status(403).json({
+        success: false,
+        error: 'No tienes permiso para modificar estas categorías'
+      });
+      return;
+    }
+
+    // Actualizar sortOrder de todas las categorías
+    for (const update of updates) {
+      await db
+        .update(categoriesTable)
+        .set({ 
+          sortOrder: update.sortOrder,
+          updatedAt: new Date()
+        })
+        .where(eq(categoriesTable.id, update.id));
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        message: 'Orden actualizado correctamente'
+      }
+    });
+  } catch (error) {
+    console.error('Error reordenando categorías:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al reordenar categorías'
     });
   }
 };

@@ -202,6 +202,8 @@ export interface Category {
   backgroundColor: string;
   /** Gradient configuration (JSON string if backgroundMode is 'gradient') */
   gradientConfig?: string | null;
+  /** Display order (lower = first) */
+  sortOrder: number;
   /** Timestamp of when the category was created */
   createdAt: Date;
   /** Timestamp of the last update to the category */
