@@ -44,5 +44,24 @@ export const CLOUDINARY_FOLDERS = {
       publicId: `category-${categoryId}-image`,
     }),
   },
+
+  // Productos (imágenes de productos)
+  products: {
+    /**
+     * Carpeta para las imágenes de un producto.
+     * Estructura: {rootFolder}/products/product-{productId}/
+     * 
+     * @param productId - ID del producto
+     * @param rootFolder - Carpeta raíz del proyecto (opcional)
+     * @returns { folder, publicId }
+     */
+    images: (productId: number, rootFolder?: string) => {
+      const base = rootFolder ? `${rootFolder}/products` : 'products';
+      return {
+        folder: `${base}/product-${productId}`,
+        publicId: `image` // Se complementará con índice en el middleware
+      };
+    }
+  },
 } as const;
 // #end-export

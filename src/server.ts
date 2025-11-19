@@ -10,6 +10,7 @@ import { companiesRouter } from './routes/companies.routes';
 import { branchesRouter } from './routes/branch.routes';
 import { usersRouter }  from './routes/users.routes';
 import { categoriesRouter } from './routes/categories.routes';
+import { productsRouter } from './routes/products.routes';
 import * as serverConfig from './config/server.config'
 import cookieParser from 'cookie-parser';
 import './db/init';
@@ -32,6 +33,7 @@ app.use('/api/companies', companiesRouter);
 app.use('/api/branches', branchesRouter); 
 app.use('/api/users', usersRouter);
 app.use('/api/categories', categoriesRouter);
+app.use('/api/products', productsRouter);
 // #end-section
 
 app.get("/", (_req, res) => {

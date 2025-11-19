@@ -285,5 +285,66 @@ export const categoriesTable = pgTable('categories', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 // #end-variable
-
+// #variable productsTable - Tabla de productos
+/**
+ * Tabla de productos de cada categoría.
+ * 
+ * Almacena los productos que se venden en cada categoría de una sucursal.
+ * Relación: Muchos-a-Uno con Category (una categoría puede tener múltiples productos).
+ * 
+ * Características:
+ * - Un producto pertenece a UNA categoría específica
+ * - Nombre obligatorio (máx 100 caracteres)
+ * - Descripción opcional (máx 1000 caracteres)
+ * - Imágenes almacenadas como JSON array (primera = principal)
+ * - Precio base obligatorio (decimal 10,2)
+ * - Descuento opcional (decimal 5,2 - porcentaje 0-100)
+ * - Control de stock opcional (3 campos relacionados)
+ * - Disponibilidad manual o automática por stock
+ * - sortOrder: Orden de visualización (menor = primero)
+ * - Hard delete (eliminación física)
+ * 
+ * Ejemplo:
+ * - categoryId: 1, name: 'Pizza Margherita', basePrice: 12.99, discount: 10, sortOrder: 1
+ * - categoryId: 1, name: 'Coca Cola', basePrice: 2.50, hasStockControl: true, currentStock: 50
+ * 
+ * Relación:
+ * - BRANCH → CATEGORIES → PRODUCTS
+ */
+export const productsTable = pgTable('products', {
+  id: serial('id').primaryKey(),
+  categoryId: serial('category_id')
+    .notNull()
+    .references(() => categoriesTable.id, { onDelete: 'cascade' }),
+  
+  // Información básica
+  name: varchar('name', { length: 100 }).notNull(),
+  description: varchar('description', { length: 1000 }),
+  
+  // Imágenes (JSON array de URLs)
+  // ["https://res.cloudinary.com/...", "https://res.cloudinary.com/..."]
+  // La primera imagen del array es la imagen principal
+  images: text('images'), // JSON stringificado
+  
+  // Precio
+  basePrice: decimal('base_price', { precision: 10, scale: 2 }).notNull(),
+  discount: decimal('discount', { precision: 5, scale: 2 }), // 0-100 (porcentaje)
+  
+  // Control de stock (todo opcional)
+  hasStockControl: boolean('has_stock_control').notNull().default(false),
+  currentStock: integer('current_stock'),
+  stockAlertThreshold: integer('stock_alert_threshold'), // Umbral de alerta
+  stockStopThreshold: integer('stock_stop_threshold'), // Umbral de parada
+  
+  // Disponibilidad
+  isAvailable: boolean('is_available').notNull().default(true),
+  
+  // Orden de visualización (menor = primero)
+  sortOrder: integer('sort_order').notNull().default(0),
+  
+  // Metadata
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+// #end-variable
 

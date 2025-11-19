@@ -210,3 +210,43 @@ export interface Category {
   updatedAt: Date;
 }
 // #end-interface
+// #interface Product
+/** 
+ * Tabla de productos.
+ * 
+ * Almacena los productos que se venden en cada categoría.
+ * Relación: Una categoría puede tener múltiples productos.
+ */
+export interface Product {
+  /** Unique identifier for the product */
+  id: number;
+  /** Reference to the category */
+  categoryId: number;
+  /** Product name (required, max 100 chars) */
+  name: string;
+  /** Optional description (max 1000 chars) */
+  description?: string | null;
+  /** Array of image URLs (JSON string, first = main image) */
+  images?: string | null;
+  /** Base price (decimal 10,2) */
+  basePrice: string; // Viene como string desde decimal de DB
+  /** Discount percentage 0-100 (decimal 5,2) */
+  discount?: string | null; // Viene como string desde decimal de DB
+  /** If product has stock control enabled */
+  hasStockControl: boolean;
+  /** Current stock quantity (nullable if no control) */
+  currentStock?: number | null;
+  /** Stock alert threshold (notify when below this) */
+  stockAlertThreshold?: number | null;
+  /** Stock stop threshold (disable product when below this) */
+  stockStopThreshold?: number | null;
+  /** Product availability (manual or automatic by stock) */
+  isAvailable: boolean;
+  /** Display order (lower = first) */
+  sortOrder: number;
+  /** Timestamp of when the product was created */
+  createdAt: Date;
+  /** Timestamp of the last update to the product */
+  updatedAt: Date;
+}
+// #end-interface
