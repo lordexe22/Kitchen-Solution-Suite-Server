@@ -23,16 +23,15 @@ import {
   reorderProducts,
   uploadProductImages,
   deleteProductImage,
-  reorderProductImages
+  reorderProductImages,
+  duplicateProduct
 } from "../middlewares/products/products.middlewares";
 import multer from 'multer';
 // #end-section
-
 // #variable productsRouter
 export const productsRouter = Router();
 // #end-variable
-
-// #config multer para múltiples archivos
+// #variable multer para múltiples archivos
 const storage = multer.memoryStorage();
 const uploadMultiple = multer({ 
   storage,
@@ -46,8 +45,7 @@ const uploadMultiple = multer({
     }
   }
 }).array('images', 6); // Máximo 6 archivos
-// #end-config
-
+// #end-variable
 // #route POST / - Crear producto
 /**
  * Crea un nuevo producto en una categoría.
@@ -76,7 +74,6 @@ productsRouter.post(
   createProduct
 );
 // #end-route
-
 // #route GET /category/:categoryId - Obtener productos de una categoría
 /**
  * Obtiene todos los productos de una categoría.
@@ -90,7 +87,6 @@ productsRouter.get(
   getCategoryProducts
 );
 // #end-route
-
 // #route GET /:id - Obtener producto por ID
 /**
  * Obtiene un producto específico por su ID.
@@ -105,7 +101,6 @@ productsRouter.get(
   getProductById
 );
 // #end-route
-
 // #route PUT /:id - Actualizar producto
 /**
  * Actualiza un producto existente.
@@ -134,7 +129,6 @@ productsRouter.put(
   updateProduct
 );
 // #end-route
-
 // #route DELETE /:id - Eliminar producto
 /**
  * Elimina un producto de forma permanente.
@@ -151,7 +145,6 @@ productsRouter.delete(
   deleteProduct
 );
 // #end-route
-
 // #route PATCH /reorder - Reordenar productos
 /**
  * Actualiza el sortOrder de múltiples productos.
@@ -169,7 +162,6 @@ productsRouter.patch(
   reorderProducts
 );
 // #end-route
-
 // #route POST /:id/images - Subir imágenes del producto
 /**
  * Sube múltiples imágenes a un producto.
@@ -188,7 +180,6 @@ productsRouter.post(
   handleFileUploadError
 );
 // #end-route
-
 // #route DELETE /:id/images - Eliminar imagen del producto
 /**
  * Elimina una imagen específica de un producto.
@@ -208,7 +199,6 @@ productsRouter.delete(
   deleteProductImage
 );
 // #end-route
-
 // #route PATCH /:id/images/reorder - Reordenar imágenes del producto
 /**
  * Reordena las imágenes de un producto.
@@ -227,5 +217,24 @@ productsRouter.patch(
   validateProductId,
   verifyProductOwnership,
   reorderProductImages
+);
+// #end-route
+// #route POST /:id/duplicate - Duplicar producto
+/**
+ * Duplica un producto existente (incluyendo imágenes).
+ *
+ * @route POST /api/products/:id/duplicate
+ * @access Private
+ *
+ * Body: {
+ *   targetCategoryId: number
+ * }
+ */
+productsRouter.post(
+  "/:id/duplicate",
+  validateJWTAndGetPayload,
+  validateProductId,
+  verifyProductOwnership,
+  duplicateProduct
 );
 // #end-route

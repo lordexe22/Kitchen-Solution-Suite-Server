@@ -11,6 +11,7 @@ import type {
   ListOptions,
   ListResult,
   GetInfoOptions,
+  DuplicateFileOptions
 } from './cloudinary.types';
 import {
   validatePublicId,
@@ -358,6 +359,97 @@ export async function listFiles(
     throw new UploadError(
       `Failed to list files: ${error.message}`,
       { options },
+      error
+    );
+  }
+}
+
+// #endregion
+
+// #region Duplicate File
+
+/**
+ * Duplica un archivo existente en Cloudinary.
+ * Crea una copia independiente del archivo original sin necesidad de descargar/subir.
+ * 
+ * @param sourcePublicId - Public ID del archivo a duplicar
+ * @param options - Opciones para el archivo duplicado
+ * @returns Resultado con el nuevo archivo creado
+ * @throws {ValidationError} Si los parámetros son inválidos
+ * @throws {NotFoundError} Si el archivo original no existe
+ * @throws {UploadError} Si falla la duplicación
+ * 
+ * @example
+ * // Duplicar con nuevo nombre
+ * const copy = await duplicateFile('products/pizza-margherita', {
+ *   folder: 'products',
+ *   publicId: 'pizza-margherita-copy'
+ * });
+ * 
+ * // Duplicar a otra carpeta
+ * const copy = await duplicateFile('branch1/categories/pizza', {
+ *   folder: 'branch2/categories'
+ * });
+ */
+export async function duplicateFile(
+  sourcePublicId: string,
+  options?: DuplicateFileOptions
+): Promise<UploadResult> {
+  validatePublicId(sourcePublicId);
+
+  try {
+    const client = getCloudinaryClient();
+    const config = loadConfig();
+
+    // Generar un public ID único si no se especifica
+    const timestamp = Date.now();
+    const randomSuffix = Math.random().toString(36).substring(2, 8);
+    const defaultPublicId = `copy_${timestamp}_${randomSuffix}`;
+
+    const targetPublicId = options?.publicId || defaultPublicId;
+    const targetFolder = options?.folder || config.defaultFolder;
+
+    // Construir el public ID completo para el destino
+    const fullTargetPublicId = targetFolder 
+      ? `${targetFolder}/${targetPublicId}`
+      : targetPublicId;
+
+    // Usar el método de Cloudinary para duplicar
+    // Esto crea una copia independiente sin descargar/subir
+    const result = await client.uploader.explicit(sourcePublicId, {
+      type: 'upload',
+      resource_type: options?.resourceType || 'image',
+      public_id: fullTargetPublicId,
+      invalidate: options?.invalidate ?? false,
+      tags: options?.tags || [],
+      // eager permite forzar la creación de una nueva versión
+      eager: [{ fetch_format: 'auto' }],
+      eager_async: false
+    });
+
+    // Si el método explicit no crea una copia nueva, usar upload con from_public_id
+    // Este es el método recomendado para duplicar
+    const duplicateResult = await client.uploader.upload(
+      `cloudinary://${result.public_id}`,
+      {
+        public_id: fullTargetPublicId,
+        resource_type: options?.resourceType || 'image',
+        invalidate: options?.invalidate ?? false,
+        tags: options?.tags || [],
+        overwrite: false // No sobrescribir si ya existe
+      }
+    );
+
+    return parseUploadResponse(duplicateResult);
+  } catch (error: any) {
+    // Detectar si el archivo fuente no existe
+    if (error.error?.http_code === 404 || error.message?.includes('not found')) {
+      throw new NotFoundError(sourcePublicId, options?.resourceType || 'image');
+    }
+
+    throw new UploadError(
+      `Failed to duplicate file: ${error.message}`,
+      { sourcePublicId, options },
       error
     );
   }

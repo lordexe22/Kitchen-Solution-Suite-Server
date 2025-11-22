@@ -15,6 +15,7 @@ import {
   deleteCategory,
   uploadCategoryImage,
   deleteCategoryImage,
+  duplicateCategory
 } from "../middlewares/categories/categories.middlewares";
 import { 
   uploadSingleFile,
@@ -178,5 +179,24 @@ categoriesRouter.patch(
   "/reorder",
   validateJWTAndGetPayload,
   reorderCategories
+);
+// #end-route
+// #route POST /:id/duplicate - Duplicar categoría
+/**
+ * Duplica una categoría existente (incluyendo todos sus productos e imágenes).
+ *
+ * @route POST /api/categories/:id/duplicate
+ * @access Private
+ *
+ * Body: {
+ *   targetBranchId: number
+ * }
+ */
+categoriesRouter.post(
+  "/:id/duplicate",
+  validateJWTAndGetPayload,
+  validateCategoryId,
+  verifyCategoryOwnership,
+  duplicateCategory
 );
 // #end-route

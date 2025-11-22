@@ -22,6 +22,7 @@ export {
   deleteFile,
   getFileInfo,
   listFiles,
+  duplicateFile
 } from './cloudinary.services';
 
 // Tipos
@@ -37,6 +38,7 @@ export type {
   ListResult,
   GetInfoOptions,
   ResourceType,
+  DuplicateFileOptions
 } from './cloudinary.types';
 
 // Errores

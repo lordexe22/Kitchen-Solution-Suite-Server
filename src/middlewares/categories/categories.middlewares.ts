@@ -8,6 +8,8 @@ import { db } from '../../db/init';
 import { categoriesTable } from '../../db/schema';
 import { branchesTable, companiesTable } from '../../db/schema';
 import { eq, and } from 'drizzle-orm';
+import { duplicateFile } from '../../modules/cloudinary';
+import { productsTable } from '../../db/schema';
 // #end-section
 
 // #middleware validateCategoryId
@@ -924,6 +926,229 @@ export const reorderCategories = async (
     res.status(500).json({
       success: false,
       error: 'Error al reordenar categorías'
+    });
+  }
+};
+// #end-middleware
+// #middleware duplicateCategory
+/**
+ * Middleware: duplicateCategory
+ * 
+ * Duplica una categoría existente a una sucursal destino.
+ * Duplica la imagen de la categoría y TODOS sus productos con sus respectivas imágenes.
+ * 
+ * Requiere:
+ * - validateJWTAndGetPayload
+ * - validateCategoryId
+ * - verifyCategoryOwnership
+ * 
+ * Body: {
+ *   targetBranchId: number
+ * }
+ * 
+ * @param {AuthenticatedRequest} req - Request con user autenticado
+ * @param {Response} res - Response de Express
+ */
+export const duplicateCategory = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const sourceCategoryId = Number(req.params.id);
+    const { targetBranchId } = req.body;
+    const userId = req.user!.userId;
+
+    // Validar targetBranchId
+    if (!targetBranchId || typeof targetBranchId !== 'number') {
+      res.status(400).json({
+        success: false,
+        error: 'targetBranchId es requerido y debe ser un número'
+      });
+      return;
+    }
+
+    // Verificar que el usuario es dueño de la sucursal destino
+    const targetBranch = await db
+      .select({
+        branchId: branchesTable.id,
+        companyId: branchesTable.companyId,
+        ownerId: companiesTable.ownerId
+      })
+      .from(branchesTable)
+      .innerJoin(companiesTable, eq(branchesTable.companyId, companiesTable.id))
+      .where(eq(branchesTable.id, targetBranchId))
+      .limit(1);
+
+    if (targetBranch.length === 0) {
+      res.status(404).json({
+        success: false,
+        error: 'Sucursal destino no encontrada'
+      });
+      return;
+    }
+
+    if (targetBranch[0].ownerId !== userId) {
+      res.status(403).json({
+        success: false,
+        error: 'No tienes permiso para agregar categorías a esta sucursal'
+      });
+      return;
+    }
+
+    // Obtener categoría original
+    const [sourceCategory] = await db
+      .select()
+      .from(categoriesTable)
+      .where(eq(categoriesTable.id, sourceCategoryId))
+      .limit(1);
+
+    if (!sourceCategory) {
+      res.status(404).json({
+        success: false,
+        error: 'Categoría original no encontrada'
+      });
+      return;
+    }
+
+    // Obtener el sortOrder máximo de la sucursal destino
+    const maxSortOrderResult = await db
+      .select({ maxOrder: categoriesTable.sortOrder })
+      .from(categoriesTable)
+      .where(eq(categoriesTable.branchId, targetBranchId))
+      .orderBy(categoriesTable.sortOrder)
+      .limit(1);
+
+    const nextSortOrder = maxSortOrderResult.length > 0
+      ? (maxSortOrderResult[0].maxOrder || 0) + 1
+      : 1;
+
+    // Duplicar imagen de categoría si existe
+    let duplicatedImageUrl: string | null = null;
+
+    if (sourceCategory.imageUrl) {
+      try {
+        // Extraer publicId de la URL
+        const urlParts = sourceCategory.imageUrl.split('/');
+        const fileNameWithExt = urlParts[urlParts.length - 1];
+        
+        const uploadIndex = urlParts.indexOf('upload');
+        if (uploadIndex !== -1) {
+          const pathAfterUpload = urlParts.slice(uploadIndex + 2);
+          const sourcePublicId = pathAfterUpload.join('/').replace(/\.[^/.]+$/, '');
+
+          const config = loadConfig();
+          const rootFolder = config.rootFolder;
+          const { folder } = CLOUDINARY_FOLDERS.categories.images(sourceCategoryId, rootFolder);
+
+          const duplicatedImage = await duplicateFile(sourcePublicId, {
+            folder,
+            tags: [`category-${sourceCategoryId}`, 'duplicated']
+          });
+
+          duplicatedImageUrl = duplicatedImage.secureUrl;
+        }
+      } catch (error) {
+        console.error('Error duplicando imagen de categoría:', error);
+        // Continuar sin imagen si falla la duplicación
+      }
+    }
+
+    // Crear la categoría duplicada
+    const [duplicatedCategory] = await db
+      .insert(categoriesTable)
+      .values({
+        branchId: targetBranchId,
+        name: sourceCategory.name,
+        description: sourceCategory.description,
+        imageUrl: duplicatedImageUrl,
+        textColor: sourceCategory.textColor,
+        backgroundMode: sourceCategory.backgroundMode,
+        backgroundColor: sourceCategory.backgroundColor,
+        gradientConfig: sourceCategory.gradientConfig,
+        sortOrder: nextSortOrder
+      })
+      .returning();
+
+    // Obtener todos los productos de la categoría original
+    const sourceProducts = await db
+      .select()
+      .from(productsTable)
+      .where(eq(productsTable.categoryId, sourceCategoryId))
+      .orderBy(productsTable.sortOrder);
+
+    // Duplicar cada producto con sus imágenes
+    const duplicatedProducts = [];
+
+    for (const sourceProduct of sourceProducts) {
+      // Duplicar imágenes del producto
+      let duplicatedProductImages: string[] | null = null;
+
+      if (sourceProduct.images) {
+        try {
+          const sourceImages: string[] = JSON.parse(sourceProduct.images);
+          duplicatedProductImages = [];
+          const config = loadConfig();
+          const rootFolder = config.rootFolder;
+
+          for (const sourceImageUrl of sourceImages) {
+            const urlParts = sourceImageUrl.split('/');
+            const uploadIndex = urlParts.indexOf('upload');
+            
+            if (uploadIndex !== -1) {
+              const pathAfterUpload = urlParts.slice(uploadIndex + 2);
+              const sourcePublicId = pathAfterUpload.join('/').replace(/\.[^/.]+$/, '');
+
+              const { folder } = CLOUDINARY_FOLDERS.products.images(sourceProduct.id, rootFolder);
+
+              const duplicatedImage = await duplicateFile(sourcePublicId, {
+                folder,
+                tags: [`product-${sourceProduct.id}`, 'duplicated']
+              });
+
+              duplicatedProductImages.push(duplicatedImage.secureUrl);
+            }
+          }
+        } catch (error) {
+          console.error(`Error duplicando imágenes del producto ${sourceProduct.id}:`, error);
+          duplicatedProductImages = null;
+        }
+      }
+
+      // Crear el producto duplicado
+      const [duplicatedProduct] = await db
+        .insert(productsTable)
+        .values({
+          categoryId: duplicatedCategory.id,
+          name: sourceProduct.name,
+          description: sourceProduct.description,
+          images: duplicatedProductImages ? JSON.stringify(duplicatedProductImages) : null,
+          basePrice: sourceProduct.basePrice,
+          discount: sourceProduct.discount,
+          hasStockControl: sourceProduct.hasStockControl,
+          currentStock: sourceProduct.currentStock,
+          stockAlertThreshold: sourceProduct.stockAlertThreshold,
+          stockStopThreshold: sourceProduct.stockStopThreshold,
+          isAvailable: sourceProduct.isAvailable,
+          sortOrder: sourceProduct.sortOrder
+        })
+        .returning();
+
+      duplicatedProducts.push(duplicatedProduct);
+    }
+
+    res.status(201).json({
+      success: true,
+      data: {
+        category: duplicatedCategory,
+        productsCount: duplicatedProducts.length,
+        message: `Categoría duplicada exitosamente con ${duplicatedProducts.length} producto(s)`
+      }
+    });
+  } catch (error) {
+    console.error('Error duplicando categoría:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al duplicar categoría'
     });
   }
 };

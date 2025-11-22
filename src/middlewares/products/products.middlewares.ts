@@ -7,6 +7,8 @@ import { CLOUDINARY_FOLDERS } from '../../config/cloudinary-folders.config';
 import { db } from '../../db/init';
 import { productsTable } from '../../db/schema';
 import { eq } from 'drizzle-orm';
+import { duplicateFile } from '../../modules/cloudinary';
+import { productsTable as allProductsTable, categoriesTable, branchesTable, companiesTable } from '../../db/schema';
 // #end-section
 
 // #middleware createProduct
@@ -789,6 +791,174 @@ export const reorderProductImages = async (
     res.status(500).json({
       success: false,
       error: 'Error al reordenar imágenes'
+    });
+  }
+};
+// #end-middleware
+// #middleware duplicateProduct
+/**
+ * Middleware: duplicateProduct
+ * 
+ * Duplica un producto existente a una categoría destino.
+ * Duplica todas las imágenes del producto en Cloudinary.
+ * 
+ * Requiere:
+ * - validateJWTAndGetPayload
+ * - validateProductId
+ * - verifyProductOwnership
+ * 
+ * Body: {
+ *   targetCategoryId: number
+ * }
+ * 
+ * @param {AuthenticatedRequest} req - Request con user autenticado
+ * @param {Response} res - Response de Express
+ */
+export const duplicateProduct = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const sourceProductId = Number(req.params.id);
+    const { targetCategoryId } = req.body;
+    const userId = req.user!.userId;
+
+    // Validar targetCategoryId
+    if (!targetCategoryId || typeof targetCategoryId !== 'number') {
+      res.status(400).json({
+        success: false,
+        error: 'targetCategoryId es requerido y debe ser un número'
+      });
+      return;
+    }
+
+    // Verificar que el usuario es dueño de la categoría destino
+    const targetCategory = await db
+      .select({
+        categoryId: categoriesTable.id,
+        branchId: branchesTable.id,
+        companyId: companiesTable.id,
+        ownerId: companiesTable.ownerId
+      })
+      .from(categoriesTable)
+      .innerJoin(branchesTable, eq(categoriesTable.branchId, branchesTable.id))
+      .innerJoin(companiesTable, eq(branchesTable.companyId, companiesTable.id))
+      .where(eq(categoriesTable.id, targetCategoryId))
+      .limit(1);
+
+    if (targetCategory.length === 0) {
+      res.status(404).json({
+        success: false,
+        error: 'Categoría destino no encontrada'
+      });
+      return;
+    }
+
+    if (targetCategory[0].ownerId !== userId) {
+      res.status(403).json({
+        success: false,
+        error: 'No tienes permiso para agregar productos a esta categoría'
+      });
+      return;
+    }
+
+    // Obtener producto original
+    const [sourceProduct] = await db
+      .select()
+      .from(productsTable)
+      .where(eq(productsTable.id, sourceProductId))
+      .limit(1);
+
+    if (!sourceProduct) {
+      res.status(404).json({
+        success: false,
+        error: 'Producto original no encontrado'
+      });
+      return;
+    }
+
+    // Obtener el sortOrder máximo de la categoría destino
+    const maxSortOrderResult = await db
+      .select({ maxOrder: productsTable.sortOrder })
+      .from(productsTable)
+      .where(eq(productsTable.categoryId, targetCategoryId))
+      .orderBy(productsTable.sortOrder)
+      .limit(1);
+
+    const nextSortOrder = maxSortOrderResult.length > 0
+      ? (maxSortOrderResult[0].maxOrder || 0) + 1
+      : 1;
+
+    // Duplicar imágenes si existen
+    let duplicatedImages: string[] | null = null;
+
+    if (sourceProduct.images) {
+      try {
+        const sourceImages: string[] = JSON.parse(sourceProduct.images);
+        duplicatedImages = [];
+        const config = loadConfig();
+        const rootFolder = config.rootFolder;
+
+        for (const sourceImageUrl of sourceImages) {
+          // Extraer publicId de la URL
+          const urlParts = sourceImageUrl.split('/');
+          const fileNameWithExt = urlParts[urlParts.length - 1];
+          const fileName = fileNameWithExt.split('.')[0];
+          
+          // Construir el publicId completo de la imagen fuente
+          const uploadIndex = urlParts.indexOf('upload');
+          if (uploadIndex === -1) continue;
+          
+          const pathAfterUpload = urlParts.slice(uploadIndex + 2); // Saltar 'upload' y version
+          const sourcePublicId = pathAfterUpload.join('/').replace(/\.[^/.]+$/, ''); // Remover extensión
+
+          // Duplicar la imagen
+          const { folder } = CLOUDINARY_FOLDERS.products.images(sourceProductId, rootFolder);
+          const duplicatedImage = await duplicateFile(sourcePublicId, {
+            folder,
+            tags: [`product-${sourceProductId}`, 'duplicated']
+          });
+
+          duplicatedImages.push(duplicatedImage.secureUrl);
+        }
+      } catch (error) {
+        console.error('Error duplicando imágenes:', error);
+        // Continuar sin imágenes si falla la duplicación
+        duplicatedImages = null;
+      }
+    }
+
+    // Crear el producto duplicado
+    const [duplicatedProduct] = await db
+      .insert(productsTable)
+      .values({
+        categoryId: targetCategoryId,
+        name: sourceProduct.name,
+        description: sourceProduct.description,
+        images: duplicatedImages ? JSON.stringify(duplicatedImages) : null,
+        basePrice: sourceProduct.basePrice,
+        discount: sourceProduct.discount,
+        hasStockControl: sourceProduct.hasStockControl,
+        currentStock: sourceProduct.currentStock,
+        stockAlertThreshold: sourceProduct.stockAlertThreshold,
+        stockStopThreshold: sourceProduct.stockStopThreshold,
+        isAvailable: sourceProduct.isAvailable,
+        sortOrder: nextSortOrder
+      })
+      .returning();
+
+    res.status(201).json({
+      success: true,
+      data: {
+        product: duplicatedProduct,
+        message: 'Producto duplicado exitosamente'
+      }
+    });
+  } catch (error) {
+    console.error('Error duplicando producto:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al duplicar producto'
     });
   }
 };

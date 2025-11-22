@@ -1,6 +1,5 @@
-// src/modules/cloudinary/cloudinary.types.ts
-
-//#region 
+/* src/modules/cloudinary/cloudinary.types.ts */
+// #interface 
 export interface CloudinaryConfig {
   /** Nombre del cloud de Cloudinary */
   cloudName: string;
@@ -21,10 +20,8 @@ export interface CloudinaryConfig {
   /** Máxima concurrencia para uploads múltiples (default: 3) */
   maxConcurrency?: number;
 }
-// #endregion
-
-// #region Upload Types
-
+// #end-interface
+// #interface Upload Types
 /**
  * Fuente de archivo para upload.
  * Puede ser: path local, Buffer en memoria, o Stream.
@@ -112,9 +109,8 @@ export interface MultipleUploadResult {
   failureCount: number;
 }
 
-// #endregion
-
-// #region Delete Types
+// #end-interface
+// #interface Delete Types
 
 /**
  * Opciones para eliminar archivos.
@@ -136,9 +132,8 @@ export interface DeleteResult {
   result: 'ok' | 'not found';
 }
 
-// #endregion
-
-// #region List Types
+// #end-interface
+// #interface List Types
 
 /**
  * Opciones para listar archivos.
@@ -172,9 +167,8 @@ export interface ListResult {
   totalCount: number;
 }
 
-// #endregion
-
-// #region Info Types
+// #end-interface
+// #interface Info Types
 
 /**
  * Opciones para obtener info de un archivo.
@@ -190,4 +184,23 @@ export interface GetInfoOptions {
   exif?: boolean;
 }
 
-// #endregion
+// #end-interface
+// #interface Duplicate Types
+
+/**
+ * Opciones para duplicar un archivo.
+ */
+export interface DuplicateFileOptions {
+  /** Carpeta destino para el archivo duplicado */
+  folder?: string;
+  /** Public ID custom para el duplicado (opcional) */
+  publicId?: string;
+  /** Tags para el archivo duplicado */
+  tags?: string[];
+  /** Tipo de recurso */
+  resourceType?: ResourceType;
+  /** Invalidar CDN cache */
+  invalidate?: boolean;
+}
+
+// #end-interface
