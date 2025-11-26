@@ -13,6 +13,14 @@ import {
   handleFileUploadError,
   validateFileExists,
 } from "../middlewares/fileUpload/fileUpload.middleware";
+import {
+  validateCreateUserTagPayload,
+  validateTagId,
+  verifyUserTagOwnership,
+  createUserTag,
+  getUserTags,
+  deleteUserTag
+} from "../middlewares/users/userTags.middlewares";
 // #end-section
 
 // #variable usersRouter
@@ -75,6 +83,55 @@ usersRouter.post(
   '/account/recover',
   validateJWTAndGetPayload,
   recoverDeletedAccount
+);
+// #end-route
+// #route POST /tags - Crear etiqueta personalizada
+/**
+ * Crea una nueva etiqueta personalizada para el usuario.
+ * 
+ * @route POST /api/users/tags
+ * @access Private
+ * 
+ * Body: {
+ *   tagConfig: string (JSON stringificado de TagConfiguration)
+ * }
+ */
+usersRouter.post(
+  '/tags',
+  validateJWTAndGetPayload,
+  validateCreateUserTagPayload,
+  createUserTag
+);
+// #end-route
+
+// #route GET /tags - Obtener etiquetas personalizadas
+/**
+ * Obtiene todas las etiquetas personalizadas del usuario autenticado.
+ * 
+ * @route GET /api/users/tags
+ * @access Private
+ */
+usersRouter.get(
+  '/tags',
+  validateJWTAndGetPayload,
+  getUserTags
+);
+// #end-route
+
+// #route DELETE /tags/:tagId - Eliminar etiqueta personalizada
+/**
+ * Elimina una etiqueta personalizada del usuario.
+ * No afecta a los productos que la tienen asignada.
+ * 
+ * @route DELETE /api/users/tags/:tagId
+ * @access Private
+ */
+usersRouter.delete(
+  '/tags/:tagId',
+  validateJWTAndGetPayload,
+  validateTagId,
+  verifyUserTagOwnership,
+  deleteUserTag
 );
 // #end-route
 

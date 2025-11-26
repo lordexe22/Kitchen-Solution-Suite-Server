@@ -9,7 +9,8 @@ export type {
   JWTPayload, 
   JWTConfig, 
   CookieOptions, 
-  JWTExpiration 
+  JWTExpiration,
+  AuthenticatedRequest
 } from './jwtManager.types';
 // #end-section
 

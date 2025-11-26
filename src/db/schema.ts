@@ -36,6 +36,43 @@ export const usersTable = pgTable('users', {
   imageUrl: text('image_url'),
 });
 // #end-variable
+// #variable userTagsTable - Tabla de etiquetas personalizadas del usuario
+/**
+ * Tabla de etiquetas personalizadas creadas por usuarios.
+ * 
+ * Almacena las configuraciones de etiquetas custom que cada usuario crea.
+ * Las etiquetas del sistema NO se almacenan aquí (solo existen en el código frontend).
+ * 
+ * Características:
+ * - Una etiqueta pertenece a UN usuario específico
+ * - tag_config almacena el objeto TagConfiguration completo como JSON
+ * - Se pueden eliminar sin afectar productos que las usan (copias independientes)
+ * - Hard delete (eliminación física)
+ * 
+ * Ejemplo de tag_config:
+ * {
+ *   "name": "Mi Etiqueta",
+ *   "textColor": "#FF0000",
+ *   "backgroundColor": "#FFE4E4",
+ *   "icon": "🔥",
+ *   "hasBorder": true,
+ *   "size": "medium"
+ * }
+ */
+export const userTagsTable = pgTable('user_tags', {
+  id: serial('id').primaryKey(),
+  userId: serial('user_id')
+    .notNull()
+    .references(() => usersTable.id, { onDelete: 'cascade' }),
+  
+  // Configuración completa de la etiqueta (JSON)
+  tagConfig: text('tag_config').notNull(),
+  
+  // Metadata
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+// #end-variable
 // #variable apiPlatformsTable - Tabla para vincular usuarios con plataformas externas
 export const apiPlatformsTable = pgTable('api_platforms', {
   userId: serial('user_id').notNull().references(() => usersTable.id), // FK a users
@@ -325,6 +362,7 @@ export const productsTable = pgTable('products', {
   // ["https://res.cloudinary.com/...", "https://res.cloudinary.com/..."]
   // La primera imagen del array es la imagen principal
   images: text('images'), // JSON stringificado
+  tags: text('tags'), // JSON stringificado de tags (sistema + user tags)
   
   // Precio
   basePrice: decimal('base_price', { precision: 10, scale: 2 }).notNull(),

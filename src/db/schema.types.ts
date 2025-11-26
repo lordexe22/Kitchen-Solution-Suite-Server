@@ -26,6 +26,25 @@ export interface User {
   imageUrl?: string | null;
 }
 // #end-interface
+// #interface UserTag
+/** 
+ * Tabla de etiquetas personalizadas de usuarios.
+ * 
+ * Almacena las configuraciones de tags custom creados por cada usuario.
+ */
+export interface UserTag {
+  /** Unique identifier for the tag */
+  id: number;
+  /** Reference to the user who created the tag */
+  userId: number;
+  /** Complete tag configuration (JSON string) */
+  tagConfig: string;
+  /** Timestamp of when the tag was created */
+  createdAt: Date;
+  /** Timestamp of the last update */
+  updatedAt: Date;
+}
+// #end-interface
 // #interface API_Platforms
 /** Table to link user accounts with external platforms */
 export interface API_Platforms {
@@ -228,6 +247,8 @@ export interface Product {
   description?: string | null;
   /** Array of image URLs (JSON string, first = main image) */
   images?: string | null;
+  /** Array of tags assigned to product (JSON string of TagConfiguration[]) */
+  tags?: string | null;
   /** Base price (decimal 10,2) */
   basePrice: string; // Viene como string desde decimal de DB
   /** Discount percentage 0-100 (decimal 5,2) */
