@@ -248,6 +248,7 @@ export const updateProduct = async (
     if (updates.stockAlertThreshold !== undefined) finalUpdates.stockAlertThreshold = updates.stockAlertThreshold;
     if (updates.stockStopThreshold !== undefined) finalUpdates.stockStopThreshold = updates.stockStopThreshold;
     if (updates.isAvailable !== undefined) finalUpdates.isAvailable = updates.isAvailable;
+    if (updates.tags !== undefined) finalUpdates.tags = updates.tags;
 
     // Determinar si hay control de stock activo
     const hasStockControl = updates.hasStockControl !== undefined 
