@@ -12,7 +12,6 @@ import {
 } from "../../db/schema";
 import { eq, and } from "drizzle-orm";
 // #end-section
-
 // #middleware getBranchMenu
 /**
  * Obtiene el menú completo de una sucursal (categorías + productos).
@@ -108,7 +107,6 @@ export const getBranchMenu = async (
   }
 };
 // #end-middleware
-
 // #middleware getBranchInfo
 /**
  * Obtiene información de la compañía y sucursal (horarios, redes sociales).
@@ -179,7 +177,6 @@ export const getBranchInfo = async (
   }
 };
 // #end-middleware
-
 // #middleware getProductDetail
 /**
  * Obtiene el detalle completo de un producto.

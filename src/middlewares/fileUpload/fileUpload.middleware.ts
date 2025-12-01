@@ -17,10 +17,10 @@ const limits = {
 };
 
 /**
- * Filtro de tipos de archivo permitidos.
+ * Filtro de tipos de archivo permitidos para imágenes.
  * Solo acepta imágenes.
  */
-const fileFilter = (
+const imageFileFilter = (
   req: Request,
   file: Express.Multer.File,
   cb: multer.FileFilterCallback
@@ -46,16 +46,52 @@ const fileFilter = (
 };
 
 /**
- * Instancia de multer configurada.
+ * Filtro de tipos de archivo permitidos para archivos Excel.
+ * Solo acepta archivos .xlsx
  */
-const upload = multer({
+const excelFileFilter = (
+  req: Request,
+  file: Express.Multer.File,
+  cb: multer.FileFilterCallback
+) => {
+  // Tipos MIME permitidos para Excel
+  const allowedMimeTypes = [
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+  ];
+
+  if (allowedMimeTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(
+      new Error(
+        `Invalid file type. Only .xlsx files are allowed`
+      )
+    );
+  }
+};
+
+/**
+ * Instancia de multer configurada para imágenes.
+ */
+const uploadImage = multer({
   storage,
   limits,
-  fileFilter,
+  fileFilter: imageFileFilter,
 });
 
 /**
- * Middleware para manejar upload de un solo archivo.
+ * Instancia de multer configurada para archivos Excel.
+ */
+const uploadExcel = multer({
+  storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB para Excel (pueden ser más grandes)
+  },
+  fileFilter: excelFileFilter,
+});
+
+/**
+ * Middleware para manejar upload de un solo archivo de imagen.
  * El archivo estará disponible en req.file
  * 
  * @param fieldName - Nombre del campo en el formulario (default: 'file')
@@ -64,12 +100,25 @@ const upload = multer({
  * router.post('/upload', uploadSingleFile('logo'), uploadLogoMiddleware);
  */
 export const uploadSingleFile = (fieldName: string = 'file') => {
-  return upload.single(fieldName);
+  return uploadImage.single(fieldName);
+};
+
+/**
+ * Middleware para manejar upload de un solo archivo Excel.
+ * El archivo estará disponible en req.file
+ * 
+ * @param fieldName - Nombre del campo en el formulario (default: 'file')
+ * 
+ * @example
+ * router.post('/import', uploadExcelFile('file'), importMiddleware);
+ */
+export const uploadExcelFile = (fieldName: string = 'file') => {
+  return uploadExcel.single(fieldName);
 };
 
 /**
  * Middleware para validar que se subió un archivo.
- * Debe usarse DESPUÉS de uploadSingleFile().
+ * Debe usarse DESPUÉS de uploadSingleFile() o uploadExcelFile().
  * 
  * @example
  * router.post('/upload', uploadSingleFile('logo'), validateFileExists, uploadLogoMiddleware);

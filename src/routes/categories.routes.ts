@@ -15,13 +15,19 @@ import {
   deleteCategory,
   uploadCategoryImage,
   deleteCategoryImage,
+  reorderCategories,
 } from "../middlewares/categories/categories.middlewares";
 import { 
   uploadSingleFile,
+  uploadExcelFile,
   handleFileUploadError,
   validateFileExists,
 } from "../middlewares/fileUpload/fileUpload.middleware";
-import { reorderCategories } from "../middlewares/categories/categories.middlewares";
+import { exportCategory } from "../middlewares/categories/categories.export.middleware";
+import { 
+  importCategory,
+  validateImportPayload,
+} from "../middlewares/categories/categories.import.middleware";
 // #end-section
 
 // #variable categoriesRouter
@@ -161,8 +167,6 @@ categoriesRouter.delete(
 );
 // #end-route
 
-export default categoriesRouter;
-
 // #route PATCH /reorder - Reordenar categorías
 /**
  * Actualiza el sortOrder de múltiples categorías.
@@ -180,3 +184,49 @@ categoriesRouter.patch(
   reorderCategories
 );
 // #end-route
+
+// #route GET /:id/export - Exportar categoría a Excel
+/**
+ * Exporta una categoría con todos sus productos a un archivo Excel.
+ * El archivo contiene 2 hojas: Categoría y Productos.
+ * 
+ * @route GET /api/categories/:id/export
+ * @access Private
+ * 
+ * @returns Archivo Excel (.xlsx) para descargar
+ */
+categoriesRouter.get(
+  "/:id/export",
+  validateJWTAndGetPayload,
+  validateCategoryId,
+  verifyCategoryOwnership,
+  exportCategory
+);
+// #end-route
+
+// #route POST /import - Importar categoría desde Excel
+/**
+ * Importa una categoría con sus productos desde un archivo Excel.
+ * Crea una nueva categoría en la sucursal destino.
+ * Si el nombre existe, lo renombra automáticamente (ej: "Pizzas (Copia)").
+ * 
+ * @route POST /api/categories/import
+ * @access Private
+ * 
+ * Body (multipart/form-data): {
+ *   branchId: number,
+ *   file: Excel file (.xlsx)
+ * }
+ */
+categoriesRouter.post(
+  "/import",
+  validateJWTAndGetPayload,
+  uploadExcelFile('file'),  // ← CAMBIADO: usar uploadExcelFile en vez de uploadSingleFile
+  validateImportPayload,
+  verifyBranchOwnership,
+  importCategory,
+  handleFileUploadError
+);
+// #end-route
+
+export default categoriesRouter;
