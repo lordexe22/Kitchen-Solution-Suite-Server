@@ -12,6 +12,8 @@ import { usersRouter }  from './routes/users.routes';
 import { categoriesRouter } from './routes/categories.routes';
 import { productsRouter } from './routes/products.routes';
 import { publicRouter } from './routes/public.routes';
+import employeesRouter from './routes/employees.routes';
+import invitationsRouter from './routes/invitations.routes';
 import * as serverConfig from './config/server.config'
 import cookieParser from 'cookie-parser';
 import './db/init';
@@ -36,6 +38,8 @@ app.use('/api/users', usersRouter);
 app.use('/api/categories', categoriesRouter);
 app.use('/api/products', productsRouter);
 app.use('/api/public', publicRouter);
+app.use('/api/employees', employeesRouter);
+app.use('/api/invitations', invitationsRouter);
 // #end-section
 
 app.get("/", (_req, res) => {

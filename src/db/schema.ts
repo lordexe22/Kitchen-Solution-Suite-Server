@@ -15,20 +15,54 @@ npx drizzle-kit migrate -> run pending migrations
 */
 
 // #section Enumeraciones
-export const userTypeEnum = pgEnum('user_type', ['admin', 'employ', 'guest', 'dev']);
+export const userTypeEnum = pgEnum('user_type', ['admin', 'employee', 'guest', 'dev']);
 export const userStateEnum = pgEnum('user_state', ['pending', 'active', 'suspended']);
 export const platformNameEnum = pgEnum('platform_name', ['local', 'google', 'facebook', 'x']);
 export const backgroundModeEnum = pgEnum('background_mode', ['solid', 'gradient']);
 export const gradientTypeEnum = pgEnum('gradient_type', ['linear', 'radial']);
 // #end-section
 // #variable usersTable - Tabla de usuarios
+/**
+ * Tabla principal de usuarios del sistema.
+ * 
+ * Soporta múltiples tipos de usuario mediante el campo 'type':
+ * - admin: Propietario de compañías, control total de sus recursos
+ * - employee: Empleado asignado a UNA sucursal con permisos específicos
+ * - guest: Usuario visitante, solo lectura de recursos públicos
+ * - dev: Usuario desarrollador con acceso especial
+ * 
+ * Campos específicos por tipo:
+ * - employee: Requiere branchId (sucursal asignada) y permissions (JSON)
+ * - admin/guest/dev: branchId y permissions deben ser NULL
+ * 
+ * @field id - Identificador único autoincremental
+ * @field firstName - Nombre del usuario (255 caracteres máx)
+ * @field lastName - Apellido del usuario (255 caracteres máx)
+ * @field email - Email único del usuario
+ * @field passwordHash - Hash bcrypt de la contraseña
+ * @field type - Tipo de usuario (enum: admin, employee, guest, dev)
+ * @field branchId - FK a sucursal (solo para employee, nullable)
+ * @field permissions - JSON con permisos granulares (solo para employee, nullable)
+ * @field createdAt - Fecha de creación
+ * @field updatedAt - Fecha de última actualización
+ * @field isActive - Estado activo/inactivo (email verificado)
+ * @field state - Estado del usuario (enum: pending, active, suspended)
+ * @field imageUrl - URL de la imagen de perfil (Cloudinary)
+ */
 export const usersTable = pgTable('users', {
-  id: serial('id').primaryKey(), // ID autoincremental
+  id: serial('id').primaryKey(),
   firstName: varchar('first_name', { length: 255 }).notNull(),
   lastName: varchar('last_name', { length: 255 }).notNull(),
   email: varchar('email', { length: 255 }).notNull().unique(),
   passwordHash: text('password_hash').notNull(),
   type: userTypeEnum('type').notNull().default('guest'),
+  
+  // Campos específicos para empleados (nullable)
+  // Se mantiene branchId sin FK directa para evitar ciclos de tipo con branchesTable;
+  // la integridad se valida a nivel de servicio.
+  branchId: integer('branch_id'),
+  permissions: text('permissions'), // JSON stringificado de EmployeePermissions
+  
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
   isActive: boolean('is_active').notNull().default(false),
@@ -380,9 +414,66 @@ export const productsTable = pgTable('products', {
   // Orden de visualización (menor = primero)
   sortOrder: integer('sort_order').notNull().default(0),
   
+  
   // Metadata
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 // #end-variable
+
+// #variable employeeInvitationsTable - Tabla de invitaciones para empleados
+/**
+ * Tabla de invitaciones para registro de empleados.
+ * 
+ * Almacena los tokens de invitación generados por owners para que nuevos usuarios
+ * se registren como empleados de una sucursal específica.
+ * 
+ * Características:
+ * - Token único (formato: UUID o hash aleatorio)
+ * - Expiración automática (por defecto 30 días)
+ * - Un solo uso (usedAt marca el momento de uso)
+ * - Auditoría: quién creó la invitación y cuándo se usó
+ * - Soft delete (para histórico)
+ * 
+ * Flujo:
+ * 1. Owner genera invitación → se crea registro con expiresAt = now + 30 días
+ * 2. Un nuevo usuario usa el enlace → middleware valida token
+ * 3. Al registrarse, se marca usedAt = now y se asigna type='employee' + branchId
+ * 4. El token no puede usarse más de una vez
+ * 
+ * @field id - Identificador único
+ * @field token - Token único (UUID), usado en URL de invitación
+ * @field branchId - Sucursal a la que se asignará el empleado
+ * @field companyId - Compañía (desnormalización para queries rápidas)
+ * @field createdBy - userId del owner que creó la invitación
+ * @field expiresAt - Fecha/hora de expiración del token
+ * @field usedAt - Fecha/hora de uso (null = no usado aún)
+ * @field usedByUserId - userId del que usó el token (null = no usado)
+ * @field createdAt - Fecha de creación
+ * @field isActive - Para soft delete
+ */
+export const employeeInvitationsTable = pgTable('employee_invitations', {
+  id: serial('id').primaryKey(),
+  token: varchar('token', { length: 255 }).notNull().unique(), // UUID o hash
+  branchId: serial('branch_id')
+    .notNull()
+    .references(() => branchesTable.id, { onDelete: 'cascade' }),
+  companyId: serial('company_id')
+    .notNull()
+    .references(() => companiesTable.id, { onDelete: 'cascade' }),
+  createdBy: serial('created_by')
+    .notNull()
+    .references(() => usersTable.id, { onDelete: 'set null' }),
+  
+  // Control de expiración y uso
+  expiresAt: timestamp('expires_at').notNull(), // Fecha de expiración
+  usedAt: timestamp('used_at'), // null = no usado, filled = usado
+  usedByUserId: serial('used_by_user_id').references(() => usersTable.id, { onDelete: 'set null' }),
+  
+  // Metadata
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  isActive: boolean('is_active').notNull().default(true), // Para soft delete
+});
+// #end-variable
+
 

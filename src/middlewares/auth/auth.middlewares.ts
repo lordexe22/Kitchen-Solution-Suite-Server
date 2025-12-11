@@ -7,6 +7,7 @@ import { db } from "../../db/init";
 import { usersTable } from "../../db/schema";
 import { eq } from "drizzle-orm";
 import { signJWT, setJWTCookie } from "../../modules/jwtManager";
+import { DEFAULT_EMPLOYEE_PERMISSIONS } from "../../config/permissions.config";
 // #end-section
 // #middleware validateRegisterPayload
 /**
@@ -242,6 +243,8 @@ export const fetchUserDataFromDB = async (
       lastName: user.lastName,
       imageUrl: user.imageUrl ?? null,
       type: user.type,
+      branchId: user.branchId ?? null,
+      permissions: user.permissions ?? null,
       state: user.state,
       isAuthenticated: false,
     };
@@ -276,7 +279,11 @@ export const createJWT = (
     // Usar el módulo jwtManager
     const token = signJWT({ 
       userId: userDataStore.id,
-      email: userDataStore.email 
+      email: userDataStore.email,
+      type: userDataStore.type,
+      branchId: userDataStore.branchId ?? null,
+      permissions: userDataStore.permissions ?? null,
+      state: userDataStore.state,
     });
     res.locals.jwtToken = token;
 
@@ -331,7 +338,7 @@ export const returnUserData = (
       return;
     }
 
-    const { firstName, lastName, email, type, state, imageUrl, isAuthenticated } = userDataStore;
+    const { firstName, lastName, email, type, state, imageUrl, branchId, permissions, isAuthenticated } = userDataStore;
 
     const statusCode = isAuthenticated ? 200 : 201;
 
@@ -343,6 +350,8 @@ export const returnUserData = (
           lastName,
           email,
           type,
+          branchId,
+          permissions,
           state,
           imageUrl,
         },
@@ -493,6 +502,8 @@ export const getUserFromDB = async (
     lastName: user.lastName,
     imageUrl: user.imageUrl ?? null,
     type: user.type,
+    branchId: user.branchId ?? null,
+    permissions: user.permissions ?? null,
     state: user.state,
     isAuthenticated: true,
   };
@@ -548,6 +559,8 @@ export const getUserFromDB = async (
       lastName: user.lastName,
       imageUrl: user.imageUrl ?? null,
       type: user.type,
+      branchId: user.branchId ?? null,
+      permissions: user.permissions ?? null,
       state: user.state,
       isAuthenticated: true,
     };

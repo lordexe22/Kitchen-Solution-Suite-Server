@@ -1,6 +1,14 @@
 /* src\db\schema.types.ts */
 // #interface User
-/** Table representing user accounts */
+/** 
+ * Table representing user accounts.
+ * 
+ * Supports multiple user types:
+ * - admin: Owner of companies, full control
+ * - employee: Assigned to ONE branch with specific permissions
+ * - guest: Visitor, read-only access to public resources
+ * - dev: Developer with special access
+ */
 export interface User {
   /** Unique identifier for the user */
   id: number;
@@ -13,7 +21,11 @@ export interface User {
   /** Hashed password for the user */
   passwordHash: string;
   /** Role of the user in the system */
-  type: 'admin' | 'employ' | 'guest' | 'dev';
+  type: 'admin' | 'employee' | 'guest' | 'dev';
+  /** FK to branch (only for employee type, nullable) */
+  branchId?: number | null;
+  /** JSON string with granular permissions (only for employee type, nullable) */
+  permissions?: string | null;
   /** Timestamp of when the user was created */
   createdAt: Date;
   /** Timestamp of the last update to the user */
@@ -271,3 +283,34 @@ export interface Product {
   updatedAt: Date;
 }
 // #end-interface
+
+// #interface EmployeeInvitation
+/**
+ * Invitación para que nuevos usuarios se registren como empleados.
+ * 
+ * Token temporal con una sola oportunidad de uso y expiración automática.
+ */
+export interface EmployeeInvitation {
+  /** Unique identifier */
+  id: number;
+  /** Unique token used in invitation URL */
+  token: string;
+  /** FK to branch where employee will be assigned */
+  branchId: number;
+  /** FK to company (denormalized for quick queries) */
+  companyId: number;
+  /** userId of the owner who created this invitation */
+  createdBy: number;
+  /** Expiration date/time of the token */
+  expiresAt: Date;
+  /** When this invitation was used (null = unused) */
+  usedAt?: Date | null;
+  /** userId of who used this token (null = unused) */
+  usedByUserId?: number | null;
+  /** Creation timestamp */
+  createdAt: Date;
+  /** Soft delete flag */
+  isActive: boolean;
+}
+// #end-interface
+

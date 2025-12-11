@@ -593,14 +593,14 @@ describe('jwtManager - Edge cases', () => {
     const payload: JWTPayload = {
       userId: 12000,
       email: 'custom@test.com',
-      role: 'admin'
+      type: 'admin'
     };
     const token = signJWT(payload);
     
     const decoded = verifyJWT(token);
     expect(decoded.userId).toBe(12000);
     expect(decoded.email).toBe('custom@test.com');
-    expect(decoded.role).toBe('admin');
+    expect(decoded.type).toBe('admin');
   });
 
   it('should handle malformed Bearer header formats', () => {

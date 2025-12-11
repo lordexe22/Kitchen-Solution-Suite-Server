@@ -797,3 +797,160 @@ export const deleteBranchLocation = async (
   }
 };
 // #end-middleware
+
+// #middleware verifyEmployeeBranchAccess
+/**
+ * Middleware: verifyEmployeeBranchAccess
+ * 
+ * Verifica que un empleado tenga acceso a la sucursal especificada en el request.
+ * 
+ * SOLO para usuarios con type='employee'.
+ * NO verifica ownership (eso es responsabilidad de verifyBranchOwnership para admins).
+ * 
+ * Validaciones:
+ * 1. Extrae branchId del request (params.id, body.branchId o body.categoryId→branch)
+ * 2. Verifica que req.user.type === 'employee'
+ * 3. Verifica que req.user.branchId coincida con el branchId del request
+ * 4. Verifica que la sucursal existe y está activa
+ * 
+ * @param {AuthenticatedRequest} req - Request con user autenticado
+ * @param {Response} res - Response de Express
+ * @param {NextFunction} next - Función para continuar
+ * 
+ * @example
+ * // Verificar acceso de employee a su sucursal antes de editar productos
+ * router.put('/products/:id',
+ *   validateJWTAndGetPayload,
+ *   requireRole('employee'),
+ *   verifyEmployeeBranchAccess,
+ *   requirePermission('products', 'canEdit'),
+ *   updateProduct
+ * );
+ */
+export const verifyEmployeeBranchAccess = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { type, branchId: userBranchId } = req.user || {};
+
+    // Verificar que el usuario es employee
+    if (type !== 'employee') {
+      res.status(403).json({
+        success: false,
+        error: 'Este endpoint requiere ser empleado'
+      });
+      return;
+    }
+
+    // Verificar que el employee tiene branchId asignado
+    if (!userBranchId) {
+      res.status(403).json({
+        success: false,
+        error: 'Empleado sin sucursal asignada'
+      });
+      return;
+    }
+
+    // Extraer branchId del request (puede venir de params o body)
+    const requestBranchId = Number(req.params.id || req.body.branchId);
+
+    if (isNaN(requestBranchId) || requestBranchId <= 0) {
+      res.status(400).json({
+        success: false,
+        error: 'ID de sucursal inválido en el request'
+      });
+      return;
+    }
+
+    // Verificar que el branchId del employee coincide con el del request
+    if (userBranchId !== requestBranchId) {
+      res.status(403).json({
+        success: false,
+        error: 'No tienes acceso a esta sucursal'
+      });
+      return;
+    }
+
+    // Verificar que la sucursal existe y está activa
+    const [branch] = await db
+      .select()
+      .from(branchesTable)
+      .where(
+        and(
+          eq(branchesTable.id, requestBranchId),
+          eq(branchesTable.isActive, true)
+        )
+      )
+      .limit(1);
+
+    if (!branch) {
+      res.status(404).json({
+        success: false,
+        error: 'Sucursal no encontrada o inactiva'
+      });
+      return;
+    }
+
+    next();
+  } catch (error) {
+    console.error('Error verificando acceso de empleado a sucursal:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al verificar permisos'
+    });
+  }
+};
+// #end-middleware
+
+// #middleware requireBranchAccess
+/**
+ * Middleware: requireBranchAccess
+ * 
+ * Middleware compuesto que verifica acceso a sucursal según tipo de usuario:
+ * - admin: delega a verifyBranchOwnership (ownership via company)
+ * - employee: delega a verifyEmployeeBranchAccess (branchId match)
+ * - otros: bloquea con 403
+ * 
+ * Este middleware orquesta la decisión de qué lógica aplicar según el tipo
+ * de usuario, manteniendo separadas las responsabilidades.
+ * 
+ * @param {AuthenticatedRequest} req - Request con user autenticado
+ * @param {Response} res - Response de Express
+ * @param {NextFunction} next - Función para continuar
+ * 
+ * @example
+ * // Permitir a admin (owner) y employee (asignado) editar productos
+ * router.put('/products/:id',
+ *   validateJWTAndGetPayload,
+ *   requireRole('admin', 'employee'),
+ *   requireBranchAccess, // Admin: ownership, Employee: branchId match
+ *   requirePermission('products', 'canEdit'),
+ *   updateProduct
+ * );
+ */
+export const requireBranchAccess = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const userType = req.user?.type;
+
+  if (userType === 'admin') {
+    // Delegar a la lógica existente de ownership
+    return verifyBranchOwnership(req, res, next);
+  }
+
+  if (userType === 'employee') {
+    // Delegar a la lógica específica de employee
+    return verifyEmployeeBranchAccess(req, res, next);
+  }
+
+  // Guest, dev u otros no tienen acceso
+  res.status(403).json({
+    success: false,
+    error: 'No tienes permisos para acceder a esta sucursal'
+  });
+};
+// #end-middleware

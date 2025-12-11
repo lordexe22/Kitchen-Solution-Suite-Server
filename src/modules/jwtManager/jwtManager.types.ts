@@ -8,14 +8,22 @@ import { Request } from 'express';
  * 
  * @property {number} userId - ID único del usuario en la base de datos
  * @property {string} [email] - Email del usuario (opcional)
- * @property {string} [role] - Rol del usuario en el sistema (opcional)
+ * @property {UserType} [type] - Tipo de usuario en el sistema
+ * @property {number | null} [branchId] - Sucursal asignada si es employee
+ * @property {string | null} [permissions] - Permisos (JSON stringificado) si es employee
+ * @property {'pending' | 'active' | 'suspended'} [state] - Estado del usuario
  * @property {number} [iat] - Timestamp de emisión del token (issued at)
  * @property {number} [exp] - Timestamp de expiración del token (expiration)
  */
+export type UserType = 'admin' | 'employee' | 'guest' | 'dev';
+
 export interface JWTPayload {
   userId: number;
   email?: string;
-  role?: string;
+  type?: UserType;
+  branchId?: number | null;
+  permissions?: string | null;
+  state?: 'pending' | 'active' | 'suspended';
   iat?: number;
   exp?: number;
 }
