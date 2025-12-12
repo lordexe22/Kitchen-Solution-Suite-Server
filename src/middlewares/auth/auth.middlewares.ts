@@ -155,7 +155,10 @@ export const hashPasswordMiddleware = async (
  * Middleware: addNewUserDataToDB
  *
  * Inserta un nuevo usuario en la base de datos.
- * Solo se encarga de la inserción.
+ * 
+ * Lógica de asignación de tipo:
+ * - Primer usuario del sistema → admin (ownership)
+ * - Usuarios subsecuentes → guest (hasta que se conviertan en employee vía invitación)
  */
 export const addNewUserDataToDB = async (
   req: Request,
@@ -188,6 +191,26 @@ export const addNewUserDataToDB = async (
       return;
     }
 
+    // #step 1 - Verificar si es el primer usuario del sistema
+    const [anyUser] = await db
+      .select()
+      .from(usersTable)
+      .limit(1);
+    
+    const isFirstUser = !anyUser;
+    console.log(`🔍 ¿Es el primer usuario? ${isFirstUser ? 'SÍ' : 'NO'}`);
+    // #end-step
+
+    // #step 2 - Asignar tipo de usuario según lógica de negocio
+    const userType: 'admin' | 'guest' = isFirstUser ? 'admin' : 'guest';
+    const userState: 'pending' | 'active' = isFirstUser ? 'active' : 'pending';
+    const isActive = isFirstUser; // Primer usuario (admin) se activa automáticamente
+    
+    console.log(`👤 Tipo de usuario: ${userType}`);
+    console.log(`📊 Estado: ${userState}`);
+    console.log(`✅ isActive: ${isActive}`);
+    // #end-step
+
     // Construir datos del usuario
     const newUserData = {
       firstName,
@@ -195,16 +218,19 @@ export const addNewUserDataToDB = async (
       email,
       passwordHash: passwordHash ?? '',
       imageUrl: platformName === 'google' ? imageUrl ?? null : null,
-      type: 'guest' as const,
-      state: 'pending' as const,
-      isActive: false,
+      type: userType,
+      state: userState,
+      isActive,
     };
 
     // Insertar en la base de datos
     await db.insert(usersTable).values(newUserData);
 
+    console.log(`✅ Usuario creado exitosamente como ${userType}`);
+
     next();
   } catch (err) {
+    console.error('❌ Error en addNewUserDataToDB:', err);
     res.status(500).json({ error: 'Error adding user to database' });
   }
 };

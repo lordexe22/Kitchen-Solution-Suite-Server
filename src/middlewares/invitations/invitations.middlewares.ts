@@ -121,13 +121,13 @@ export const verifyInvitationBranchOwnership = async (
 
 // #middleware validateInvitationTokenMiddleware
 /**
- * Valida un token de invitación desde query params.
+ * Valida un token de invitación desde query params (REQUERIDO).
  * 
- * Se ejecuta al acceder al endpoint de validación o durante el registro.
- * Agrega los datos de la invitación a req.body para uso posterior.
+ * Este middleware se usa exclusivamente en la ruta /register/invitation
+ * donde el token es obligatorio.
  * 
  * Query param:
- * - token: string (token de invitación)
+ * - token: string (requerido - token de invitación)
  */
 export const validateInvitationTokenMiddleware = async (
   req: AuthenticatedRequest,
@@ -147,6 +147,7 @@ export const validateInvitationTokenMiddleware = async (
   // #end-step
 
   // #step 2 - Validar el token usando el servicio
+  console.log('🎫 Validando token de invitación:', token);
   const validation = await validateInvitationToken(token);
   // #end-step
 
@@ -161,6 +162,7 @@ export const validateInvitationTokenMiddleware = async (
   // #end-step
 
   // #step 4 - Guardar datos validados en req para uso posterior
+  console.log('✅ Token de invitación válido');
   req.body.invitationToken = token;
   req.body.invitationData = {
     branchId: validation.branchId,

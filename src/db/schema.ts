@@ -455,20 +455,20 @@ export const productsTable = pgTable('products', {
 export const employeeInvitationsTable = pgTable('employee_invitations', {
   id: serial('id').primaryKey(),
   token: varchar('token', { length: 255 }).notNull().unique(), // UUID o hash
-  branchId: serial('branch_id')
+  branchId: integer('branch_id')
     .notNull()
     .references(() => branchesTable.id, { onDelete: 'cascade' }),
-  companyId: serial('company_id')
+  companyId: integer('company_id')
     .notNull()
     .references(() => companiesTable.id, { onDelete: 'cascade' }),
-  createdBy: serial('created_by')
+  createdBy: integer('created_by')
     .notNull()
     .references(() => usersTable.id, { onDelete: 'set null' }),
   
   // Control de expiración y uso
   expiresAt: timestamp('expires_at').notNull(), // Fecha de expiración
   usedAt: timestamp('used_at'), // null = no usado, filled = usado
-  usedByUserId: serial('used_by_user_id').references(() => usersTable.id, { onDelete: 'set null' }),
+  usedByUserId: integer('used_by_user_id').references(() => usersTable.id, { onDelete: 'set null' }),
   
   // Metadata
   createdAt: timestamp('created_at').notNull().defaultNow(),

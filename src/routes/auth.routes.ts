@@ -28,13 +28,42 @@ export const authRouter = Router();
 
 authRouter.use('/jwt', jwtManagerRoutes);
 
+// #route POST /register - Registro normal de usuarios
+/**
+ * Endpoint de registro tradicional (sin invitación):
+ * - Primer usuario → admin (ownership)
+ * - Usuarios subsecuentes → guest
+ * 
+ * @route POST /api/auth/register
+ */
 authRouter.post(API_ROUTES.REGISTER_URL,
-  validateInvitationTokenMiddleware, // Valida invitación si viene en query params
   validateRegisterPayload,
   hashPasswordMiddleware,
   addNewUserDataToDB,
   savePlatformToken,
-  processInvitationIfPresent, // Procesa invitación si es válida
+  fetchUserDataFromDB,
+  createJWT,
+  setJWTonCookies,
+  returnUserData
+)
+
+// #route POST /register/invitation - Registro con invitación de empleado
+/**
+ * Endpoint de registro con token de invitación:
+ * - Requiere token válido en query params
+ * - Crea usuario como employee asignado a sucursal
+ * - Asigna permisos por defecto
+ * 
+ * @route POST /api/auth/register/invitation?token={invitationToken}
+ * @query token - Token de invitación (requerido)
+ */
+authRouter.post(`${API_ROUTES.REGISTER_URL}/invitation`,
+  validateInvitationTokenMiddleware, // Valida token (requerido en esta ruta)
+  validateRegisterPayload,
+  hashPasswordMiddleware,
+  addNewUserDataToDB,
+  savePlatformToken,
+  processInvitationIfPresent, // Convierte a employee
   fetchUserDataFromDB,
   createJWT,
   setJWTonCookies,
