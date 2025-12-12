@@ -163,13 +163,20 @@ export const validateInvitationTokenMiddleware = async (
 
   // #step 4 - Guardar datos validados en req para uso posterior
   console.log('✅ Token de invitación válido');
-  req.body.invitationToken = token;
-  req.body.invitationData = {
+  const invitationData = {
     branchId: validation.branchId,
     companyId: validation.companyId,
     branchName: validation.branchName,
     companyName: validation.companyName
   };
+
+  // Guardar en res.locals para sobrevivir a middlewares que sobreescriben req.body
+  res.locals.invitationToken = token;
+  res.locals.invitationData = invitationData;
+
+  // Mantener en req.body por compatibilidad
+  req.body.invitationToken = token;
+  req.body.invitationData = invitationData;
   // #end-step
 
   next();

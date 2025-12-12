@@ -62,7 +62,10 @@ export const validateRegisterPayload = (
         firstName: processedName,
         lastName: processedLastName,
         email: processedEmail,
-        password
+        password,
+        // preservar datos de invitación si existen en res.locals
+        invitationToken: (req.res?.locals as any)?.invitationToken,
+        invitationData: (req.res?.locals as any)?.invitationData,
       };
 
       return next();
@@ -89,6 +92,8 @@ export const validateRegisterPayload = (
         email: processedEmail,
         platformToken,
         imageUrl: imageUrl?.trim() || null,
+        invitationToken: (req.res?.locals as any)?.invitationToken,
+        invitationData: (req.res?.locals as any)?.invitationData,
       };
 
       return next();

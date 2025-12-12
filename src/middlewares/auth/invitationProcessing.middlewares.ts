@@ -29,7 +29,10 @@ export const processInvitationIfPresent = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { invitationToken, invitationData, email } = req.body;
+    // Leer de req.body o res.locals (puede haber sido sobreescrito antes)
+    const invitationToken = (req.body as any)?.invitationToken ?? (res.locals as any)?.invitationToken;
+    const invitationData = (req.body as any)?.invitationData ?? (res.locals as any)?.invitationData;
+    const { email } = req.body;
 
     // #step 1 - Si no hay invitación, continuar normalmente
     if (!invitationToken || !invitationData) {

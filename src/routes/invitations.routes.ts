@@ -115,6 +115,10 @@ router.get(
     try {
       const token = req.query.token as string;
 
+      console.log('[GET /invitations/validate] inicio', {
+        token: token ? token.substring(0, 12) + '...' : 'null'
+      });
+
       if (!token || typeof token !== 'string') {
         res.status(400).json({
           success: false,
@@ -125,20 +129,27 @@ router.get(
 
       const validation = await validateInvitationToken(token);
 
-      res.status(200).json({
-        success: validation.valid,
+      console.log('[GET /invitations/validate] resultado', {
         valid: validation.valid,
-        data: validation.valid
-          ? {
-              branchId: validation.branchId,
-              companyId: validation.companyId,
-              branchName: validation.branchName,
-              companyName: validation.companyName,
-              expiresAt: validation.expiresAt,
-              expiresIn: validation.expiresIn
-            }
-          : null,
+        branchId: validation.branchId,
+        companyId: validation.companyId,
+        expiresAt: validation.expiresAt,
         error: validation.error
+      });
+
+      res.status(200).json({
+        // Siempre success=true para que el cliente reciba el payload completo
+        success: true,
+        data: {
+          valid: validation.valid,
+          branchId: validation.branchId,
+          companyId: validation.companyId,
+          branchName: validation.branchName,
+          companyName: validation.companyName,
+          expiresAt: validation.expiresAt,
+          expiresIn: validation.expiresIn,
+          error: validation.error
+        }
       });
     } catch (error) {
       console.error('[GET /invitations/validate] Error al validar invitación:', error);
