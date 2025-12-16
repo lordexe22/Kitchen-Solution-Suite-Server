@@ -144,13 +144,14 @@ authRouter.get('/test-permissions/products-edit',
   }
 );
 
-// #route GET /test-permissions/categories-delete - Prueba permiso de eliminación
+// #route GET /test-permissions/categories-delete - Prueba permiso de edición/eliminación
 /**
- * RUTA TEMPORAL DE PRUEBA - Permiso de eliminación de categorías
+ * RUTA TEMPORAL DE PRUEBA - Permiso de edición/eliminación de categorías
  * 
- * Prueba requirePermission con módulo 'categories' y acción 'canDelete'.
+ * Prueba requirePermission con módulo 'categories' y acción 'canEdit'.
+ * Nota: canEdit incluye crear, modificar y eliminar.
  * Admin: siempre pasa
- * Employee: debe tener el permiso explícito (probablemente no lo tenga)
+ * Employee: debe tener el permiso explícito
  * 
  * @route GET /api/auth/test-permissions/categories-delete
  * @access Private (admin bypass, employee con permiso)
@@ -158,11 +159,11 @@ authRouter.get('/test-permissions/products-edit',
 authRouter.get('/test-permissions/categories-delete',
   validateJWTAndGetPayload,
   requireRole('admin', 'employee'),
-  requirePermission('categories', 'canDelete'),
+  requirePermission('categories', 'canEdit'),
   (req: AuthenticatedRequest, res: Response) => {
     res.json({
       success: true,
-      message: '✅ Tienes permiso para eliminar categorías',
+      message: '✅ Tienes permiso para editar/eliminar categorías',
       user: {
         userId: req.user?.userId,
         type: req.user?.type,

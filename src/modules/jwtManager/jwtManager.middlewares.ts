@@ -128,6 +128,8 @@ export const validateJWTAndGetPayload = (
   res: Response,
   next: NextFunction
 ): Response | void => {
+  console.log(`\n🔑 [validateJWTAndGetPayload] START - ${req.method} ${req.path}`);
+
   let token = getJWTFromCookie(req);
 
   if (!token) {
@@ -135,6 +137,7 @@ export const validateJWTAndGetPayload = (
   }
 
   if (!token) {
+    console.log(`  ❌ No token found`);
     return res.status(401).json({
       success: false,
       error: 'Authentication required'
@@ -143,9 +146,11 @@ export const validateJWTAndGetPayload = (
 
   try {
     const payload = verifyJWT(token);
+    console.log(`  ✅ JWT verified - userId: ${payload.userId}, type: ${payload.type}`);
     req.user = payload;
     next();
   } catch (error) {
+    console.error(`  ❌ JWT verification failed:`, error);
     return res.status(401).json({
       success: false,
       error: 'Invalid or expired token'

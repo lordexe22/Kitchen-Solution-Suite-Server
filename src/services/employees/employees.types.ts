@@ -4,7 +4,32 @@
 import type { EmployeePermissions } from '../../config/permissions.config';
 // #end-section
 
-// #type EmployeeCreateDTO
+// #type EmployeeDBPermissions
+/**
+ * Mapeo directo de los campos de la tabla employee_permissions en la BD.
+ * 
+ * Se usa internamente para convertir entre formato BD (columnas booleanas)
+ * y formato de aplicación (EmployeePermissions con estructura jerárquica).
+ */
+export interface EmployeeDBPermissions {
+  id: number;
+  userId: number;
+  productsCanView: boolean;
+  productsCanEdit: boolean;
+  productsCanDelete: boolean;
+  categoriesCanView: boolean;
+  categoriesCanEdit: boolean;
+  categoriesCanDelete: boolean;
+  schedulesCanView: boolean;
+  schedulesCanEdit: boolean;
+  schedulesCanDelete: boolean;
+  socialsCanView: boolean;
+  socialsCanEdit: boolean;
+  socialsCanDelete: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+// #end-type
 /**
  * DTO para crear un nuevo empleado.
  * 

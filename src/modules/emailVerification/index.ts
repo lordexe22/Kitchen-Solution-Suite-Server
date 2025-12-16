@@ -34,7 +34,7 @@ export {
   sendVerificationEmailMiddleware,
   verifyEmailTokenMiddleware,
   resendVerificationEmailMiddleware,
-  requireVerifiedEmail,
+  protectUnverifiedEmailMiddleware,
 } from './emailVerification.middlewares';
 // #end-section
 

@@ -82,7 +82,7 @@ export const requireRole = (...allowedRoles: UserType[]) => {
  * Debe ejecutarse DESPUÉS de validateJWTAndGetPayload y requireRole.
  * 
  * @param module - Módulo a verificar (ej: 'products', 'categories')
- * @param action - Acción requerida (ej: 'canEdit', 'canDelete')
+ * @param action - Acción requerida ('canView' o 'canEdit', donde canEdit incluye crear/modificar/eliminar)
  * @returns Middleware de Express
  * 
  * @example
@@ -110,10 +110,15 @@ export const requirePermission = (
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     const { type, permissions, email, userId } = req.user || {};
 
+    console.log(`\n📋 [requirePermission] START - Module: ${module}, Action: ${action}`);
+    console.log(`  - userType: ${type}`);
+    console.log(`  - email: ${email}`);
+    console.log(`  - userId: ${userId}`);
+
     // Admin siempre tiene todos los permisos (bypass)
     if (type === 'admin') {
       console.log(
-        `[requirePermission] ✓ Admin bypass - Usuario: ${email} | Permiso: ${module}.${action}`
+        `  ✅ Admin bypass - Permiso: ${module}.${action}`
       );
       next();
       return;
@@ -121,36 +126,49 @@ export const requirePermission = (
 
     // Employee debe tener el permiso específico
     if (type === 'employee') {
+      console.log(`  - Checking EMPLOYEE permissions...`);
+      console.log(`  - Raw permissions from JWT (type):`, typeof permissions);
+      console.log(`  - Raw permissions from JWT:`, permissions);
+
       let employeePermissions: EmployeePermissions | null = null;
 
-      // Parsear permisos desde JSON
-      try {
-        employeePermissions = permissions ? JSON.parse(permissions) : null;
-      } catch (error) {
-        console.error(
-          `[requirePermission] Error al parsear permisos - Usuario: ${email} (ID: ${userId})`,
-          error
-        );
-        res.status(500).json({
-          success: false,
-          error: 'Error al verificar permisos'
-        });
-        return;
+      // Si permissions ya es un objeto (parseado por JWT), usarlo directamente
+      // Si es string, parsearlo
+      if (typeof permissions === 'string') {
+        try {
+          employeePermissions = JSON.parse(permissions);
+          console.log(`  - Parsed permissions from string:`, employeePermissions);
+        } catch (error) {
+          console.error(
+            `  ❌ Error parsing permissions - Usuario: ${email} (ID: ${userId})`,
+            error
+          );
+          res.status(500).json({
+            success: false,
+            error: 'Error al verificar permisos'
+          });
+          return;
+        }
+      } else if (permissions) {
+        // Ya es un objeto
+        employeePermissions = permissions as any as EmployeePermissions;
+        console.log(`  - Permissions already parsed (object):`, employeePermissions);
       }
 
       // Verificar permiso usando la utilidad
       const hasAccess = hasPermission(employeePermissions, module, action);
+      console.log(`  - hasPermission result for ${module}.${action}:`, hasAccess);
       
       if (hasAccess) {
         console.log(
-          `[requirePermission] ✓ Permiso concedido - Usuario: ${email} | Permiso: ${module}.${action}`
+          `  ✅ Permiso concedido - Permiso: ${module}.${action}`
         );
         next();
         return;
       }
 
       console.warn(
-        `[requirePermission] Permiso denegado - Usuario: ${email} (ID: ${userId}) | Permiso requerido: ${module}.${action}`
+        `  ❌ Permiso denegado - Permiso requerido: ${module}.${action}`
       );
       res.status(403).json({
         success: false,

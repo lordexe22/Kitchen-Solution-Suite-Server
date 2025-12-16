@@ -2,11 +2,12 @@
 // #section Imports
 import { Router } from "express";
 import { validateJWTAndGetPayload } from "../modules/jwtManager";
+import { requirePermission } from "../middlewares/authorization/authorization.middlewares";
+import { verifyEmployeeBranchAccess } from "../middlewares/branches/branches.middlewares";
 import {
   validateCategoryId,
   validateCreateCategoryPayload,
   validateUpdateCategoryPayload,
-  verifyBranchOwnership,
   verifyCategoryOwnership,
   createCategory,
   getBranchCategories,
@@ -56,7 +57,8 @@ categoriesRouter.post(
   "/",
   validateJWTAndGetPayload,
   validateCreateCategoryPayload,
-  verifyBranchOwnership,
+  verifyEmployeeBranchAccess,
+  requirePermission('categories', 'canEdit'),
   createCategory
 );
 // #end-route
@@ -72,6 +74,7 @@ categoriesRouter.post(
 categoriesRouter.get(
   "/branch/:branchId",
   validateJWTAndGetPayload,
+  requirePermission('categories', 'canView'),
   getBranchCategories
 );
 // #end-route
@@ -88,6 +91,7 @@ categoriesRouter.get(
   validateJWTAndGetPayload,
   validateCategoryId,
   verifyCategoryOwnership,
+  requirePermission('categories', 'canView'),
   getCategoryById
 );
 // #end-route
@@ -115,6 +119,7 @@ categoriesRouter.put(
   validateCategoryId,
   verifyCategoryOwnership,
   validateUpdateCategoryPayload,
+  requirePermission('categories', 'canEdit'),
   updateCategory
 );
 // #end-route
@@ -132,6 +137,7 @@ categoriesRouter.delete(
   validateJWTAndGetPayload,
   validateCategoryId,
   verifyCategoryOwnership,
+  requirePermission('categories', 'canEdit'),
   deleteCategory
 );
 // #end-route
@@ -146,6 +152,9 @@ categoriesRouter.delete(
 categoriesRouter.post(
   '/:id/image',
   validateJWTAndGetPayload,
+  validateCategoryId,
+  verifyCategoryOwnership,
+  requirePermission('categories', 'canEdit'),
   uploadSingleFile('image'),
   validateFileExists,
   uploadCategoryImage,
@@ -163,6 +172,9 @@ categoriesRouter.post(
 categoriesRouter.delete(
   '/:id/image',
   validateJWTAndGetPayload,
+  validateCategoryId,
+  verifyCategoryOwnership,
+  requirePermission('categories', 'canEdit'),
   deleteCategoryImage
 );
 // #end-route
@@ -181,6 +193,7 @@ categoriesRouter.delete(
 categoriesRouter.patch(
   "/reorder",
   validateJWTAndGetPayload,
+  requirePermission('categories', 'canEdit'),
   reorderCategories
 );
 // #end-route
@@ -200,6 +213,7 @@ categoriesRouter.get(
   validateJWTAndGetPayload,
   validateCategoryId,
   verifyCategoryOwnership,
+  requirePermission('categories', 'canView'),
   exportCategory
 );
 // #end-route
@@ -223,7 +237,8 @@ categoriesRouter.post(
   validateJWTAndGetPayload,
   uploadExcelFile('file'),  // ← CAMBIADO: usar uploadExcelFile en vez de uploadSingleFile
   validateImportPayload,
-  verifyBranchOwnership,
+  verifyEmployeeBranchAccess,
+  requirePermission('categories', 'canEdit'),
   importCategory,
   handleFileUploadError
 );

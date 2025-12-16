@@ -22,6 +22,7 @@ export interface JWTPayload {
   email?: string;
   type?: UserType;
   branchId?: number | null;
+    companyId?: number | null;
   permissions?: string | null;
   state?: 'pending' | 'active' | 'suspended';
   iat?: number;

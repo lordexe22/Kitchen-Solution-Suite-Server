@@ -2,6 +2,7 @@
 // #section Imports
 import { Router } from "express";
 import { validateJWTAndGetPayload } from "../modules/jwtManager";
+import { requirePermission } from "../middlewares/authorization/authorization.middlewares";
 import { 
   uploadSingleFile, 
   validateFileExists,
@@ -73,6 +74,7 @@ productsRouter.post(
   validateJWTAndGetPayload,
   validateCreateProductPayload,
   verifyCategoryOwnership,
+  requirePermission('products', 'canEdit'),
   createProduct
 );
 // #end-route
@@ -87,6 +89,7 @@ productsRouter.post(
 productsRouter.get(
   "/category/:categoryId",
   validateJWTAndGetPayload,
+  requirePermission('products', 'canView'),
   getCategoryProducts
 );
 // #end-route
@@ -102,6 +105,7 @@ productsRouter.get(
   "/:id",
   validateJWTAndGetPayload,
   validateProductId,
+  requirePermission('products', 'canView'),
   getProductById
 );
 // #end-route
@@ -131,6 +135,7 @@ productsRouter.put(
   validateProductId,
   verifyProductOwnership,
   validateUpdateProductPayload,
+  requirePermission('products', 'canEdit'),
   updateProduct
 );
 // #end-route
@@ -148,6 +153,7 @@ productsRouter.delete(
   validateJWTAndGetPayload,
   validateProductId,
   verifyProductOwnership,
+  requirePermission('products', 'canEdit'),
   deleteProduct
 );
 // #end-route
@@ -166,6 +172,7 @@ productsRouter.delete(
 productsRouter.patch(
   "/reorder",
   validateJWTAndGetPayload,
+  requirePermission('products', 'canEdit'),
   reorderProducts
 );
 // #end-route
@@ -183,6 +190,7 @@ productsRouter.post(
   validateJWTAndGetPayload,
   validateProductId,
   verifyProductOwnership,
+  requirePermission('products', 'canEdit'),
   uploadMultiple,
   uploadProductImages,
   handleFileUploadError
@@ -205,6 +213,7 @@ productsRouter.delete(
   validateJWTAndGetPayload,
   validateProductId,
   verifyProductOwnership,
+  requirePermission('products', 'canEdit'),
   deleteProductImage
 );
 // #end-route
@@ -226,6 +235,7 @@ productsRouter.patch(
   validateJWTAndGetPayload,
   validateProductId,
   verifyProductOwnership,
+  requirePermission('products', 'canEdit'),
   reorderProductImages
 );
 // #end-route

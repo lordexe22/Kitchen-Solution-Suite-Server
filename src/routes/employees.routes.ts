@@ -15,6 +15,7 @@ import {
 } from '../middlewares/employees/employees.middlewares';
 import {
   createEmployee,
+  getEmployeePermissions,
   updateEmployeePermissions,
   listEmployees,
   deactivateEmployee
@@ -68,6 +69,59 @@ router.post(
       res.status(500).json({
         success: false,
         error: 'Error al crear empleado'
+      });
+    }
+  }
+);
+// #end-route
+
+// #route GET /employees/:id/permissions
+/**
+ * Obtiene los permisos actuales de un empleado.
+ * 
+ * Solo admin puede obtener los permisos de un empleado.
+ * El admin debe ser dueño de la compañía del empleado.
+ * 
+ * Params:
+ * - id: number (employeeId)
+ * 
+ * Response:
+ * - permissions: EmployeePermissions
+ * 
+ * Middlewares:
+ * 1. validateJWTAndGetPayload - Autentica al usuario
+ * 2. requireRole('admin') - Solo admin puede ver permisos
+ * 3. verifyEmployeeOwnership - Verifica ownership del empleado
+ */
+router.get(
+  '/:id/permissions',
+  validateJWTAndGetPayload,
+  requireRole('admin'),
+  verifyEmployeeOwnership,
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const employeeId = parseInt(req.params.id);
+      const adminId = req.user!.userId;
+      const permissions = await getEmployeePermissions(employeeId, adminId);
+
+      res.status(200).json({
+        success: true,
+        data: { permissions }
+      });
+    } catch (error) {
+      console.error('[GET /employees/:id/permissions] Error al obtener permisos:', error);
+      
+      if (error instanceof Error && error.message === 'Empleado no encontrado') {
+        res.status(404).json({
+          success: false,
+          error: error.message
+        });
+        return;
+      }
+
+      res.status(500).json({
+        success: false,
+        error: 'Error al obtener permisos'
       });
     }
   }

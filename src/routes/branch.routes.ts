@@ -2,11 +2,13 @@
 // #section Imports
 import { Router } from "express";
 import { validateJWTAndGetPayload } from "../modules/jwtManager";
+import { requirePermission } from "../middlewares/authorization/authorization.middlewares";
 import {
   validateCreateBranchPayload,
   validateUpdateBranchPayload,
   validateBranchId,
   verifyBranchOwnership,
+  verifyEmployeeBranchAccess,
   verifyCompanyOwnership,
   createBranch,
   getCompanyBranches,
@@ -192,7 +194,8 @@ branchesRouter.post(
   "/:id/socials",
   validateJWTAndGetPayload,
   validateBranchId,
-  verifyBranchOwnership,
+  verifyEmployeeBranchAccess,
+  requirePermission('socials', 'canEdit'),
   validateCreateSocialPayload,
   createBranchSocial
 );
@@ -208,7 +211,8 @@ branchesRouter.get(
   "/:id/socials",
   validateJWTAndGetPayload,
   validateBranchId,
-  verifyBranchOwnership,
+  verifyEmployeeBranchAccess,
+  requirePermission('socials', 'canView'),
   getBranchSocials
 );
 // #end-route
@@ -227,7 +231,8 @@ branchesRouter.put(
   "/:id/socials/:socialId",
   validateJWTAndGetPayload,
   validateBranchId,
-  verifyBranchOwnership,
+  verifyEmployeeBranchAccess,
+  requirePermission('socials', 'canEdit'),
   validateSocialId,
   validateCreateSocialPayload,
   updateBranchSocial
@@ -244,7 +249,8 @@ branchesRouter.delete(
   "/:id/socials/:socialId",
   validateJWTAndGetPayload,
   validateBranchId,
-  verifyBranchOwnership,
+  verifyEmployeeBranchAccess,
+  requirePermission('socials', 'canEdit'),
   validateSocialId,
   deleteBranchSocial
 );
@@ -267,7 +273,8 @@ branchesRouter.post(
   "/:id/schedules",
   validateJWTAndGetPayload,
   validateBranchId,
-  verifyBranchOwnership,
+  verifyEmployeeBranchAccess,
+  requirePermission('schedules', 'canEdit'),
   validateCreateSchedulePayload,
   createBranchSchedule
 );
@@ -284,7 +291,8 @@ branchesRouter.get(
   "/:id/schedules",
   validateJWTAndGetPayload,
   validateBranchId,
-  verifyBranchOwnership,
+  verifyEmployeeBranchAccess,
+  requirePermission('schedules', 'canView'),
   getBranchSchedules
 );
 // #end-route
@@ -307,7 +315,8 @@ branchesRouter.put(
   "/:id/schedules/batch",
   validateJWTAndGetPayload,
   validateBranchId,
-  verifyBranchOwnership,
+  verifyEmployeeBranchAccess,
+  requirePermission('schedules', 'canEdit'),
   upsertBranchSchedules
 );
 // #end-route
@@ -329,7 +338,8 @@ branchesRouter.put(
   "/:id/schedules/:scheduleId",
   validateJWTAndGetPayload,
   validateBranchId,
-  verifyBranchOwnership,
+  verifyEmployeeBranchAccess,
+  requirePermission('schedules', 'canEdit'),
   validateScheduleId,
   validateCreateSchedulePayload,
   updateBranchSchedule
@@ -347,7 +357,8 @@ branchesRouter.delete(
   "/:id/schedules/:scheduleId",
   validateJWTAndGetPayload,
   validateBranchId,
-  verifyBranchOwnership,
+  verifyEmployeeBranchAccess,
+  requirePermission('schedules', 'canEdit'),
   validateScheduleId,
   deleteBranchSchedule
 );

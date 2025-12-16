@@ -32,8 +32,8 @@ export const gradientTypeEnum = pgEnum('gradient_type', ['linear', 'radial']);
  * - dev: Usuario desarrollador con acceso especial
  * 
  * Campos específicos por tipo:
- * - employee: Requiere branchId (sucursal asignada) y permissions (JSON)
- * - admin/guest/dev: branchId y permissions deben ser NULL
+ * - employee: Requiere branchId (sucursal asignada). Los permisos se almacenan en la tabla employee_permissions
+ * - admin/guest/dev: branchId debe ser NULL
  * 
  * @field id - Identificador único autoincremental
  * @field firstName - Nombre del usuario (255 caracteres máx)
@@ -42,7 +42,6 @@ export const gradientTypeEnum = pgEnum('gradient_type', ['linear', 'radial']);
  * @field passwordHash - Hash bcrypt de la contraseña
  * @field type - Tipo de usuario (enum: admin, employee, guest, dev)
  * @field branchId - FK a sucursal (solo para employee, nullable)
- * @field permissions - JSON con permisos granulares (solo para employee, nullable)
  * @field createdAt - Fecha de creación
  * @field updatedAt - Fecha de última actualización
  * @field isActive - Estado activo/inactivo (email verificado)
@@ -57,11 +56,10 @@ export const usersTable = pgTable('users', {
   passwordHash: text('password_hash').notNull(),
   type: userTypeEnum('type').notNull().default('guest'),
   
-  // Campos específicos para empleados (nullable)
+  // Campo específico para empleados: ID de la sucursal (nullable)
   // Se mantiene branchId sin FK directa para evitar ciclos de tipo con branchesTable;
   // la integridad se valida a nivel de servicio.
   branchId: integer('branch_id'),
-  permissions: text('permissions'), // JSON stringificado de EmployeePermissions
   
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
@@ -70,6 +68,76 @@ export const usersTable = pgTable('users', {
   imageUrl: text('image_url'),
 });
 // #end-variable
+
+// #variable employeePermissionsTable - Tabla de permisos de empleados
+/**
+ * Tabla de permisos granulares para empleados.
+ * 
+ * Almacena los permisos específicos que tiene cada empleado sobre los módulos
+ * de la sucursal a la que está asignado.
+ * 
+ * Modelo de permisos:
+ * - 4 módulos: products, categories, schedules, socials
+ * - 2 acciones por módulo: canView, canEdit (editar incluye crear, modificar y eliminar)
+ * - Total: 8 columnas booleanas (4 módulos × 2 acciones)
+ * 
+ * Características:
+ * - Relación 1:1 con users (userId unique)
+ * - Solo para users con type='employee'
+ * - Default: todos los permisos en false (zero-trust)
+ * - FK a users con cascade delete
+ * - Optimizado para queries rápidas con índices en columnas booleanas
+ * 
+ * Nomenclatura de columnas:
+ * - [module]_can_view: Permiso de lectura/visualización
+ * - [module]_can_edit: Permiso de modificación, creación y eliminación
+ * 
+ * @field id - Identificador único autoincremental
+ * @field userId - FK a users (unique, cascade delete)
+ * @field productsCanView - Ver productos
+ * @field productsCanEdit - Editar/crear/eliminar productos
+ * @field categoriesCanView - Ver categorías
+ * @field categoriesCanEdit - Editar/crear/eliminar categorías
+ * @field schedulesCanView - Ver horarios
+ * @field schedulesCanEdit - Editar/crear/eliminar horarios
+ * @field socialsCanView - Ver redes sociales
+ * @field socialsCanEdit - Editar/crear/eliminar redes sociales
+ * @field createdAt - Fecha de creación
+ * @field updatedAt - Fecha de última actualización
+ */
+export const employeePermissionsTable = pgTable('employee_permissions', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id')
+    .notNull()
+    .unique()
+    .references(() => usersTable.id, { onDelete: 'cascade' }),
+  
+  // #section Permisos de Productos
+  productsCanView: boolean('products_can_view').notNull().default(false),
+  productsCanEdit: boolean('products_can_edit').notNull().default(false),
+  // #end-section
+  
+  // #section Permisos de Categorías
+  categoriesCanView: boolean('categories_can_view').notNull().default(false),
+  categoriesCanEdit: boolean('categories_can_edit').notNull().default(false),
+  // #end-section
+  
+  // #section Permisos de Horarios
+  schedulesCanView: boolean('schedules_can_view').notNull().default(false),
+  schedulesCanEdit: boolean('schedules_can_edit').notNull().default(false),
+  // #end-section
+  
+  // #section Permisos de Redes Sociales
+  socialsCanView: boolean('socials_can_view').notNull().default(false),
+  socialsCanEdit: boolean('socials_can_edit').notNull().default(false),
+  // #end-section
+  
+  // Metadata
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+// #end-variable
+
 // #variable userTagsTable - Tabla de etiquetas personalizadas del usuario
 /**
  * Tabla de etiquetas personalizadas creadas por usuarios.

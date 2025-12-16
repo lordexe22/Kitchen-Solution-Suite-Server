@@ -4,10 +4,11 @@ import { Request, Response, NextFunction } from "express";
 import { validateAndProcessName, validateAndProcessEmail, validatePassword } from "../../utils/authenticationValidations.utils";
 import { hashPassword, comparePassword } from "../../utils/password.utils";
 import { db } from "../../db/init";
-import { usersTable } from "../../db/schema";
+import { branchesTable, employeePermissionsTable, usersTable } from "../../db/schema";
 import { eq } from "drizzle-orm";
 import { signJWT, setJWTCookie } from "../../modules/jwtManager";
 import { DEFAULT_EMPLOYEE_PERMISSIONS } from "../../config/permissions.config";
+import { dbPermissionsToAppFormat } from "../../services/employees/permissions.utils";
 // #end-section
 // #middleware validateRegisterPayload
 /**
@@ -275,7 +276,6 @@ export const fetchUserDataFromDB = async (
       imageUrl: user.imageUrl ?? null,
       type: user.type,
       branchId: user.branchId ?? null,
-      permissions: user.permissions ?? null,
       state: user.state,
       isAuthenticated: false,
     };
@@ -313,6 +313,7 @@ export const createJWT = (
       email: userDataStore.email,
       type: userDataStore.type,
       branchId: userDataStore.branchId ?? null,
+      companyId: userDataStore.companyId ?? null,
       permissions: userDataStore.permissions ?? null,
       state: userDataStore.state,
     });
@@ -369,7 +370,7 @@ export const returnUserData = (
       return;
     }
 
-    const { firstName, lastName, email, type, state, imageUrl, branchId, permissions, isAuthenticated } = userDataStore;
+    const { id, firstName, lastName, email, type, state, imageUrl, branchId, companyId, permissions, isAuthenticated } = userDataStore;
 
     const statusCode = isAuthenticated ? 200 : 201;
 
@@ -377,11 +378,13 @@ export const returnUserData = (
       success: true,  
       data: {         
         user: {
+          id,
           firstName,
           lastName,
           email,
           type,
           branchId,
+          companyId,
           permissions,
           state,
           imageUrl,
@@ -525,7 +528,47 @@ export const getUserFromDB = async (
 
   console.log('✅ Usuario autenticado correctamente');
 
+  // Cargar permisos y companyId si es empleado
+  let permissions = null as unknown;
+  let companyId = null as number | null;
+  
+  if (user.type === 'employee' && user.branchId) {
+    console.log('  📍 Loading EMPLOYEE data...');
+    console.log('    - user.id:', user.id);
+    console.log('    - user.branchId:', user.branchId);
+
+    // Cargar permisos
+    const [dbPerms] = await db
+      .select()
+      .from(employeePermissionsTable)
+      .where(eq(employeePermissionsTable.userId, user.id))
+      .limit(1);
+
+    console.log('    - dbPerms found:', !!dbPerms);
+    if (dbPerms) {
+      console.log('    - dbPerms data:', dbPerms);
+    }
+
+    permissions = dbPerms
+      ? dbPermissionsToAppFormat(dbPerms as any)
+      : DEFAULT_EMPLOYEE_PERMISSIONS;
+
+    console.log('    - permissions (formatted):', permissions);
+
+    // Derivar companyId del branchId
+    const [branch] = await db
+      .select()
+      .from(branchesTable)
+      .where(eq(branchesTable.id, user.branchId))
+      .limit(1);
+
+    console.log('    - branch found:', !!branch);
+    companyId = branch?.companyId ?? null;
+    console.log('    - companyId (derived):', companyId);
+  }
+
   // Preparar objeto UserDataStore
+  console.log('\n📦 [LOGIN] Preparing UserDataStore:');
   req.body.userDataStore = {
     id: user.id,
     email: user.email,
@@ -534,10 +577,12 @@ export const getUserFromDB = async (
     imageUrl: user.imageUrl ?? null,
     type: user.type,
     branchId: user.branchId ?? null,
-    permissions: user.permissions ?? null,
+    companyId,
+    permissions,
     state: user.state,
     isAuthenticated: true,
   };
+  console.log('  - userDataStore:', req.body.userDataStore);
 
   console.log('📤 userDataStore creado:', req.body.userDataStore);
   console.log('➡️ Llamando a next()');
@@ -582,6 +627,32 @@ export const getUserFromDB = async (
 
     console.log('✅ Usuario encontrado, preparando userDataStore');
 
+    // Cargar permisos y companyId si es empleado
+    let permissions = null as unknown;
+    let companyId = null as number | null;
+    
+    if (user.type === 'employee' && user.branchId) {
+      // Cargar permisos
+      const [dbPerms] = await db
+        .select()
+        .from(employeePermissionsTable)
+        .where(eq(employeePermissionsTable.userId, user.id))
+        .limit(1);
+
+      permissions = dbPerms
+        ? dbPermissionsToAppFormat(dbPerms as any)
+        : DEFAULT_EMPLOYEE_PERMISSIONS;
+
+      // Derivar companyId del branchId
+      const [branch] = await db
+        .select()
+        .from(branchesTable)
+        .where(eq(branchesTable.id, user.branchId))
+        .limit(1);
+
+      companyId = branch?.companyId ?? null;
+    }
+
     // Preparar objeto UserDataStore
     req.body.userDataStore = {
       id: user.id,
@@ -591,7 +662,8 @@ export const getUserFromDB = async (
       imageUrl: user.imageUrl ?? null,
       type: user.type,
       branchId: user.branchId ?? null,
-      permissions: user.permissions ?? null,
+      companyId,
+      permissions,
       state: user.state,
       isAuthenticated: true,
     };
@@ -721,7 +793,32 @@ export const fetchUserDataByUserId = async (
       return;
     }
 
-    // ← CAMBIO: usar res.locals en lugar de req.body
+    // Cargar permisos y companyId si es empleado
+    let permissions = null as unknown;
+    let companyId = null as number | null;
+
+    if (user.type === 'employee' && user.branchId) {
+      // Cargar permisos
+      const [dbPerms] = await db
+        .select()
+        .from(employeePermissionsTable)
+        .where(eq(employeePermissionsTable.userId, user.id))
+        .limit(1);
+
+      permissions = dbPerms
+        ? dbPermissionsToAppFormat(dbPerms as any)
+        : DEFAULT_EMPLOYEE_PERMISSIONS;
+
+      // Derivar companyId del branchId
+      const [branch] = await db
+        .select()
+        .from(branchesTable)
+        .where(eq(branchesTable.id, user.branchId))
+        .limit(1);
+
+      companyId = branch?.companyId ?? null;
+    }
+
     res.locals.userDataStore = {
       id: user.id,
       email: user.email,
@@ -729,6 +826,9 @@ export const fetchUserDataByUserId = async (
       lastName: user.lastName,
       imageUrl: user.imageUrl ?? null,
       type: user.type,
+      branchId: user.branchId ?? null,
+      companyId,
+      permissions,
       state: user.state,
       isAuthenticated: true,
     };

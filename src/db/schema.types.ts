@@ -24,8 +24,6 @@ export interface User {
   type: 'admin' | 'employee' | 'guest' | 'dev';
   /** FK to branch (only for employee type, nullable) */
   branchId?: number | null;
-  /** JSON string with granular permissions (only for employee type, nullable) */
-  permissions?: string | null;
   /** Timestamp of when the user was created */
   createdAt: Date;
   /** Timestamp of the last update to the user */
@@ -314,3 +312,50 @@ export interface EmployeeInvitation {
 }
 // #end-interface
 
+// #interface EmployeePermissions
+/**
+ * Tabla de permisos granulares para empleados.
+ * 
+ * Almacena los permisos específicos que tiene cada empleado sobre los módulos
+ * de la sucursal a la que está asignado. Relación 1:1 con users.
+ */
+export interface EmployeePermissions {
+  /** Unique identifier for the permission record */
+  id: number;
+  /** Reference to the employee user */
+  userId: number;
+  
+  // #section Products Permissions
+  /** Can view products */
+  productsCanView: boolean;
+  /** Can edit/create/delete products */
+  productsCanEdit: boolean;
+  // #end-section
+  
+  // #section Categories Permissions
+  /** Can view categories */
+  categoriesCanView: boolean;
+  /** Can edit/create/delete categories */
+  categoriesCanEdit: boolean;
+  // #end-section
+  
+  // #section Schedules Permissions
+  /** Can view schedules */
+  schedulesCanView: boolean;
+  /** Can edit/create/delete schedules */
+  schedulesCanEdit: boolean;
+  // #end-section
+  
+  // #section Socials Permissions
+  /** Can view socials */
+  socialsCanView: boolean;
+  /** Can edit/create/delete socials */
+  socialsCanEdit: boolean;
+  // #end-section
+  
+  /** Creation timestamp */
+  createdAt: Date;
+  /** Last update timestamp */
+  updatedAt: Date;
+}
+// #end-interface

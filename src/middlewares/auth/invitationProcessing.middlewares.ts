@@ -3,9 +3,10 @@
 // #section Imports
 import { Request, Response, NextFunction } from "express";
 import { db } from "../../db/init";
-import { usersTable } from "../../db/schema";
+import { usersTable, employeePermissionsTable } from "../../db/schema";
 import { eq } from "drizzle-orm";
 import { DEFAULT_EMPLOYEE_PERMISSIONS } from "../../config/permissions.config";
+import { appFormatToDBPermissions } from "../../services/employees/permissions.utils";
 // #end-section
 
 // #middleware processInvitationIfPresent
@@ -58,19 +59,33 @@ export const processInvitationIfPresent = async (
     }
     // #end-step
 
-    // #step 4 - Actualizar usuario a employee con permisos defaults
-    const permissionsJson = JSON.stringify(DEFAULT_EMPLOYEE_PERMISSIONS);
-
+    // #step 4 - Actualizar usuario a employee
     await db
       .update(usersTable)
       .set({
         type: 'employee',
         branchId: invitationData.branchId,
-        permissions: permissionsJson,
         state: 'active',
         isActive: true
       })
       .where(eq(usersTable.id, user.id));
+    // #end-step
+
+    // #step 4b - Crear registro de permisos en employee_permissions table
+    const dbPerms = appFormatToDBPermissions(DEFAULT_EMPLOYEE_PERMISSIONS);
+    const [existingPerms] = await db
+      .select()
+      .from(employeePermissionsTable)
+      .where(eq(employeePermissionsTable.userId, user.id));
+
+    if (!existingPerms) {
+      await db
+        .insert(employeePermissionsTable)
+        .values({
+          userId: user.id,
+          ...dbPerms
+        });
+    }
     // #end-step
 
     // #step 5 - Marcar invitación como usada
@@ -80,7 +95,6 @@ export const processInvitationIfPresent = async (
     // #step 6 - Actualizar req.body para que los siguientes middlewares usen los datos correctos
     req.body.type = 'employee';
     req.body.branchId = invitationData.branchId;
-    req.body.permissions = permissionsJson;
     // #end-step
 
     // #step 7 - Log

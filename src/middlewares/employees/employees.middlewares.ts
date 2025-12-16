@@ -284,6 +284,11 @@ export const verifyEmployeeOwnership = async (
   // #end-step
 
   // #step 3 - Guardar companyId en req para uso posterior
+  // Asegurar que req.body exista incluso en rutas GET
+  if (!req.body) {
+    // Express puede no inicializar body en GET; creamos un objeto seguro
+    (req as unknown as { body: Record<string, unknown> }).body = {};
+  }
   req.body.companyId = employeeData.company.id;
   // #end-step
 

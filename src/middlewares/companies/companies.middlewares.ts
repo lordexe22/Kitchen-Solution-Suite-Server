@@ -304,18 +304,46 @@ export const getUserCompanies = async (
   res: Response
 ): Promise<void> => {
   try {
-    const ownerId = req.user!.userId;
+    const userId = req.user!.userId;
+    const userType = req.user!.type;
 
-    const companies = await db
-      .select()
-      .from(companiesTable)
-      .where(
-        and(
-          eq(companiesTable.ownerId, ownerId),
-          eq(companiesTable.isActive, true)
+    let companies;
+
+    if (userType === 'employee') {
+      // Employee: devolver solo SU compañía (derivada del companyId en JWT)
+      const companyId = req.user!.companyId;
+      
+      if (!companyId) {
+        res.status(200).json({
+          success: true,
+          data: { companies: [] }
+        });
+        return;
+      }
+
+      companies = await db
+        .select()
+        .from(companiesTable)
+        .where(
+          and(
+            eq(companiesTable.id, companyId),
+            eq(companiesTable.isActive, true)
+          )
         )
-      )
-      .orderBy(companiesTable.createdAt);
+        .limit(1);
+    } else {
+      // Admin/Owner: devolver todas sus compañías
+      companies = await db
+        .select()
+        .from(companiesTable)
+        .where(
+          and(
+            eq(companiesTable.ownerId, userId),
+            eq(companiesTable.isActive, true)
+          )
+        )
+        .orderBy(companiesTable.createdAt);
+    }
 
     res.status(200).json({
       success: true,

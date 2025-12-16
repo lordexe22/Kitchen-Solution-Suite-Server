@@ -133,7 +133,10 @@ export const validateBranchId = (
 ): void => {
   const branchId = Number(req.params.id);
 
+  console.log(`\n📋 [validateBranchId] branchId=${branchId}`);
+
   if (isNaN(branchId) || branchId <= 0) {
+    console.log(`  ❌ Invalid branchId`);
     res.status(400).json({
       success: false,
       error: 'ID de sucursal inválido'
@@ -141,6 +144,7 @@ export const validateBranchId = (
     return;
   }
 
+  console.log(`  ✅ BranchId valid`);
   next();
 };
 // #end-middleware
@@ -197,6 +201,125 @@ export const verifyBranchOwnership = async (
   }
 };
 // #end-middleware
+
+// #middleware verifyEmployeeBranchAccess
+/**
+ * Middleware: verifyEmployeeBranchAccess
+ * 
+ * Verifica acceso a una sucursal para ADMIN y EMPLOYEE:
+ * - Admin: debe ser propietario de la compañía
+ * - Employee: debe estar asignado a esa sucursal (branchId match)
+ * 
+ * Este middleware REEMPLAZA a verifyBranchOwnership para rutas
+ * que necesitan soportar acceso de empleados.
+ * 
+ * @param {AuthenticatedRequest} req - Request con user autenticado
+ * @param {Response} res - Response de Express
+ * @param {NextFunction} next - Función para continuar
+ */
+export const verifyEmployeeBranchAccess = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const branchId = Number(req.params.id);
+    const { userId, type: userType, branchId: userBranchId } = req.user!;
+
+    console.log('🔐 [verifyEmployeeBranchAccess] START');
+    console.log('  - branchId (params):', branchId);
+    console.log('  - userId:', userId);
+    console.log('  - userType:', userType);
+    console.log('  - userBranchId:', userBranchId);
+
+    // #step 1 - validar que la sucursal existe y está activa
+    const [branch] = await db
+      .select()
+      .from(branchesTable)
+      .where(
+        and(
+          eq(branchesTable.id, branchId),
+          eq(branchesTable.isActive, true)
+        )
+      )
+      .limit(1);
+
+    console.log('  - branch found:', !!branch);
+
+    if (!branch) {
+      console.log('  ❌ Branch not found or inactive');
+      res.status(404).json({
+        success: false,
+        error: 'La sucursal no existe o está inactiva'
+      });
+      return;
+    }
+    // #end-step
+
+    // #step 2 - validar acceso según tipo de usuario
+    if (userType === 'admin') {
+      console.log('  - Checking ADMIN access...');
+      // Admin: debe ser propietario de la compañía
+      const [company] = await db
+        .select()
+        .from(companiesTable)
+        .where(
+          and(
+            eq(companiesTable.id, branch.companyId),
+            eq(companiesTable.ownerId, userId),
+            eq(companiesTable.isActive, true)
+          )
+        )
+        .limit(1);
+
+      console.log('  - admin company found:', !!company);
+
+      if (!company) {
+        console.log('  ❌ Admin: No company ownership');
+        res.status(403).json({
+          success: false,
+          error: 'No tienes permisos para acceder a esta sucursal'
+        });
+        return;
+      }
+      console.log('  ✅ Admin access GRANTED');
+    } else if (userType === 'employee') {
+      console.log('  - Checking EMPLOYEE access...');
+      // Employee: debe estar asignado a esa sucursal
+
+      if (userBranchId !== branchId) {
+        console.log(`  ❌ Employee: branchId mismatch (user: ${userBranchId}, request: ${branchId})`);
+        res.status(403).json({
+          success: false,
+          error: 'No estás asignado a esta sucursal'
+        });
+        return;
+      }
+      console.log('  ✅ Employee access GRANTED');
+    } else {
+      console.log('  ❌ Invalid user type:', userType);
+      // Otros tipos de usuario (guest, dev) no tienen acceso
+      res.status(403).json({
+        success: false,
+        error: 'Tu tipo de usuario no tiene acceso a sucursales'
+      });
+      return;
+    }
+    // #end-step
+
+    console.log('  ✅ [verifyEmployeeBranchAccess] PASSED');
+    next();
+  } catch (error) {
+    console.error('❌ [verifyEmployeeBranchAccess] ERROR:', error);
+
+    res.status(500).json({
+      success: false,
+      error: 'Error al verificar permisos'
+    });
+  }
+};
+// #end-middleware
+
 // #middleware verifyCompanyOwnership
 /**
  * Middleware: verifyCompanyOwnership
@@ -797,113 +920,6 @@ export const deleteBranchLocation = async (
   }
 };
 // #end-middleware
-
-// #middleware verifyEmployeeBranchAccess
-/**
- * Middleware: verifyEmployeeBranchAccess
- * 
- * Verifica que un empleado tenga acceso a la sucursal especificada en el request.
- * 
- * SOLO para usuarios con type='employee'.
- * NO verifica ownership (eso es responsabilidad de verifyBranchOwnership para admins).
- * 
- * Validaciones:
- * 1. Extrae branchId del request (params.id, body.branchId o body.categoryId→branch)
- * 2. Verifica que req.user.type === 'employee'
- * 3. Verifica que req.user.branchId coincida con el branchId del request
- * 4. Verifica que la sucursal existe y está activa
- * 
- * @param {AuthenticatedRequest} req - Request con user autenticado
- * @param {Response} res - Response de Express
- * @param {NextFunction} next - Función para continuar
- * 
- * @example
- * // Verificar acceso de employee a su sucursal antes de editar productos
- * router.put('/products/:id',
- *   validateJWTAndGetPayload,
- *   requireRole('employee'),
- *   verifyEmployeeBranchAccess,
- *   requirePermission('products', 'canEdit'),
- *   updateProduct
- * );
- */
-export const verifyEmployeeBranchAccess = async (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const { type, branchId: userBranchId } = req.user || {};
-
-    // Verificar que el usuario es employee
-    if (type !== 'employee') {
-      res.status(403).json({
-        success: false,
-        error: 'Este endpoint requiere ser empleado'
-      });
-      return;
-    }
-
-    // Verificar que el employee tiene branchId asignado
-    if (!userBranchId) {
-      res.status(403).json({
-        success: false,
-        error: 'Empleado sin sucursal asignada'
-      });
-      return;
-    }
-
-    // Extraer branchId del request (puede venir de params o body)
-    const requestBranchId = Number(req.params.id || req.body.branchId);
-
-    if (isNaN(requestBranchId) || requestBranchId <= 0) {
-      res.status(400).json({
-        success: false,
-        error: 'ID de sucursal inválido en el request'
-      });
-      return;
-    }
-
-    // Verificar que el branchId del employee coincide con el del request
-    if (userBranchId !== requestBranchId) {
-      res.status(403).json({
-        success: false,
-        error: 'No tienes acceso a esta sucursal'
-      });
-      return;
-    }
-
-    // Verificar que la sucursal existe y está activa
-    const [branch] = await db
-      .select()
-      .from(branchesTable)
-      .where(
-        and(
-          eq(branchesTable.id, requestBranchId),
-          eq(branchesTable.isActive, true)
-        )
-      )
-      .limit(1);
-
-    if (!branch) {
-      res.status(404).json({
-        success: false,
-        error: 'Sucursal no encontrada o inactiva'
-      });
-      return;
-    }
-
-    next();
-  } catch (error) {
-    console.error('Error verificando acceso de empleado a sucursal:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Error al verificar permisos'
-    });
-  }
-};
-// #end-middleware
-
 // #middleware requireBranchAccess
 /**
  * Middleware: requireBranchAccess
