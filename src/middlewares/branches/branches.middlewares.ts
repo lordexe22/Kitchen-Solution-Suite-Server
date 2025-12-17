@@ -213,6 +213,10 @@ export const verifyBranchOwnership = async (
  * Este middleware REEMPLAZA a verifyBranchOwnership para rutas
  * que necesitan soportar acceso de empleados.
  * 
+ * El branchId puede venir en:
+ * - req.params.id (GET/PUT/DELETE con :id en la URL)
+ * - req.body.branchId (POST con branchId en el body)
+ * 
  * @param {AuthenticatedRequest} req - Request con user autenticado
  * @param {Response} res - Response de Express
  * @param {NextFunction} next - Función para continuar
@@ -223,14 +227,26 @@ export const verifyEmployeeBranchAccess = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const branchId = Number(req.params.id);
+    // Intentar obtener branchId de params o body
+    const branchId = Number(req.params.id || req.body.branchId);
     const { userId, type: userType, branchId: userBranchId } = req.user!;
 
     console.log('🔐 [verifyEmployeeBranchAccess] START');
-    console.log('  - branchId (params):', branchId);
+    console.log('  - branchId (params/body):', branchId);
     console.log('  - userId:', userId);
     console.log('  - userType:', userType);
     console.log('  - userBranchId:', userBranchId);
+
+    // #step 0 - validar que branchId es un número válido
+    if (isNaN(branchId)) {
+      console.log('  ❌ Invalid branchId (NaN)');
+      res.status(400).json({
+        success: false,
+        error: 'ID de sucursal inválido'
+      });
+      return;
+    }
+    // #end-step
 
     // #step 1 - validar que la sucursal existe y está activa
     const [branch] = await db
