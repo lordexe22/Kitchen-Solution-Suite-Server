@@ -13,7 +13,9 @@ import {
   validateCreateProductPayload,
   validateUpdateProductPayload,
   verifyProductOwnership,
-  verifyCategoryOwnership
+  verifyProductAccess,
+  verifyCategoryOwnership,
+  verifyCategoryAccessForProduct
 } from "../middlewares/products/products.validations";
 import {
   createProduct,
@@ -73,7 +75,7 @@ productsRouter.post(
   "/",
   validateJWTAndGetPayload,
   validateCreateProductPayload,
-  verifyCategoryOwnership,
+  verifyCategoryAccessForProduct,
   requirePermission('products', 'canEdit'),
   createProduct
 );
@@ -133,7 +135,7 @@ productsRouter.put(
   "/:id",
   validateJWTAndGetPayload,
   validateProductId,
-  verifyProductOwnership,
+  verifyProductAccess,
   validateUpdateProductPayload,
   requirePermission('products', 'canEdit'),
   updateProduct
@@ -152,7 +154,7 @@ productsRouter.delete(
   "/:id",
   validateJWTAndGetPayload,
   validateProductId,
-  verifyProductOwnership,
+  verifyProductAccess,
   requirePermission('products', 'canEdit'),
   deleteProduct
 );
@@ -189,7 +191,7 @@ productsRouter.post(
   '/:id/images',
   validateJWTAndGetPayload,
   validateProductId,
-  verifyProductOwnership,
+  verifyProductAccess,
   requirePermission('products', 'canEdit'),
   uploadMultiple,
   uploadProductImages,
@@ -212,7 +214,7 @@ productsRouter.delete(
   '/:id/images',
   validateJWTAndGetPayload,
   validateProductId,
-  verifyProductOwnership,
+  verifyProductAccess,
   requirePermission('products', 'canEdit'),
   deleteProductImage
 );
@@ -234,7 +236,7 @@ productsRouter.patch(
   '/:id/images/reorder',
   validateJWTAndGetPayload,
   validateProductId,
-  verifyProductOwnership,
+  verifyProductAccess,
   requirePermission('products', 'canEdit'),
   reorderProductImages
 );

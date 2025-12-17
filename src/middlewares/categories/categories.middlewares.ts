@@ -351,6 +351,120 @@ export const verifyCategoryOwnership = async (
 };
 // #end-middleware
 
+// #middleware verifyCategoryAccess
+/**
+ * Middleware: verifyCategoryAccess
+ * 
+ * Verifica acceso a una categoría para ADMIN y EMPLOYEE:
+ * - Admin: debe ser propietario de la compañía que contiene la sucursal
+ * - Employee: debe estar asignado a la sucursal que contiene la categoría
+ * 
+ * Este middleware es más permisivo que verifyCategoryOwnership y permite
+ * acceso de empleados. Útil para operaciones de lectura/exportación.
+ * 
+ * @param {AuthenticatedRequest} req - Request con user autenticado
+ * @param {Response} res - Response de Express
+ * @param {Function} next - Next middleware
+ */
+export const verifyCategoryAccess = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: Function
+): Promise<void> => {
+  try {
+    const categoryId = Number(req.params.id);
+    const { userId, type: userType, branchId: userBranchId } = req.user!;
+
+    console.log('🔐 [verifyCategoryAccess] START');
+    console.log('  - categoryId:', categoryId);
+    console.log('  - userId:', userId);
+    console.log('  - userType:', userType);
+    console.log('  - userBranchId:', userBranchId);
+
+    // Obtener categoría con información de sucursal y compañía
+    const [category] = await db
+      .select({
+        categoryId: categoriesTable.id,
+        branchId: branchesTable.id,
+        companyId: companiesTable.id,
+        ownerId: companiesTable.ownerId,
+        branchIsActive: branchesTable.isActive,
+        companyIsActive: companiesTable.isActive
+      })
+      .from(categoriesTable)
+      .innerJoin(branchesTable, eq(categoriesTable.branchId, branchesTable.id))
+      .innerJoin(companiesTable, eq(branchesTable.companyId, companiesTable.id))
+      .where(eq(categoriesTable.id, categoryId))
+      .limit(1);
+
+    console.log('  - category found:', !!category);
+
+    if (!category) {
+      console.log('  ❌ Category not found');
+      res.status(404).json({
+        success: false,
+        error: 'Categoría no encontrada'
+      });
+      return;
+    }
+
+    // Verificar que la sucursal y compañía estén activas
+    if (!category.branchIsActive || !category.companyIsActive) {
+      console.log('  ❌ Branch or company inactive');
+      res.status(403).json({
+        success: false,
+        error: 'La sucursal o compañía no está activa'
+      });
+      return;
+    }
+
+    // Verificar acceso según tipo de usuario
+    if (userType === 'admin') {
+      console.log('  - Checking ADMIN access...');
+      // Admin: debe ser propietario de la compañía
+      if (category.ownerId !== userId) {
+        console.log('  ❌ Admin: Not company owner');
+        res.status(403).json({
+          success: false,
+          error: 'No tienes permisos para esta categoría'
+        });
+        return;
+      }
+      console.log('  ✅ Admin access GRANTED');
+    } else if (userType === 'employee') {
+      console.log('  - Checking EMPLOYEE access...');
+      // Employee: debe estar asignado a la sucursal
+      if (userBranchId !== category.branchId) {
+        console.log(`  ❌ Employee: branchId mismatch (user: ${userBranchId}, category: ${category.branchId})`);
+        res.status(403).json({
+          success: false,
+          error: 'No estás asignado a la sucursal de esta categoría'
+        });
+        return;
+      }
+      console.log('  ✅ Employee access GRANTED');
+    } else {
+      console.log('  ❌ Invalid user type:', userType);
+      // Otros tipos de usuario (guest, dev) no tienen acceso
+      res.status(403).json({
+        success: false,
+        error: 'Tu tipo de usuario no tiene acceso a categorías'
+      });
+      return;
+    }
+
+    console.log('  ✅ [verifyCategoryAccess] PASSED');
+    next();
+  } catch (error) {
+    console.error('❌ [verifyCategoryAccess] ERROR:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al verificar permisos'
+    });
+  }
+};
+// #end-middleware
+
 // #middleware createCategory
 /**
  * Middleware: createCategory

@@ -9,6 +9,7 @@ import {
   validateCreateCategoryPayload,
   validateUpdateCategoryPayload,
   verifyCategoryOwnership,
+  verifyCategoryAccess,
   createCategory,
   getBranchCategories,
   getCategoryById,
@@ -212,7 +213,7 @@ categoriesRouter.get(
   "/:id/export",
   validateJWTAndGetPayload,
   validateCategoryId,
-  verifyCategoryOwnership,
+  verifyCategoryAccess,
   requirePermission('categories', 'canView'),
   exportCategory
 );

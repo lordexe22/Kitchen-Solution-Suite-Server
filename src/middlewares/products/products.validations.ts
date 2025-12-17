@@ -418,6 +418,124 @@ export const verifyProductOwnership = async (
   }
 };
 // #end-middleware
+
+// #middleware verifyProductAccess
+/**
+ * Middleware: verifyProductAccess
+ * 
+ * Verifica acceso a un producto para modificar/eliminar/subir imágenes.
+ * Permite acceso tanto a ADMIN (owners) como a EMPLOYEE (con acceso a la sucursal).
+ * 
+ * - Admin: debe ser propietario de la compañía
+ * - Employee: debe estar asignado a la sucursal que contiene el producto
+ * 
+ * @param {AuthenticatedRequest} req - Request con user autenticado
+ * @param {Response} res - Response de Express
+ * @param {NextFunction} next - Next middleware
+ */
+export const verifyProductAccess = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { userId, type: userType, branchId: userBranchId } = req.user!;
+    const productId = Number(req.params.id);
+
+    console.log('🔐 [verifyProductAccess] START');
+    console.log('  - productId (params):', productId);
+    console.log('  - userId:', userId);
+    console.log('  - userType:', userType);
+    console.log('  - userBranchId:', userBranchId);
+
+    // Obtener producto con toda la cadena de relaciones
+    const product = await db
+      .select({
+        productId: productsTable.id,
+        categoryId: categoriesTable.id,
+        branchId: branchesTable.id,
+        companyId: companiesTable.id,
+        ownerId: companiesTable.ownerId,
+        branchIsActive: branchesTable.isActive,
+        companyIsActive: companiesTable.isActive
+      })
+      .from(productsTable)
+      .innerJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id))
+      .innerJoin(branchesTable, eq(categoriesTable.branchId, branchesTable.id))
+      .innerJoin(companiesTable, eq(branchesTable.companyId, companiesTable.id))
+      .where(eq(productsTable.id, productId))
+      .limit(1);
+
+    console.log('  - product found:', product.length > 0);
+
+    if (product.length === 0) {
+      console.log('  ❌ Product not found');
+      res.status(404).json({
+        success: false,
+        error: 'Producto no encontrado'
+      });
+      return;
+    }
+
+    const prod = product[0];
+
+    // Verificar que la sucursal y compañía estén activas
+    if (!prod.branchIsActive || !prod.companyIsActive) {
+      console.log('  ❌ Branch or company inactive');
+      res.status(403).json({
+        success: false,
+        error: 'La sucursal o compañía no está activa'
+      });
+      return;
+    }
+
+    // Verificar acceso según tipo de usuario
+    if (userType === 'admin') {
+      console.log('  - Checking ADMIN access...');
+      // Admin: debe ser propietario de la compañía
+      if (prod.ownerId !== userId) {
+        console.log('  ❌ Admin: Not company owner');
+        res.status(403).json({
+          success: false,
+          error: 'No tienes permiso para modificar este producto'
+        });
+        return;
+      }
+      console.log('  ✅ Admin access GRANTED');
+    } else if (userType === 'employee') {
+      console.log('  - Checking EMPLOYEE access...');
+      // Employee: debe estar asignado a la sucursal
+      if (userBranchId !== prod.branchId) {
+        console.log(`  ❌ Employee: branchId mismatch (user: ${userBranchId}, product: ${prod.branchId})`);
+        res.status(403).json({
+          success: false,
+          error: 'No estás asignado a la sucursal de este producto'
+        });
+        return;
+      }
+      console.log('  ✅ Employee access GRANTED');
+    } else {
+      console.log('  ❌ Invalid user type:', userType);
+      // Otros tipos de usuario (guest, dev) no tienen acceso
+      res.status(403).json({
+        success: false,
+        error: 'Tu tipo de usuario no tiene acceso a productos'
+      });
+      return;
+    }
+
+    console.log('  ✅ [verifyProductAccess] PASSED');
+    next();
+  } catch (error) {
+    console.error('❌ [verifyProductAccess] ERROR:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al verificar permisos'
+    });
+  }
+};
+// #end-middleware
+
 // #middleware verifyCategoryOwnership
 /**
  * Middleware: verifyCategoryOwnership
@@ -472,6 +590,121 @@ export const verifyCategoryOwnership = async (
     next();
   } catch (error) {
     console.error('Error verificando ownership de categoría:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al verificar permisos'
+    });
+  }
+};
+// #end-middleware
+
+// #middleware verifyCategoryAccessForProduct
+/**
+ * Middleware: verifyCategoryAccessForProduct
+ * 
+ * Verifica acceso a una categoría para crear/modificar productos.
+ * Permite acceso tanto a ADMIN (owners) como a EMPLOYEE (con acceso a la sucursal).
+ * 
+ * - Admin: debe ser propietario de la compañía
+ * - Employee: debe estar asignado a la sucursal que contiene la categoría
+ * 
+ * @param {AuthenticatedRequest} req - Request con user autenticado
+ * @param {Response} res - Response de Express
+ * @param {NextFunction} next - Next middleware
+ */
+export const verifyCategoryAccessForProduct = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { userId, type: userType, branchId: userBranchId } = req.user!;
+    const { categoryId } = req.body;
+
+    console.log('🔐 [verifyCategoryAccessForProduct] START');
+    console.log('  - categoryId (body):', categoryId);
+    console.log('  - userId:', userId);
+    console.log('  - userType:', userType);
+    console.log('  - userBranchId:', userBranchId);
+
+    // Obtener categoría con toda la cadena de relaciones
+    const category = await db
+      .select({
+        categoryId: categoriesTable.id,
+        branchId: branchesTable.id,
+        companyId: companiesTable.id,
+        ownerId: companiesTable.ownerId,
+        branchIsActive: branchesTable.isActive,
+        companyIsActive: companiesTable.isActive
+      })
+      .from(categoriesTable)
+      .innerJoin(branchesTable, eq(categoriesTable.branchId, branchesTable.id))
+      .innerJoin(companiesTable, eq(branchesTable.companyId, companiesTable.id))
+      .where(eq(categoriesTable.id, Number(categoryId)))
+      .limit(1);
+
+    console.log('  - category found:', category.length > 0);
+
+    if (category.length === 0) {
+      console.log('  ❌ Category not found');
+      res.status(404).json({
+        success: false,
+        error: 'Categoría no encontrada'
+      });
+      return;
+    }
+
+    const cat = category[0];
+
+    // Verificar que la sucursal y compañía estén activas
+    if (!cat.branchIsActive || !cat.companyIsActive) {
+      console.log('  ❌ Branch or company inactive');
+      res.status(403).json({
+        success: false,
+        error: 'La sucursal o compañía no está activa'
+      });
+      return;
+    }
+
+    // Verificar acceso según tipo de usuario
+    if (userType === 'admin') {
+      console.log('  - Checking ADMIN access...');
+      // Admin: debe ser propietario de la compañía
+      if (cat.ownerId !== userId) {
+        console.log('  ❌ Admin: Not company owner');
+        res.status(403).json({
+          success: false,
+          error: 'No tienes permiso para crear productos en esta categoría'
+        });
+        return;
+      }
+      console.log('  ✅ Admin access GRANTED');
+    } else if (userType === 'employee') {
+      console.log('  - Checking EMPLOYEE access...');
+      // Employee: debe estar asignado a la sucursal
+      if (userBranchId !== cat.branchId) {
+        console.log(`  ❌ Employee: branchId mismatch (user: ${userBranchId}, category: ${cat.branchId})`);
+        res.status(403).json({
+          success: false,
+          error: 'No estás asignado a la sucursal de esta categoría'
+        });
+        return;
+      }
+      console.log('  ✅ Employee access GRANTED');
+    } else {
+      console.log('  ❌ Invalid user type:', userType);
+      // Otros tipos de usuario (guest, dev) no tienen acceso
+      res.status(403).json({
+        success: false,
+        error: 'Tu tipo de usuario no tiene acceso a productos'
+      });
+      return;
+    }
+
+    console.log('  ✅ [verifyCategoryAccessForProduct] PASSED');
+    next();
+  } catch (error) {
+    console.error('❌ [verifyCategoryAccessForProduct] ERROR:', error);
     res.status(500).json({
       success: false,
       error: 'Error al verificar permisos'
