@@ -10,6 +10,10 @@ import { Request } from 'express';
  * @property {string} [email] - Email del usuario (opcional)
  * @property {UserType} [type] - Tipo de usuario en el sistema
  * @property {number | null} [branchId] - Sucursal asignada si es employee
+ * @property {string | null} [branchName] - Nombre de la sucursal si es employee
+ * @property {number | null} [companyId] - Compañía asociada si es employee
+ * @property {string | null} [companyName] - Nombre de la compañía si es employee
+ * @property {string | null} [companyLogoUrl] - URL del logo de la compañía si es employee
  * @property {string | null} [permissions] - Permisos (JSON stringificado) si es employee
  * @property {'pending' | 'active' | 'suspended'} [state] - Estado del usuario
  * @property {number} [iat] - Timestamp de emisión del token (issued at)
@@ -22,7 +26,10 @@ export interface JWTPayload {
   email?: string;
   type?: UserType;
   branchId?: number | null;
-    companyId?: number | null;
+  branchName?: string | null;
+  companyId?: number | null;
+  companyName?: string | null;
+  companyLogoUrl?: string | null;
   permissions?: string | null;
   state?: 'pending' | 'active' | 'suspended';
   iat?: number;

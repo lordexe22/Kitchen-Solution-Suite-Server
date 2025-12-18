@@ -4,7 +4,7 @@ import { Request, Response, NextFunction } from "express";
 import { validateAndProcessName, validateAndProcessEmail, validatePassword } from "../../utils/authenticationValidations.utils";
 import { hashPassword, comparePassword } from "../../utils/password.utils";
 import { db } from "../../db/init";
-import { branchesTable, employeePermissionsTable, usersTable } from "../../db/schema";
+import { branchesTable, companiesTable, employeePermissionsTable, usersTable } from "../../db/schema";
 import { eq } from "drizzle-orm";
 import { signJWT, setJWTCookie } from "../../modules/jwtManager";
 import { DEFAULT_EMPLOYEE_PERMISSIONS } from "../../config/permissions.config";
@@ -313,7 +313,10 @@ export const createJWT = (
       email: userDataStore.email,
       type: userDataStore.type,
       branchId: userDataStore.branchId ?? null,
+      branchName: userDataStore.branchName ?? null,
       companyId: userDataStore.companyId ?? null,
+      companyName: userDataStore.companyName ?? null,
+      companyLogoUrl: userDataStore.companyLogoUrl ?? null,
       permissions: userDataStore.permissions ?? null,
       state: userDataStore.state,
     });
@@ -370,7 +373,22 @@ export const returnUserData = (
       return;
     }
 
-    const { id, firstName, lastName, email, type, state, imageUrl, branchId, companyId, permissions, isAuthenticated } = userDataStore;
+    const { 
+      id, 
+      firstName, 
+      lastName, 
+      email, 
+      type, 
+      state, 
+      imageUrl, 
+      branchId, 
+      branchName,
+      companyId, 
+      companyName,
+      companyLogoUrl,
+      permissions, 
+      isAuthenticated 
+    } = userDataStore;
 
     const statusCode = isAuthenticated ? 200 : 201;
 
@@ -384,7 +402,10 @@ export const returnUserData = (
           email,
           type,
           branchId,
+          branchName,
           companyId,
+          companyName,
+          companyLogoUrl,
           permissions,
           state,
           imageUrl,
@@ -531,6 +552,9 @@ export const getUserFromDB = async (
   // Cargar permisos y companyId si es empleado
   let permissions = null as unknown;
   let companyId = null as number | null;
+  let branchName = null as string | null;
+  let companyName = null as string | null;
+  let companyLogoUrl = null as string | null;
   
   if (user.type === 'employee' && user.branchId) {
     console.log('  📍 Loading EMPLOYEE data...');
@@ -555,16 +579,31 @@ export const getUserFromDB = async (
 
     console.log('    - permissions (formatted):', permissions);
 
-    // Derivar companyId del branchId
-    const [branch] = await db
-      .select()
+    // Obtener información de sucursal y compañía
+    const [branchData] = await db
+      .select({
+        branchId: branchesTable.id,
+        branchName: branchesTable.name,
+        companyId: branchesTable.companyId,
+        companyName: companiesTable.name,
+        companyLogoUrl: companiesTable.logoUrl
+      })
       .from(branchesTable)
+      .innerJoin(companiesTable, eq(branchesTable.companyId, companiesTable.id))
       .where(eq(branchesTable.id, user.branchId))
       .limit(1);
 
-    console.log('    - branch found:', !!branch);
-    companyId = branch?.companyId ?? null;
-    console.log('    - companyId (derived):', companyId);
+    console.log('    - branchData found:', !!branchData);
+    if (branchData) {
+      companyId = branchData.companyId;
+      branchName = branchData.branchName;
+      companyName = branchData.companyName;
+      companyLogoUrl = branchData.companyLogoUrl;
+      console.log('    - companyId:', companyId);
+      console.log('    - branchName:', branchName);
+      console.log('    - companyName:', companyName);
+      console.log('    - companyLogoUrl:', companyLogoUrl);
+    }
   }
 
   // Preparar objeto UserDataStore
@@ -577,7 +616,10 @@ export const getUserFromDB = async (
     imageUrl: user.imageUrl ?? null,
     type: user.type,
     branchId: user.branchId ?? null,
+    branchName,
     companyId,
+    companyName,
+    companyLogoUrl,
     permissions,
     state: user.state,
     isAuthenticated: true,
@@ -796,6 +838,9 @@ export const fetchUserDataByUserId = async (
     // Cargar permisos y companyId si es empleado
     let permissions = null as unknown;
     let companyId = null as number | null;
+    let branchName = null as string | null;
+    let companyName = null as string | null;
+    let companyLogoUrl = null as string | null;
 
     if (user.type === 'employee' && user.branchId) {
       // Cargar permisos
@@ -809,14 +854,26 @@ export const fetchUserDataByUserId = async (
         ? dbPermissionsToAppFormat(dbPerms as any)
         : DEFAULT_EMPLOYEE_PERMISSIONS;
 
-      // Derivar companyId del branchId
-      const [branch] = await db
-        .select()
+      // Obtener información de sucursal y compañía
+      const [branchData] = await db
+        .select({
+          branchId: branchesTable.id,
+          branchName: branchesTable.name,
+          companyId: branchesTable.companyId,
+          companyName: companiesTable.name,
+          companyLogoUrl: companiesTable.logoUrl
+        })
         .from(branchesTable)
+        .innerJoin(companiesTable, eq(branchesTable.companyId, companiesTable.id))
         .where(eq(branchesTable.id, user.branchId))
         .limit(1);
 
-      companyId = branch?.companyId ?? null;
+      if (branchData) {
+        companyId = branchData.companyId;
+        branchName = branchData.branchName;
+        companyName = branchData.companyName;
+        companyLogoUrl = branchData.companyLogoUrl;
+      }
     }
 
     res.locals.userDataStore = {
@@ -827,7 +884,10 @@ export const fetchUserDataByUserId = async (
       imageUrl: user.imageUrl ?? null,
       type: user.type,
       branchId: user.branchId ?? null,
+      branchName,
       companyId,
+      companyName,
+      companyLogoUrl,
       permissions,
       state: user.state,
       isAuthenticated: true,
