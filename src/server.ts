@@ -18,20 +18,22 @@ import * as serverConfig from './config/server.config'
 import cookieParser from 'cookie-parser';
 import './db/init';
 // #end-section
-
-
-const app = express();
-
+// #section Get env variables
+// #const CORS_ORIGIN - origen permitido para CORS
+const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:5173';
+// #end-const
+// #end-section
 // #section Use server middlewares
-app.use(cookieParser());
+const app = express(); // Crear instancia de Express
+app.use(cookieParser()); // Middleware para parsear cookies
 app.use(cors({
-  credentials: true, // permitir el uso de cookies
-  origin: 'http://localhost:5173' // ajustar al origen del cliente (quien recibira las cookies)
-}));
-app.use(bodyParser.json());
+  credentials: true, // permite el uso de cookies
+  origin: CORS_ORIGIN // define la ulr de origen del cliente (quien recibira las cookies)
+})); // Configuración de CORS 
+app.use(bodyParser.json()); // Middleware para parsear JSON en body
 // #end-section
 // #section User server's routes
-app.use('/api/auth', authRouter);
+app.use('/api/auth', authRouter); // auth routes
 app.use('/api/companies', companiesRouter);
 app.use('/api/branches', branchesRouter); 
 app.use('/api/users', usersRouter);

@@ -23,11 +23,10 @@ import type { AuthenticatedRequest } from "../modules/jwtManager/jwtManager.type
 import { requireRole } from "../middlewares/authorization/authorization.middlewares";
 import { requirePermission } from "../middlewares/authorization/authorization.middlewares";
 // #end-section
-
+// #section Create authRouter
 export const authRouter = Router();
-
-authRouter.use('/jwt', jwtManagerRoutes);
-
+authRouter.use('/jwt', jwtManagerRoutes); // api/auth/jwt routes
+// #end-section
 // #route POST /register - Registro normal de usuarios
 /**
  * Endpoint de registro tradicional (sin invitación):
@@ -37,16 +36,16 @@ authRouter.use('/jwt', jwtManagerRoutes);
  * @route POST /api/auth/register
  */
 authRouter.post(API_ROUTES.REGISTER_URL,
-  validateRegisterPayload,
-  hashPasswordMiddleware,
-  addNewUserDataToDB,
-  savePlatformToken,
-  fetchUserDataFromDB,
-  createJWT,
-  setJWTonCookies,
-  returnUserData
+  validateRegisterPayload, // validate payload
+  hashPasswordMiddleware, // hash password 
+  addNewUserDataToDB, // add user to DB
+  savePlatformToken, // save platform token if provided   
+  fetchUserDataFromDB, // fetch user data from DB
+  createJWT, // create JWT
+  setJWTonCookies, // set JWT in cookies
+  returnUserData // return user data in response
 )
-
+// #end-route
 // #route POST /register/invitation - Registro con invitación de empleado
 /**
  * Endpoint de registro con token de invitación:
@@ -83,7 +82,7 @@ authRouter.post(API_ROUTES.AUTO_LOGIN_BY_TOKEN_URL,
   fetchUserDataByUserId,
   returnUserData
 )
-
+// #end-route
 // #route GET /test-permissions - Ruta temporal de prueba para sistema de permisos
 /**
  * RUTA TEMPORAL DE PRUEBA - Sistema de permisos
@@ -115,7 +114,7 @@ authRouter.get('/test-permissions',
     });
   }
 );
-
+// #end-route
 // #route GET /test-permissions/products-edit - Prueba permiso específico
 /**
  * RUTA TEMPORAL DE PRUEBA - Permiso de edición de productos
@@ -143,7 +142,7 @@ authRouter.get('/test-permissions/products-edit',
     });
   }
 );
-
+// #end-route
 // #route GET /test-permissions/categories-delete - Prueba permiso de edición/eliminación
 /**
  * RUTA TEMPORAL DE PRUEBA - Permiso de edición/eliminación de categorías
