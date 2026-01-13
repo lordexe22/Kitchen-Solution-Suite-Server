@@ -1,173 +1,53 @@
-/* src\routes\index.routes.ts */
+// src/routes/auth.routes.ts
 // #section Imports
-import { Router, Response } from "express";
-import { API_ROUTES } from "../config/routes.config";
-import { jwtManagerRoutes } from "../modules/jwtManager";
-import { 
-  validateRegisterPayload,
-  hashPasswordMiddleware,
-  addNewUserDataToDB,
-  fetchUserDataFromDB,
-  fetchUserDataByUserId,
-  createJWT,
-  setJWTonCookies,
-  returnUserData,
-  validateLoginPayload,
-  getUserFromDB,
-  savePlatformToken
-} from "../middlewares/auth/auth.middlewares";
-import { processInvitationIfPresent } from "../middlewares/auth/invitationProcessing.middlewares";
-import { validateInvitationTokenMiddleware } from "../middlewares/invitations/invitations.middlewares";
-import { validateJWTAndGetPayload } from "../modules/jwtManager";
-import type { AuthenticatedRequest } from "../modules/jwtManager/jwtManager.types";
-import { requireRole } from "../middlewares/authorization/authorization.middlewares";
-import { requirePermission } from "../middlewares/authorization/authorization.middlewares";
-// #end-section
-// #section Create authRouter
-export const authRouter = Router();
-authRouter.use('/jwt', jwtManagerRoutes); // api/auth/jwt routes
-// #end-section
-// #route POST /register - Registro normal de usuarios
-/**
- * Endpoint de registro tradicional (sin invitación):
- * - Primer usuario → admin (ownership)
- * - Usuarios subsecuentes → guest
- * 
- * @route POST /api/auth/register
- */
-authRouter.post(API_ROUTES.REGISTER_URL,
-  validateRegisterPayload, // validate payload
-  hashPasswordMiddleware, // hash password 
-  addNewUserDataToDB, // add user to DB
-  savePlatformToken, // save platform token if provided   
-  fetchUserDataFromDB, // fetch user data from DB
-  createJWT, // create JWT
-  setJWTonCookies, // set JWT in cookies
-  returnUserData // return user data in response
-)
-// #end-route
-// #route POST /register/invitation - Registro con invitación de empleado
-/**
- * Endpoint de registro con token de invitación:
- * - Requiere token válido en query params
- * - Crea usuario como employee asignado a sucursal
- * - Asigna permisos por defecto
- * 
- * @route POST /api/auth/register/invitation?token={invitationToken}
- * @query token - Token de invitación (requerido)
- */
-authRouter.post(`${API_ROUTES.REGISTER_URL}/invitation`,
-  validateInvitationTokenMiddleware, // Valida token (requerido en esta ruta)
+import { Router } from "express";
+import {
   validateRegisterPayload,
   hashPasswordMiddleware,
   addNewUserDataToDB,
   savePlatformToken,
-  processInvitationIfPresent, // Convierte a employee
   fetchUserDataFromDB,
-  createJWT,
+  fetchUserDataByUserId,
+  createJWTMiddleware,
   setJWTonCookies,
-  returnUserData
-)
-
-authRouter.post(API_ROUTES.LOGIN_URL,
+  returnUserData,
   validateLoginPayload,
   getUserFromDB,
-  createJWT,
+  validateJWTAndGetPayload,
+} from "../middlewares/auth.middlewares";
+// #end-section
+
+// #section Create authRouter
+export const authRouter = Router();
+// #end-section
+
+// #route POST /register - User registration
+authRouter.post('/register',
+  validateRegisterPayload,
+  hashPasswordMiddleware,
+  addNewUserDataToDB,
+  savePlatformToken,
+  fetchUserDataFromDB,
+  createJWTMiddleware,
   setJWTonCookies,
   returnUserData
-)
+);
+// #end-route
 
-authRouter.post(API_ROUTES.AUTO_LOGIN_BY_TOKEN_URL,
+// #route POST /login - User login
+authRouter.post('/login',
+  validateLoginPayload,
+  getUserFromDB,
+  createJWTMiddleware,
+  setJWTonCookies,
+  returnUserData
+);
+// #end-route
+
+// #route POST /auto-login - Auto login by token
+authRouter.post('/auto-login',
   validateJWTAndGetPayload,
   fetchUserDataByUserId,
   returnUserData
-)
-// #end-route
-// #route GET /test-permissions - Ruta temporal de prueba para sistema de permisos
-/**
- * RUTA TEMPORAL DE PRUEBA - Sistema de permisos
- * 
- * Prueba los nuevos middlewares de autorización:
- * - requireRole: verifica tipo de usuario
- * - requirePermission: verifica permisos específicos
- * 
- * Esta ruta debe eliminarse en producción.
- * 
- * @route GET /api/auth/test-permissions
- * @access Private (solo admin y employee)
- */
-authRouter.get('/test-permissions',
-  validateJWTAndGetPayload,
-  requireRole('admin', 'employee'),
-  (req: AuthenticatedRequest, res: Response) => {
-    res.json({
-      success: true,
-      message: '✅ Sistema de permisos funcionando correctamente',
-      user: {
-        userId: req.user?.userId,
-        email: req.user?.email,
-        type: req.user?.type,
-        branchId: req.user?.branchId,
-        permissions: req.user?.permissions ? JSON.parse(req.user.permissions) : null,
-        state: req.user?.state,
-      }
-    });
-  }
-);
-// #end-route
-// #route GET /test-permissions/products-edit - Prueba permiso específico
-/**
- * RUTA TEMPORAL DE PRUEBA - Permiso de edición de productos
- * 
- * Prueba requirePermission con módulo 'products' y acción 'canEdit'.
- * Admin: siempre pasa (bypass)
- * Employee: debe tener el permiso explícito
- * 
- * @route GET /api/auth/test-permissions/products-edit
- * @access Private (admin bypass, employee con permiso)
- */
-authRouter.get('/test-permissions/products-edit',
-  validateJWTAndGetPayload,
-  requireRole('admin', 'employee'),
-  requirePermission('products', 'canEdit'),
-  (req: AuthenticatedRequest, res: Response) => {
-    res.json({
-      success: true,
-      message: '✅ Tienes permiso para editar productos',
-      user: {
-        userId: req.user?.userId,
-        type: req.user?.type,
-        branchId: req.user?.branchId,
-      }
-    });
-  }
-);
-// #end-route
-// #route GET /test-permissions/categories-delete - Prueba permiso de edición/eliminación
-/**
- * RUTA TEMPORAL DE PRUEBA - Permiso de edición/eliminación de categorías
- * 
- * Prueba requirePermission con módulo 'categories' y acción 'canEdit'.
- * Nota: canEdit incluye crear, modificar y eliminar.
- * Admin: siempre pasa
- * Employee: debe tener el permiso explícito
- * 
- * @route GET /api/auth/test-permissions/categories-delete
- * @access Private (admin bypass, employee con permiso)
- */
-authRouter.get('/test-permissions/categories-delete',
-  validateJWTAndGetPayload,
-  requireRole('admin', 'employee'),
-  requirePermission('categories', 'canEdit'),
-  (req: AuthenticatedRequest, res: Response) => {
-    res.json({
-      success: true,
-      message: '✅ Tienes permiso para editar/eliminar categorías',
-      user: {
-        userId: req.user?.userId,
-        type: req.user?.type,
-      }
-    });
-  }
 );
 // #end-route
