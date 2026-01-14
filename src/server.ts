@@ -7,6 +7,7 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import cookieParser from 'cookie-parser';
 import { authRouter } from "./routes/auth.routes";
+import devToolsRouter from "./routes/devTools.routes";
 import * as serverConfig from './config/server.config';
 import './db/init';
 // #end-section
@@ -25,10 +26,11 @@ app.use(bodyParser.json());
 
 // #section Routes
 app.use('/api/auth', authRouter);
+app.use('/api/devtools', devToolsRouter);
 // #end-section
 
 app.get("/", (_req, res) => {
-  res.send("Kitchen Solutions Suite Server - Auth Ready");
+  res.send("Kitchen Solutions Suite Server - DevTools & Auth Ready");
 });
 
 // #section Start server
