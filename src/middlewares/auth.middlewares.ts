@@ -182,6 +182,11 @@ export const fetchUserDataFromDB = async (
       return;
     }
 
+    // Inicializar req.body si no existe
+    if (!req.body) {
+      req.body = {};
+    }
+
     req.body.userData = {
       id: user.id,
       email: user.email,
@@ -225,6 +230,11 @@ export const fetchUserDataByUserId = async (
       return;
     }
 
+    // Inicializar req.body si no existe
+    if (!req.body) {
+      req.body = {};
+    }
+
     req.body.userData = {
       id: user.id,
       email: user.email,
@@ -238,6 +248,7 @@ export const fetchUserDataByUserId = async (
 
     next();
   } catch (err) {
+    console.error('💥 Error in fetchUserDataByUserId:', err);
     res.status(500).json({ error: 'Error fetching user data' });
   }
 };
@@ -385,6 +396,11 @@ export const getUserFromDB = async (
         return;
       }
 
+      // Inicializar req.body si no existe
+      if (!req.body) {
+        req.body = {};
+      }
+
       req.body.userData = {
         id: user.id,
         email: user.email,
@@ -420,6 +436,11 @@ export const getUserFromDB = async (
       if (!user) {
         res.status(401).json({ error: 'User not found' });
         return;
+      }
+
+      // Inicializar req.body si no existe
+      if (!req.body) {
+        req.body = {};
       }
 
       req.body.userData = {

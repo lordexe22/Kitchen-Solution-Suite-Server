@@ -3,7 +3,16 @@
 // #section Imports
 import { Request, Response } from 'express';
 import * as devToolsService from '../services/devTools/databaseCrud';
+import { extractTableSchema, validateTableSchema } from '../services/devTools/databaseCrud/table-schema.service';
+import { usersTable, apiPlatformsTable } from '../db/schema';
 // #end-section
+
+// #constant Mapeo de tablas disponibles
+const TABLE_MAP: Record<string, any> = {
+  users: usersTable,
+  apiPlatforms: apiPlatformsTable
+};
+// #end-constant
 
 // #info
 /**
@@ -49,31 +58,46 @@ export async function listTables(req: Request, res: Response) {
 
 // #controller getTableSchema
 /**
- * Obtiene el schema de una tabla específica.
+ * Obtiene el schema completo de una tabla específica.
+ * 
+ * Extrae todos los campos, tipos, y metadatos de la tabla.
  * 
  * GET /api/devtools/tables/:table/schema
+ * 
+ * @param table - Nombre de la tabla (ej: users, apiPlatforms)
+ * @returns Schema con lista de campos y sus propiedades
  */
 export async function getTableSchema(req: Request, res: Response) {
   try {
     const { table } = req.params;
-    const schema = devToolsService.getTableSchema(table);
-    
-    if (!schema) {
+
+    // Validar que la tabla existe
+    if (!table || !TABLE_MAP[table]) {
       return res.status(404).json({
         success: false,
-        error: `Tabla no encontrada: ${table}`
+        error: `Tabla no encontrada: ${table}. Tablas disponibles: ${Object.keys(TABLE_MAP).join(', ')}`
       });
     }
-    
+
+    // Extraer schema usando el nuevo servicio
+    const tableObj = TABLE_MAP[table];
+    const schema = extractTableSchema(tableObj, table);
+
+    // Validar que el schema se extrajo correctamente
+    validateTableSchema(schema);
+
     return res.status(200).json({
       success: true,
       data: schema,
       metadata: {
-        timestamp: new Date()
+        timestamp: new Date(),
+        fieldCount: schema.fields.length,
+        primaryKeys: schema.primaryKeys
       }
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+    console.error('❌ Error en getTableSchema:', errorMessage);
     return res.status(500).json({
       success: false,
       error: `Error al obtener schema: ${errorMessage}`

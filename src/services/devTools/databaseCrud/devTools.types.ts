@@ -105,7 +105,7 @@ export interface TableSchema {
   /** Listado de campos con su información */
   fields: TableFieldInfo[];
   /** Campos que son clave primaria */
-  primaryKeys: string[];
+  primaryKeys?: string[];
 }
 
 // #end-section

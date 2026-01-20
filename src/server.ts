@@ -33,6 +33,16 @@ app.get("/", (_req, res) => {
   res.send("Kitchen Solutions Suite Server - DevTools & Auth Ready");
 });
 
+// #section Error Handler - Global error handler middleware
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('🔥 Global Error Handler:', err);
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal Server Error',
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
+});
+// #end-section
+
 // #section Start server
 app.listen(serverConfig.PORT, () => {
   console.log(`Server running on port ${serverConfig.PORT}`);
