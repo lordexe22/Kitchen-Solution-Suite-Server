@@ -2,18 +2,9 @@
 // #section Imports
 import { Router } from "express";
 import {
-  validateRegisterPayload,
-  hashPasswordMiddleware,
-  addNewUserDataToDB,
-  savePlatformToken,
-  fetchUserDataFromDB,
-  fetchUserDataByUserId,
-  createJWTMiddleware,
-  setJWTonCookies,
-  returnUserData,
-  validateLoginPayload,
-  getUserFromDB,
-  validateJWTAndGetPayload,
+  registerMiddleware,
+  loginMiddleware,
+  autoLoginMiddleware,
 } from "../middlewares/auth.middlewares";
 // #end-section
 
@@ -22,32 +13,13 @@ export const authRouter = Router();
 // #end-section
 
 // #route POST /register - User registration
-authRouter.post('/register',
-  validateRegisterPayload,
-  hashPasswordMiddleware,
-  addNewUserDataToDB,
-  savePlatformToken,
-  fetchUserDataFromDB,
-  createJWTMiddleware,
-  setJWTonCookies,
-  returnUserData
-);
+authRouter.post('/register', registerMiddleware);
 // #end-route
 
 // #route POST /login - User login
-authRouter.post('/login',
-  validateLoginPayload,
-  getUserFromDB,
-  createJWTMiddleware,
-  setJWTonCookies,
-  returnUserData
-);
+authRouter.post('/login', loginMiddleware);
 // #end-route
 
 // #route POST /auto-login - Auto login by token
-authRouter.post('/auto-login',
-  validateJWTAndGetPayload,
-  fetchUserDataByUserId,
-  returnUserData
-);
+authRouter.post('/auto-login', autoLoginMiddleware);
 // #end-route
