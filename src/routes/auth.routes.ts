@@ -5,6 +5,7 @@ import {
   registerMiddleware,
   loginMiddleware,
   autoLoginMiddleware,
+  logoutMiddleware,
 } from "../middlewares/auth.middlewares";
 // #end-section
 
@@ -22,4 +23,8 @@ authRouter.post('/login', loginMiddleware);
 
 // #route POST /auto-login - Auto login by JWT cookie
 authRouter.post('/auto-login', autoLoginMiddleware);
+// #end-route
+
+// #route POST /logout - User logout
+authRouter.post('/logout', logoutMiddleware);
 // #end-route

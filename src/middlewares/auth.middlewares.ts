@@ -14,6 +14,7 @@ import { Request, Response, NextFunction } from "express";
 import { loginService } from "../services/auth/login.service";
 import { registerService } from "../services/auth/register.service";
 import { autoLoginService } from "../services/auth/autoLogin.service";
+import { logoutService } from "../services/auth/logout.service";
 import { clearJWTCookie } from "../lib/modules/jwtCookieManager";
 // #end-section
 // #middleware registerMiddleware
@@ -94,6 +95,31 @@ export const autoLoginMiddleware = async (
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Auto-login failed';
     res.status(401).json({ error: message });
+  }
+};
+// #end-middleware
+
+// #middleware logoutMiddleware
+export const logoutMiddleware = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    // #step 1 - Call logout service
+    const { cookieClearData } = logoutService();
+    // #end-step
+
+    // #step 2 - Clear JWT cookie
+    res.cookie(cookieClearData.name, cookieClearData.value, cookieClearData.options);
+    // #end-step
+
+    // #step 3 - Send response
+    res.json({ success: true, message: 'Logged out successfully' });
+    // #end-step
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Logout failed';
+    res.status(500).json({ success: false, error: message });
   }
 };
 // #end-middleware
