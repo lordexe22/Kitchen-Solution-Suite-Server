@@ -39,7 +39,7 @@ export interface UserData {
   firstName: string;
   lastName: string;
   imageUrl: string | null;
-  type: 'admin' | 'employee' | 'guest' | 'dev';
+  type: 'admin' | 'employee' | 'guest' | 'ownership';
   belongToCompanyId: number | null;
   belongToBranchId: number | null;
   state: 'pending' | 'active' | 'suspended';

@@ -40,7 +40,7 @@ export interface UserData {
   firstName: string;
   lastName: string;
   imageUrl: string | null;
-  type: 'admin' | 'employee' | 'guest' | 'dev';
+  type: 'admin' | 'employee' | 'guest' | 'ownership';
   belongToCompanyId: number | null;
   belongToBranchId: number | null;
   state: 'pending' | 'active' | 'suspended';
@@ -157,7 +157,7 @@ async function checkUserDoesNotExist(email: string): Promise<void> {
     .limit(1);
 
   if (existingUser) {
-    throw new Error('User already exists');
+    throw new Error('Email already registered');
   }
 }
 
@@ -179,9 +179,9 @@ async function createUser(data: {
       email: data.email,
       passwordHash: data.passwordHash,
       imageUrl: data.imageUrl,
-      type: 'guest',
-      isActive: false,
-      state: 'pending',
+      type: 'admin',
+      isActive: true,
+      state: 'active',
     })
     .returning({ id: usersTable.id });
 

@@ -14,7 +14,7 @@ npx drizzle-kit migrate -> run pending migrations
 */
 
 // #section Enumeraciones
-export const userTypeEnum = pgEnum('user_type', ['admin', 'employee', 'guest', 'dev']);
+export const userTypeEnum = pgEnum('user_type', ['admin', 'employee', 'guest', 'ownership']);
 export const userStateEnum = pgEnum('user_state', ['pending', 'active', 'suspended']);
 export const platformNameEnum = pgEnum('platform_name', ['local', 'google', 'facebook', 'x']);
 // #end-section
@@ -24,10 +24,10 @@ export const platformNameEnum = pgEnum('platform_name', ['local', 'google', 'fac
  * Tabla principal de usuarios del sistema.
  * 
  * Soporta múltiples tipos de usuario mediante el campo 'type':
- * - admin: Propietario de compañías, control total de sus recursos
+ * - ownership: Propietario de compañías, control total (en desarrollo, usar 'admin' temporalmente)
+ * - admin: Usuario administrador del sistema (equipo desarrollo)
  * - employee: Empleado asignado a UNA sucursal con permisos específicos
  * - guest: Usuario visitante, solo lectura de recursos públicos
- * - dev: Usuario desarrollador con acceso especial
  * 
  * Campos específicos por tipo:
  * - employee: Requiere belongToBranchId (sucursal asignada). Los permisos se almacenan en la tabla employee_permissions
@@ -69,7 +69,7 @@ export const usersTable = pgTable('users', {
 
 // #variable apiPlatformsTable - Tabla para vincular usuarios con plataformas externas
 export const apiPlatformsTable = pgTable('api_platforms', {
-  userId: serial('user_id').notNull().references(() => usersTable.id), // FK a users
+  userId: integer('user_id').notNull().references(() => usersTable.id), // FK a users
   platformName: platformNameEnum('platform_name').notNull(),
   platformToken: text('token').notNull(),
   linkedAt: timestamp('linked_at').notNull().defaultNow(),
