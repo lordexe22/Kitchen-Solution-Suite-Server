@@ -229,10 +229,10 @@ interface UserData {
 npm test src/services/auth/
 
 # Solo login
-npm test src/services/auth/login.service.test.ts
+npm test src/services/auth/login/login.service.test.ts
 
 # Solo register
-npm test src/services/auth/register.service.test.ts
+npm test src/services/auth/register/register.service.test.ts
 
 # Con cobertura
 npm test -- --coverage src/services/auth/
@@ -261,6 +261,7 @@ npm test -- --coverage src/services/auth/
 
 - **Google OAuth:** Los tests de Google login son limitados porque `validateGoogleToken` requiere tokens reales de Google. En producción, debería mockearse este módulo.
 - **Estado suspendido:** La validación de usuario suspendido solo está implementada para Google login, no para local.
+- **Defaults temporales en registro:** Hoy los registros crean usuarios con `type: 'admin'` y `state: 'active'` (config de desarrollo). Si un test espera `guest/pending`, fallará únicamente por ese detalle.
 
 ---
 

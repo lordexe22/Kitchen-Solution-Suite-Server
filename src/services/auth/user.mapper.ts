@@ -5,7 +5,7 @@
  * Centraliza la lógica de transformación de datos de usuario
  */
 
-import type { UserData } from './login.service';
+import type { UserData } from './login/types';
 
 /**
  * Mapea un registro de usuario de la base de datos a la estructura UserData

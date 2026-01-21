@@ -1,7 +1,6 @@
-// src/services/auth/login.service.test.ts
+// src/services/auth/login/login.service.test.ts
 
-// Mocks de base de datos y eq para aislar a memoria
-jest.mock('../../db/schema', () => ({
+jest.mock('../../../db/schema', () => ({
   usersTable: {
     name: 'users',
     id: 'id',
@@ -27,7 +26,7 @@ jest.mock('drizzle-orm', () => ({
   eq: (column: any, value: any) => ({ column, value }),
 }));
 
-jest.mock('../../db/init', () => {
+jest.mock('../../../db/init', () => {
   const mockStore = { users: [] as any[], platforms: [] as any[] };
 
   const db = {
@@ -95,42 +94,27 @@ jest.mock('../../db/init', () => {
   return { db };
 });
 
-import { loginService, LoginPayload } from './login.service';
-import { db } from '../../db/init';
-import { usersTable, apiPlatformsTable } from '../../db/schema';
-import { hashPassword } from '../../utils/password.utils';
+import { loginService } from './login.service';
+import type { LoginPayload } from './types';
+import { db } from '../../../db/init';
+import { usersTable, apiPlatformsTable } from '../../../db/schema';
+import { hashPassword } from '../../../utils/password.utils';
 import { eq } from 'drizzle-orm';
-import { validateGoogleToken } from '../../lib/utils/authentication/validateGoogleToken';
+import { validateGoogleToken } from '../../../lib/utils/authentication/validateGoogleToken';
 
-// Mock de validateGoogleToken para no depender de Google en tests
-jest.mock('../../lib/utils/authentication/validateGoogleToken', () => ({
+jest.mock('../../../lib/utils/authentication/validateGoogleToken', () => ({
   validateGoogleToken: jest.fn(),
 }));
 
-/**
- * Tests para el servicio de login.
- * 
- * Cobertura:
- * - Login local exitoso
- * - Login local con credenciales inválidas
- * - Login Google exitoso
- * - Login Google con usuario no registrado
- * - Login con usuario suspendido
- * - Validación de payloads
- */
-
 describe('loginService', () => {
-  // Setup: Usuario de prueba local
   let testLocalUser: any;
   const testLocalPassword = 'TestPassword123!';
 
-  // Setup: Usuario de prueba Google
   let testGoogleUser: any;
   const testGoogleSub = 'google_test_sub_12345';
   const mockedValidateGoogleToken = validateGoogleToken as jest.MockedFunction<typeof validateGoogleToken>;
 
   beforeAll(async () => {
-    // Crear usuario local de prueba
     const passwordHash = await hashPassword(testLocalPassword);
     const [localUser] = await db
       .insert(usersTable)
@@ -146,7 +130,6 @@ describe('loginService', () => {
       .returning();
     testLocalUser = localUser;
 
-    // Crear usuario Google de prueba
     const [googleUser] = await db
       .insert(usersTable)
       .values({
@@ -161,7 +144,6 @@ describe('loginService', () => {
       .returning();
     testGoogleUser = googleUser;
 
-    // Vincular usuario con Google
     await db.insert(apiPlatformsTable).values({
       userId: googleUser.id,
       platformName: 'google',
@@ -170,7 +152,6 @@ describe('loginService', () => {
   });
 
   afterAll(async () => {
-    // Limpiar usuarios de prueba
     if (testLocalUser) {
       await db.delete(usersTable).where(eq(usersTable.id, testLocalUser.id));
     }
@@ -347,8 +328,6 @@ describe('loginService', () => {
     });
 
     it('debería permitir login de usuario suspendido con local (se valida después)', async () => {
-      // Nota: La validación de suspensión solo está implementada para Google
-      // Para local, el flujo actual no valida estado
       const payload: LoginPayload = {
         platformName: 'local',
         email: suspendedUser.email,

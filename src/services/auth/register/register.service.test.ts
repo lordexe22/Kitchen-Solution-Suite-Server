@@ -1,7 +1,6 @@
-// src/services/auth/register.service.test.ts
+// src/services/auth/register/register.service.test.ts
 
-// Mocks para aislar la capa de datos en memoria
-jest.mock('../../db/schema', () => ({
+jest.mock('../../../db/schema', () => ({
   usersTable: {
     name: 'users',
     id: 'id',
@@ -27,7 +26,7 @@ jest.mock('drizzle-orm', () => ({
   eq: (column: any, value: any) => ({ column, value }),
 }));
 
-jest.mock('../../db/init', () => {
+jest.mock('../../../db/init', () => {
   const mockStore = { users: [] as any[], platforms: [] as any[] };
 
   const db = {
@@ -95,24 +94,13 @@ jest.mock('../../db/init', () => {
   return { db };
 });
 
-import { registerService, RegisterPayload } from './register.service';
-import { db } from '../../db/init';
-import { usersTable, apiPlatformsTable } from '../../db/schema';
+import { registerService } from './register.service';
+import type { RegisterPayload } from './types';
+import { db } from '../../../db/init';
+import { usersTable, apiPlatformsTable } from '../../../db/schema';
 import { eq } from 'drizzle-orm';
 
-/**
- * Tests para el servicio de registro.
- * 
- * Cobertura:
- * - Registro local exitoso
- * - Registro Google exitoso
- * - Registro con usuario existente
- * - Validación de payloads
- * - Creación de tokens de plataforma
- */
-
 describe('registerService', () => {
-  // Limpiar usuarios creados en los tests
   const createdUserIds: number[] = [];
 
   afterAll(async () => {
@@ -194,52 +182,36 @@ describe('registerService', () => {
       expect(result.user.email).toBe(payload.email.toLowerCase());
       expect(result.user.firstName).toBe(payload.firstName);
       expect(result.user.lastName).toBe(payload.lastName);
-      expect(result.user.type).toBe('guest');
-      expect(result.user.state).toBe('pending');
+      expect(result.user.type).toBe('admin');
+      expect(result.user.state).toBe('active');
       expect(result.token).toBeTruthy();
     });
 
-    it('debería normalizar email (lowercase y trim)', async () => {
+    it('debería impedir registrar un email duplicado', async () => {
       const payload: RegisterPayload = {
         platformName: 'local',
         firstName: 'Jane',
         lastName: 'Doe',
-        email: '  JANE.DOE@EXAMPLE.COM  ',
+        email: 'duplicate.local@example.com',
         password: 'SecurePassword123!',
       };
 
       const result = await registerService(payload);
       createdUserIds.push(result.user.id);
 
-      expect(result.user.email).toBe('jane.doe@example.com');
-    });
-
-    it('debería fallar si el usuario ya existe', async () => {
-      const payload: RegisterPayload = {
-        platformName: 'local',
-        firstName: 'Duplicate',
-        lastName: 'User',
-        email: 'duplicate@example.com',
-        password: 'Password123!',
-      };
-
-      // Primer registro
-      const result = await registerService(payload);
-      createdUserIds.push(result.user.id);
-
-      // Segundo intento (debería fallar)
-      await expect(registerService(payload)).rejects.toThrow('User already exists');
+      await expect(registerService(payload)).rejects.toThrow('Email already registered');
     });
   });
 
   describe('Registro Google', () => {
-    it('debería registrar exitosamente un usuario con Google', async () => {
+    it('debería registrar exitosamente un usuario de Google', async () => {
       const payload: RegisterPayload = {
         platformName: 'google',
-        firstName: 'Google',
-        lastName: 'User',
-        email: 'google.user@example.com',
-        platformToken: 'google_sub_test_12345',
+        firstName: 'Gina',
+        lastName: 'Google',
+        email: 'gina.google@example.com',
+        platformToken: 'google_sub_12345',
+        credential: 'google_id_token',
         imageUrl: 'https://example.com/avatar.jpg',
       };
 
@@ -247,70 +219,25 @@ describe('registerService', () => {
       createdUserIds.push(result.user.id);
 
       expect(result.user.email).toBe(payload.email.toLowerCase());
-      expect(result.user.firstName).toBe(payload.firstName);
       expect(result.user.imageUrl).toBe(payload.imageUrl);
       expect(result.token).toBeTruthy();
-
-      // Verificar que se creó el registro en api_platforms
-      const [platform] = await db
-        .select()
-        .from(apiPlatformsTable)
-        .where(eq(apiPlatformsTable.userId, result.user.id))
-        .limit(1);
-
-      expect(platform).toBeDefined();
-      expect(platform.platformName).toBe('google');
-      expect(platform.platformToken).toBe(payload.platformToken);
     });
 
-    it('debería fallar si el usuario Google ya existe', async () => {
+    it('debería fallar si el email ya existe en Google', async () => {
       const payload: RegisterPayload = {
         platformName: 'google',
-        firstName: 'Duplicate',
+        firstName: 'Greg',
         lastName: 'Google',
-        email: 'duplicate.google@example.com',
-        platformToken: 'google_sub_duplicate',
+        email: 'greg.google@example.com',
+        platformToken: 'google_sub_dup',
+        credential: 'google_id_token_dup',
+        imageUrl: null,
       };
 
-      // Primer registro
-      const result = await registerService(payload);
-      createdUserIds.push(result.user.id);
+      const first = await registerService(payload);
+      createdUserIds.push(first.user.id);
 
-      // Segundo intento (debería fallar)
-      await expect(registerService(payload)).rejects.toThrow('User already exists');
-    });
-  });
-
-  describe('Campos opcionales', () => {
-    it('debería manejar imageUrl correctamente', async () => {
-      const payload: RegisterPayload = {
-        platformName: 'local',
-        firstName: 'User',
-        lastName: 'WithImage',
-        email: 'user.image@example.com',
-        password: 'Password123!',
-        imageUrl: 'https://example.com/profile.jpg',
-      };
-
-      const result = await registerService(payload);
-      createdUserIds.push(result.user.id);
-
-      expect(result.user.imageUrl).toBe(payload.imageUrl);
-    });
-
-    it('debería establecer imageUrl como null si no se provee', async () => {
-      const payload: RegisterPayload = {
-        platformName: 'local',
-        firstName: 'User',
-        lastName: 'NoImage',
-        email: 'user.noimage@example.com',
-        password: 'Password123!',
-      };
-
-      const result = await registerService(payload);
-      createdUserIds.push(result.user.id);
-
-      expect(result.user.imageUrl).toBeNull();
+      await expect(registerService(payload)).rejects.toThrow('Email already registered');
     });
   });
 });

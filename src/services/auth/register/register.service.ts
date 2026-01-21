@@ -1,83 +1,22 @@
-// src/services/auth/register.service.ts
-
-/**
- * Servicio de registro de usuarios
- * 
- * Responsabilidad: Registrar nuevos usuarios mediante credenciales locales o Google OAuth.
- * Este servicio es independiente de Express y puede ser reutilizado en cualquier contexto.
- */
-
-// #section Imports
-import { db } from '../../db/init';
-import { usersTable, apiPlatformsTable } from '../../db/schema';
+// Servicio de registro de usuarios
+import { db } from '../../../db/init';
+import { usersTable, apiPlatformsTable } from '../../../db/schema';
 import { eq } from 'drizzle-orm';
-import { hashPassword } from '../../utils/password.utils';
-import { CookieData, createJWT, setJWTCookie } from '../../lib/modules/jwtCookieManager';
-import { mapUserToUserData } from './user.mapper';
-// #end-section
+import { hashPassword } from '../../../utils/password.utils';
+import { createJWT, setJWTCookie } from '../../../lib/modules/jwtCookieManager';
+import { mapUserToUserData } from '../user.mapper';
+import type { RegisterPayload, RegisterResult, UserData } from './types';
 
-// #section Types
-export interface RegisterPayload {
-  platformName: 'local' | 'google';
-  firstName: string;
-  lastName: string;
-  email: string;
-  password?: string | null;
-  platformToken?: string | null;
-  credential?: string | null;
-  imageUrl?: string | null;
-}
+export type { RegisterPayload, RegisterResult, UserData } from './types';
 
-export interface RegisterResult {
-  user: UserData;
-  token: string;
-  cookieData: CookieData;
-}
-
-export interface UserData {
-  id: number;
-  email: string;
-  firstName: string;
-  lastName: string;
-  imageUrl: string | null;
-  type: 'admin' | 'employee' | 'guest' | 'ownership';
-  belongToCompanyId: number | null;
-  belongToBranchId: number | null;
-  state: 'pending' | 'active' | 'suspended';
-}
-// #end-section
-
-// #service registerService
-/**
- * Servicio principal de registro.
- * 
- * Flujo:
- * 1. Valida el payload de entrada
- * 2. Verifica que el usuario no exista
- * 3. Hashea la contraseña (si es registro local)
- * 4. Crea el usuario en la base de datos
- * 5. Guarda el token de plataforma (si es Google)
- * 6. Obtiene los datos completos del usuario creado
- * 7. Genera un JWT para la sesión
- * 8. Retorna los datos del usuario y el token
- * 
- * @param payload - Datos de registro
- * @returns Objeto con datos del usuario registrado y token JWT
- * @throws Error si el usuario ya existe o los datos son inválidos
- */
 export async function registerService(payload: RegisterPayload): Promise<RegisterResult> {
-  // PASO 1: Validar payload
   const validatedPayload = validatePayload(payload);
-  
-  // PASO 2: Verificar que el usuario no exista
   await checkUserDoesNotExist(validatedPayload.email);
-  
-  // PASO 3: Hashear contraseña si es registro local
+
   const passwordHash = validatedPayload.platformName === 'local' && validatedPayload.password
     ? await hashPassword(validatedPayload.password)
     : '';
-  
-  // PASO 4: Crear usuario en BD
+
   const userId = await createUser({
     firstName: validatedPayload.firstName,
     lastName: validatedPayload.lastName,
@@ -85,31 +24,19 @@ export async function registerService(payload: RegisterPayload): Promise<Registe
     passwordHash,
     imageUrl: validatedPayload.imageUrl ?? null,
   });
-  
-  // PASO 5: Guardar token de plataforma si es Google
+
   if (validatedPayload.platformName === 'google' && validatedPayload.platformToken) {
     await savePlatformToken(userId, 'google', validatedPayload.platformToken);
   }
-  
-  // PASO 6: Obtener datos completos del usuario
+
   const user = await getUserById(userId);
-  
-  // PASO 7: Generar JWT y datos de cookie
+
   const token = createJWT({ userId: user.id });
   const cookieData = setJWTCookie(token);
-  
-  // PASO 8: Retornar resultado con cookie lista para setear
+
   return { user, token, cookieData };
 }
-// #end-service
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// FUNCIONES INTERNAS (privadas al servicio)
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-/**
- * Valida que el payload contenga los campos requeridos.
- */
 function validatePayload(payload: RegisterPayload): RegisterPayload {
   if (!payload || typeof payload !== 'object') {
     throw new Error('Invalid request body');
@@ -133,7 +60,6 @@ function validatePayload(payload: RegisterPayload): RegisterPayload {
     throw new Error('Platform token required for Google registration');
   }
 
-  // Normalizar datos
   return {
     platformName,
     firstName: firstName.trim(),
@@ -145,10 +71,6 @@ function validatePayload(payload: RegisterPayload): RegisterPayload {
   };
 }
 
-/**
- * Verifica que el usuario no exista en la base de datos.
- * Optimizado: solo busca por email sin traer toda la fila.
- */
 async function checkUserDoesNotExist(email: string): Promise<void> {
   const [existingUser] = await db
     .select({ id: usersTable.id })
@@ -161,9 +83,6 @@ async function checkUserDoesNotExist(email: string): Promise<void> {
   }
 }
 
-/**
- * Crea un nuevo usuario en la base de datos.
- */
 async function createUser(data: {
   firstName: string;
   lastName: string;
@@ -192,9 +111,6 @@ async function createUser(data: {
   return newUser.id;
 }
 
-/**
- * Guarda el token de plataforma externa en la tabla api_platforms.
- */
 async function savePlatformToken(
   userId: number,
   platformName: 'google',
@@ -207,9 +123,6 @@ async function savePlatformToken(
   });
 }
 
-/**
- * Obtiene los datos completos de un usuario por su ID.
- */
 async function getUserById(userId: number): Promise<UserData> {
   const [user] = await db
     .select()

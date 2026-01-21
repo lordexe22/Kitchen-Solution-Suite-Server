@@ -11,10 +11,10 @@
 
 // #section Imports
 import { Request, Response, NextFunction } from "express";
-import { loginService } from "../services/auth/login.service";
-import { registerService } from "../services/auth/register.service";
-import { autoLoginService } from "../services/auth/autoLogin.service";
-import { logoutService } from "../services/auth/logout.service";
+import { loginService } from "../services/auth/login/login.service";
+import { registerService } from "../services/auth/register/register.service";
+import { autoLoginService } from "../services/auth/autoLogin/autoLogin.service";
+import { logoutService } from "../services/auth/logout/logout.service";
 import { clearJWTCookie } from "../lib/modules/jwtCookieManager";
 // #end-section
 // #middleware registerMiddleware
