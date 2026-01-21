@@ -30,8 +30,8 @@ export const platformNameEnum = pgEnum('platform_name', ['local', 'google', 'fac
  * - dev: Usuario desarrollador con acceso especial
  * 
  * Campos específicos por tipo:
- * - employee: Requiere branchId (sucursal asignada). Los permisos se almacenan en la tabla employee_permissions
- * - admin/guest/dev: branchId debe ser NULL
+ * - employee: Requiere belongToBranchId (sucursal asignada). Los permisos se almacenan en la tabla employee_permissions
+ * - admin/guest/dev: belongToBranchId debe ser NULL
  * 
  * @field id - Identificador único autoincremental
  * @field firstName - Nombre del usuario (255 caracteres máx)
@@ -39,7 +39,8 @@ export const platformNameEnum = pgEnum('platform_name', ['local', 'google', 'fac
  * @field email - Email único del usuario
  * @field passwordHash - Hash bcrypt de la contraseña
  * @field type - Tipo de usuario (enum: admin, employee, guest, dev)
- * @field branchId - FK a sucursal (solo para employee, nullable)
+ * @field belongToCompanyId - FK a compañía (nullable, solo para usuarios con acceso a compañía)
+ * @field belongToBranchId - FK a sucursal (solo para employee, nullable)
  * @field createdAt - Fecha de creación
  * @field updatedAt - Fecha de última actualización
  * @field isActive - Estado activo/inactivo (email verificado)
@@ -54,8 +55,9 @@ export const usersTable = pgTable('users', {
   passwordHash: text('password_hash').notNull(),
   type: userTypeEnum('type').notNull().default('guest'),
   
-  // Campo específico para empleados: ID de la sucursal (nullable)
-  branchId: integer('branch_id'),
+  // Campos de pertenencia a compañía y sucursal
+  belongToCompanyId: integer('belong_to_company_id'),
+  belongToBranchId: integer('belong_to_branch_id'),
   
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),

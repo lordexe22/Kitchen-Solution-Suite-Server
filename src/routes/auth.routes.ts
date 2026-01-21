@@ -20,6 +20,6 @@ authRouter.post('/register', registerMiddleware);
 authRouter.post('/login', loginMiddleware);
 // #end-route
 
-// #route POST /auto-login - Auto login by token
+// #route POST /auto-login - Auto login by JWT cookie
 authRouter.post('/auto-login', autoLoginMiddleware);
 // #end-route

@@ -2,6 +2,11 @@
 // #section Imports
 import dotenv from 'dotenv';
 dotenv.config();
+
+// Validar variables de entorno críticas antes de cualquier otra cosa
+import { validateEnvironment } from './config/environment';
+validateEnvironment();
+
 import express from "express";
 import bodyParser from "body-parser";
 import cors from "cors";
@@ -44,7 +49,26 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 // #end-section
 
 // #section Start server
-app.listen(serverConfig.PORT, () => {
+import { closeDatabase } from './db/init';
+
+const server = app.listen(serverConfig.PORT, () => {
   console.log(`Server running on port ${serverConfig.PORT}`);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  server.close(async () => {
+    await closeDatabase();
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', async () => {
+  console.log('SIGINT received, shutting down gracefully');
+  server.close(async () => {
+    await closeDatabase();
+    process.exit(0);
+  });
 });
 // #end-section

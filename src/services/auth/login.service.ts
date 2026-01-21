@@ -1,4 +1,4 @@
-// src/services/auth/login.service.ts
+/* src/services/auth/login.service.ts */
 
 /**
  * Servicio de autenticación (Login)
@@ -9,26 +9,30 @@
 
 // #section Imports
 import { validateGoogleToken } from '../../lib/utils/authentication/validateGoogleToken';
-import { createJWT } from '../../lib/modules/jwtCookieManager';
+import { CookieData, createJWT, setJWTCookie } from '../../lib/modules/jwtCookieManager';
 import { comparePassword } from '../../utils/password.utils';
 import { db } from '../../db/init';
 import { usersTable, apiPlatformsTable } from '../../db/schema';
 import { eq } from 'drizzle-orm';
+import { mapUserToUserData } from './user.mapper';
 // #end-section
-
 // #section Types
+// #interface LoginPayload
 export interface LoginPayload {
   platformName: 'local' | 'google';
   email?: string;
   password?: string;
   credential?: string;
 }
-
+// #end-interface
+// #interface LoginResult
 export interface LoginResult {
   user: UserData;
   token: string;
+  cookieData: CookieData;
 }
-
+// #end-interface
+// #interface UserData
 export interface UserData {
   id: number;
   email: string;
@@ -36,11 +40,12 @@ export interface UserData {
   lastName: string;
   imageUrl: string | null;
   type: 'admin' | 'employee' | 'guest' | 'dev';
-  branchId: number | null;
+  belongToCompanyId: number | null;
+  belongToBranchId: number | null;
   state: 'pending' | 'active' | 'suspended';
 }
+// #end-interface
 // #end-section
-
 // #service loginService
 /**
  * Servicio principal de login.
@@ -56,24 +61,24 @@ export interface UserData {
  * @throws Error si las credenciales son inválidas o el usuario está suspendido
  */
 export async function loginService(payload: LoginPayload): Promise<LoginResult> {
-  // PASO 1: Validar payload
+  // #step 1: Validate payload
   validatePayload(payload);
-  
-  // PASO 2: Autenticar usuario según plataforma
+  // #end-step
+  // #step 2: Authenticate user by platform
   const user = await authenticateUser(payload);
-  
-  // PASO 3: Generar JWT
+  // #end-step
+  // #step 3: Generate JWT and cookie data
   const token = createJWT({ userId: user.id });
-  
-  // PASO 4: Retornar resultado
-  return { user, token };
+  const cookieData = setJWTCookie(token);
+  // #end-step
+  // #step 4: Return result with cookie ready to set
+  return { user, token, cookieData };
+  // #end-step
+
 }
 // #end-service
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// FUNCIONES INTERNAS (privadas al servicio)
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
+// #section Internal Functions
+// #function validatePayload
 /**
  * Valida que el payload contenga los campos requeridos según la plataforma.
  */
@@ -98,7 +103,8 @@ function validatePayload(payload: LoginPayload): void {
     throw new Error('Invalid platform value');
   }
 }
-
+// #end-function
+// #function authenticateUser
 /**
  * Autentica al usuario según la plataforma especificada.
  */
@@ -109,7 +115,8 @@ async function authenticateUser(payload: LoginPayload): Promise<UserData> {
   
   return await authenticateGoogleUser(payload.credential!);
 }
-
+// #end-function
+// #function authenticateLocalUser
 /**
  * Autentica un usuario con credenciales locales (email/password).
  * 
@@ -120,10 +127,11 @@ async function authenticateUser(payload: LoginPayload): Promise<UserData> {
  */
 async function authenticateLocalUser(email: string, password: string): Promise<UserData> {
   // Buscar usuario por email
+  const normalizedEmail = email.toLowerCase().trim();
   const [user] = await db
     .select()
     .from(usersTable)
-    .where(eq(usersTable.email, email.toLowerCase().trim()))
+    .where(eq(usersTable.email, normalizedEmail))
     .limit(1);
 
   if (!user) {
@@ -138,14 +146,15 @@ async function authenticateLocalUser(email: string, password: string): Promise<U
 
   return mapUserToUserData(user);
 }
-
+// #end-function
+// #function authenticateGoogleUser
 /**
  * Autentica un usuario con Google OAuth.
  * 
  * Flujo:
  * 1. Valida la firma del token JWT de Google
- * 2. Extrae el 'sub' (Google User ID) del token validado
- * 3. Busca el usuario en la tabla api_platforms usando el 'sub'
+ * 2. Extrae el 'userId' (Google User ID) del token validado
+ * 3. Busca el usuario en la tabla api_platforms usando el userId de Google
  * 4. Obtiene los datos completos del usuario
  * 5. Valida que el usuario no esté suspendido
  * 
@@ -157,14 +166,14 @@ async function authenticateGoogleUser(credential: string): Promise<UserData> {
   // PASO 1: Validar firma del token de Google
   const googlePayload = await validateGoogleToken(credential);
   
-  // PASO 2: Extraer sub (Google User ID)
-  const platformToken = googlePayload.sub;
+  // PASO 2: Extraer userId (Google User ID)
+  const userId = googlePayload.sub;
   
   // PASO 3: Buscar usuario en api_platforms
   const [platform] = await db
     .select()
     .from(apiPlatformsTable)
-    .where(eq(apiPlatformsTable.platformToken, platformToken))
+    .where(eq(apiPlatformsTable.platformToken, userId))
     .limit(1);
 
   if (!platform) {
@@ -189,19 +198,5 @@ async function authenticateGoogleUser(credential: string): Promise<UserData> {
 
   return mapUserToUserData(user);
 }
-
-/**
- * Mapea un registro de la base de datos a la estructura UserData.
- */
-function mapUserToUserData(user: any): UserData {
-  return {
-    id: user.id,
-    email: user.email,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    imageUrl: user.imageUrl ?? null,
-    type: user.type,
-    branchId: user.branchId ?? null,
-    state: user.state,
-  };
-}
+// #end-function
+// #end-section

@@ -12,7 +12,8 @@ import { db } from '../../db/init';
 import { usersTable, apiPlatformsTable } from '../../db/schema';
 import { eq } from 'drizzle-orm';
 import { hashPassword } from '../../utils/password.utils';
-import { createJWT } from '../../lib/modules/jwtCookieManager';
+import { CookieData, createJWT, setJWTCookie } from '../../lib/modules/jwtCookieManager';
+import { mapUserToUserData } from './user.mapper';
 // #end-section
 
 // #section Types
@@ -30,6 +31,7 @@ export interface RegisterPayload {
 export interface RegisterResult {
   user: UserData;
   token: string;
+  cookieData: CookieData;
 }
 
 export interface UserData {
@@ -39,7 +41,8 @@ export interface UserData {
   lastName: string;
   imageUrl: string | null;
   type: 'admin' | 'employee' | 'guest' | 'dev';
-  branchId: number | null;
+  belongToCompanyId: number | null;
+  belongToBranchId: number | null;
   state: 'pending' | 'active' | 'suspended';
 }
 // #end-section
@@ -91,11 +94,12 @@ export async function registerService(payload: RegisterPayload): Promise<Registe
   // PASO 6: Obtener datos completos del usuario
   const user = await getUserById(userId);
   
-  // PASO 7: Generar JWT
+  // PASO 7: Generar JWT y datos de cookie
   const token = createJWT({ userId: user.id });
+  const cookieData = setJWTCookie(token);
   
-  // PASO 8: Retornar resultado
-  return { user, token };
+  // PASO 8: Retornar resultado con cookie lista para setear
+  return { user, token, cookieData };
 }
 // #end-service
 
@@ -143,15 +147,16 @@ function validatePayload(payload: RegisterPayload): RegisterPayload {
 
 /**
  * Verifica que el usuario no exista en la base de datos.
+ * Optimizado: solo busca por email sin traer toda la fila.
  */
 async function checkUserDoesNotExist(email: string): Promise<void> {
-  const existingUser = await db
-    .select()
+  const [existingUser] = await db
+    .select({ id: usersTable.id })
     .from(usersTable)
     .where(eq(usersTable.email, email))
     .limit(1);
 
-  if (existingUser.length > 0) {
+  if (existingUser) {
     throw new Error('User already exists');
   }
 }
@@ -216,14 +221,5 @@ async function getUserById(userId: number): Promise<UserData> {
     throw new Error('User not found after creation');
   }
 
-  return {
-    id: user.id,
-    email: user.email,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    imageUrl: user.imageUrl ?? null,
-    type: user.type,
-    branchId: user.branchId ?? null,
-    state: user.state,
-  };
+  return mapUserToUserData(user);
 }

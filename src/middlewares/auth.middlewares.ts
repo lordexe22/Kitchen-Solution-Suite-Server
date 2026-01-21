@@ -13,12 +13,9 @@
 import { Request, Response, NextFunction } from "express";
 import { loginService } from "../services/auth/login.service";
 import { registerService } from "../services/auth/register.service";
-import { setJWTCookie, decodeJWT, getJWTFromCookie } from "../lib/modules/jwtCookieManager";
-import { db } from "../db/init";
-import { usersTable } from "../db/schema";
-import { eq } from "drizzle-orm";
+import { autoLoginService } from "../services/auth/autoLogin.service";
+import { clearJWTCookie } from "../lib/modules/jwtCookieManager";
 // #end-section
-
 // #middleware registerMiddleware
 export const registerMiddleware = async (
   req: Request,
@@ -26,17 +23,21 @@ export const registerMiddleware = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { user, token } = await registerService(req.body);
-    const cookieData = setJWTCookie(token);
+    // #step 1 - Call register service
+    const { user, cookieData } = await registerService(req.body);
+    // #end-step
+    // #step 2 - Set JWT cookie in response
     res.cookie(cookieData.name, cookieData.value, cookieData.options);
+    // #end-step
+    // #step 3 - Send response
     res.json({ success: true, user });
+    // #end-step
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Registration failed';
     res.status(400).json({ success: false, error: message });
   }
 };
 // #end-middleware
-
 // #middleware loginMiddleware
 export const loginMiddleware = async (
   req: Request,
@@ -44,10 +45,15 @@ export const loginMiddleware = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { user, token } = await loginService(req.body);
-    const cookieData = setJWTCookie(token);
+    // #step 1 - Call login service
+    const { user, cookieData } = await loginService(req.body);
+    // #end-step
+    // #step 2 - Set JWT cookie in response
     res.cookie(cookieData.name, cookieData.value, cookieData.options);
+    // #end-step
+    // #step 3 - Send response
     res.json({ success: true, user });
+    // #end-step
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Login failed';
     res.status(401).json({ error: message });
@@ -62,43 +68,29 @@ export const autoLoginMiddleware = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const token = getJWTFromCookie(req as any);
-    
-    if (!token) {
-      res.status(401).json({ error: 'No token provided' });
+    // #step 1 - Call auto-login service
+    const { user, statusCode, cookieData } = await autoLoginService(req as any);
+    // #end-step
+
+    // #step 2 - Handle cookie based on status
+    if (statusCode !== 'SUCCESS') {
+      // If failed, clear cookie
+      const clearData = clearJWTCookie();
+      res.cookie(clearData.name, clearData.value, clearData.options);
+    } else if (cookieData) {
+      // If successful, set refreshed cookie with updated user data
+      res.cookie(cookieData.name, cookieData.value, cookieData.options);
+    }
+    // #end-step
+
+    // #step 3 - Send response based on result
+    if (user) {
+      res.status(200).json({ success: true, user });
       return;
     }
-    
-    const payload = decodeJWT(token);
-    
-    if (!payload || !payload.userId) {
-      res.status(401).json({ error: 'Invalid token' });
-      return;
-    }
-    
-    const [user] = await db
-      .select()
-      .from(usersTable)
-      .where(eq(usersTable.id, Number(payload.userId)))
-      .limit(1);
-    
-    if (!user) {
-      res.status(404).json({ error: 'User not found' });
-      return;
-    }
-    
-    const userData = {
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      imageUrl: user.imageUrl ?? null,
-      type: user.type,
-      branchId: user.branchId ?? null,
-      state: user.state,
-    };
-    
-    res.json({ success: true, user: userData });
+
+    res.status(401).json({ success: false, error: statusCode });
+    // #end-step
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Auto-login failed';
     res.status(401).json({ error: message });
