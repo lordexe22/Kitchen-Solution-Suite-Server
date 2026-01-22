@@ -15,7 +15,7 @@ export async function loginService(payload: LoginPayload): Promise<LoginResult> 
   validatePayload(payload);
   const user = await authenticateUser(payload);
 
-  const token = createJWT({ userId: user.id });
+  const token = createJWT({ userId: user.id, state: user.state });
   const cookieData = setJWTCookie(token);
 
   return { user, token, cookieData };

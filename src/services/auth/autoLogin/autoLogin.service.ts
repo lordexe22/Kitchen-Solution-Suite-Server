@@ -48,7 +48,7 @@ export async function autoLoginService(req: AutoLoginPayload): Promise<AutoLogin
 
   const userData = mapUserToUserData(user);
 
-  const newToken = createJWT({ userId: user.id });
+  const newToken = createJWT({ userId: user.id, state: user.state });
   const cookieData = setJWTCookie(newToken);
 
   return { user: userData, statusCode: 'SUCCESS', cookieData };

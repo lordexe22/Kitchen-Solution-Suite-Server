@@ -124,7 +124,6 @@ describe('loginService', () => {
         email: 'test.local@example.com',
         passwordHash,
         type: 'guest',
-        isActive: true,
         state: 'active',
       })
       .returning();
@@ -138,7 +137,6 @@ describe('loginService', () => {
         email: 'test.google@example.com',
         passwordHash: '',
         type: 'guest',
-        isActive: true,
         state: 'active',
       })
       .returning();
@@ -314,7 +312,6 @@ describe('loginService', () => {
           email: 'suspended@example.com',
           passwordHash,
           type: 'guest',
-          isActive: false,
           state: 'suspended',
         })
         .returning();

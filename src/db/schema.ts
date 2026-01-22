@@ -43,7 +43,6 @@ export const platformNameEnum = pgEnum('platform_name', ['local', 'google', 'fac
  * @field belongToBranchId - FK a sucursal (solo para employee, nullable)
  * @field createdAt - Fecha de creación
  * @field updatedAt - Fecha de última actualización
- * @field isActive - Estado activo/inactivo (email verificado)
  * @field state - Estado del usuario (enum: pending, active, suspended)
  * @field imageUrl - URL de la imagen de perfil (Cloudinary)
  */
@@ -61,7 +60,6 @@ export const usersTable = pgTable('users', {
   
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
-  isActive: boolean('is_active').notNull().default(false),
   state: userStateEnum('state').notNull().default('pending'),
   imageUrl: text('image_url'),
 });

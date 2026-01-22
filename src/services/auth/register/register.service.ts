@@ -31,7 +31,7 @@ export async function registerService(payload: RegisterPayload): Promise<Registe
 
   const user = await getUserById(userId);
 
-  const token = createJWT({ userId: user.id });
+  const token = createJWT({ userId: user.id, state: user.state });
   const cookieData = setJWTCookie(token);
 
   return { user, token, cookieData };
@@ -99,7 +99,6 @@ async function createUser(data: {
       passwordHash: data.passwordHash,
       imageUrl: data.imageUrl,
       type: 'admin',
-      isActive: true,
       state: 'active',
     })
     .returning({ id: usersTable.id });
