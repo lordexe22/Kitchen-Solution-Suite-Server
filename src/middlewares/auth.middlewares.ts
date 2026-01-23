@@ -90,7 +90,8 @@ export const autoLoginMiddleware = async (
       return;
     }
 
-    res.status(401).json({ success: false, error: statusCode });
+    // No token or token expired/invalid: return null user with 200 status
+    res.status(200).json({ success: true, user: null });
     // #end-step
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Auto-login failed';
