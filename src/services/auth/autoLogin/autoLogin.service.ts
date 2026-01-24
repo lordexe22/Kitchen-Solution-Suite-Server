@@ -4,9 +4,9 @@ import { db } from '../../../db/init';
 import { usersTable } from '../../../db/schema';
 import { eq } from 'drizzle-orm';
 import { mapUserToUserData } from '../user.mapper';
-import type { AutoLoginPayload, AutoLoginResult, AutoLoginStatusCode } from './types';
+import type { AutoLoginPayload, AutoLoginResult, AutoLoginStatusCode } from '../types';
 
-export type { AutoLoginPayload, AutoLoginResult, AutoLoginStatusCode } from './types';
+export type { AutoLoginPayload, AutoLoginResult, AutoLoginStatusCode } from '../types';
 
 export async function autoLoginService(req: AutoLoginPayload): Promise<AutoLoginResult> {
   const token = getJWTFromCookie((req as any).cookies);

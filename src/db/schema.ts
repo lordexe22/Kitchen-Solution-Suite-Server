@@ -1,4 +1,4 @@
-import { pgTable, serial, text, varchar, boolean, timestamp, pgEnum, integer } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, varchar, boolean, timestamp, pgEnum, integer, index } from 'drizzle-orm/pg-core';
 
 /* #info 
 
@@ -16,6 +16,7 @@ npx drizzle-kit migrate -> run pending migrations
 // #section Enumeraciones
 export const userTypeEnum = pgEnum('user_type', ['admin', 'employee', 'guest', 'ownership']);
 export const userStateEnum = pgEnum('user_state', ['pending', 'active', 'suspended']);
+export const companyStateEnum = pgEnum('company_state', ['active', 'archived']);
 export const platformNameEnum = pgEnum('platform_name', ['local', 'google', 'facebook', 'x']);
 // #end-section
 
@@ -73,3 +74,47 @@ export const apiPlatformsTable = pgTable('api_platforms', {
   linkedAt: timestamp('linked_at').notNull().defaultNow(),
 });
 // #end-variable
+
+// #variable companiesTable - Tabla de compañías
+/**
+ * Tabla de compañías del sistema.
+ * 
+ * Una compañía es la entidad principal que agrupa sucursales y empleados.
+ * Cada compañía tiene un dueño (ownership) que puede tener múltiples compañías.
+ * 
+ * @field id - Identificador único autoincremental
+ * @field name - Nombre único de la compañía (normalizado para búsqueda)
+ * @field description - Descripción de la compañía (opcional)
+ * @field ownerId - FK a users (el propietario/ownership de la compañía)
+ * @field logoUrl - URL del logo (Cloudinary, opcional)
+ * @field state - Estado de la compañía (enum: active, archived)
+ * @field archivedAt - Fecha de archivo (null si no está archivada)
+ * @field createdAt - Fecha de creación
+ * @field updatedAt - Fecha de última actualización
+ */
+export const companiesTable = pgTable('companies', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull().unique(),
+  description: text('description'),
+  ownerId: integer('owner_id').notNull().references(() => usersTable.id),
+  logoUrl: text('logo_url'),
+  state: companyStateEnum('state').notNull().default('active'),
+  archivedAt: timestamp('archived_at'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({
+  // Índice para queries por owner
+  ownerIdIdx: index('companies_owner_id_idx').on(table.ownerId),
+  
+  // Índice compuesto para la query más común: WHERE owner_id = ? AND state = ?
+  ownerStateIdx: index('companies_owner_state_idx').on(table.ownerId, table.state),
+  
+  // Índice para ordenamiento por fecha de creación
+  createdAtIdx: index('companies_created_at_idx').on(table.createdAt.desc()),
+  
+  // Índice compuesto óptimo para query completa con ORDER BY
+  ownerStateCreatedIdx: index('companies_owner_state_created_idx')
+    .on(table.ownerId, table.state, table.createdAt.desc()),
+}));
+// #end-variable
+

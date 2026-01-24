@@ -95,7 +95,7 @@ jest.mock('../../../db/init', () => {
 });
 
 import { loginService } from './login.service';
-import type { LoginPayload } from './types';
+import type { LoginPayload } from '../types';
 import { db } from '../../../db/init';
 import { usersTable, apiPlatformsTable } from '../../../db/schema';
 import { hashPassword } from '../../../utils/password.utils';
@@ -324,15 +324,14 @@ describe('loginService', () => {
       }
     });
 
-    it('debería permitir login de usuario suspendido con local (se valida después)', async () => {
+    it('debería rechazar login de usuario suspendido con local', async () => {
       const payload: LoginPayload = {
         platformName: 'local',
         email: suspendedUser.email,
         password: 'SuspendedPassword123!',
       };
 
-      const result = await loginService(payload);
-      expect(result.user.state).toBe('suspended');
+      await expect(loginService(payload)).rejects.toThrow('User account is suspended');
     });
   });
 });

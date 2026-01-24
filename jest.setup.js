@@ -6,3 +6,4 @@ process.env.PG_PASSWORD = 'test_password';
 process.env.PG_HOST = 'localhost';
 process.env.PG_PORT = '5432';
 process.env.PG_DB_NAME = 'test_database';
+process.env.DATABASE_URL = 'postgresql://test_user:test_password@localhost:5432/test_database';

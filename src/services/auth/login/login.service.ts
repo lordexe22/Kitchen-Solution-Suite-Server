@@ -7,9 +7,9 @@ import { db } from '../../../db/init';
 import { usersTable, apiPlatformsTable } from '../../../db/schema';
 import { eq } from 'drizzle-orm';
 import { mapUserToUserData } from '../user.mapper';
-import type { LoginPayload, LoginResult, UserData } from './types';
+import type { LoginPayload, LoginResult, UserData } from '../types';
 
-export type { LoginPayload, LoginResult, UserData } from './types';
+export type { LoginPayload, LoginResult, UserData } from '../types';
 
 export async function loginService(payload: LoginPayload): Promise<LoginResult> {
   validatePayload(payload);
@@ -67,6 +67,18 @@ async function authenticateLocalUser(email: string, password: string): Promise<U
     throw new Error('Invalid email or password');
   }
 
+  if (user.state === 'suspended') {
+    throw new Error('User account is suspended');
+  }
+
+  if (user.state === 'pending') {
+    throw new Error('User account is pending activation');
+  }
+
+  if (user.state !== 'active') {
+    throw new Error('User account is not active');
+  }
+
   return mapUserToUserData(user);
 }
 
@@ -96,6 +108,14 @@ async function authenticateGoogleUser(credential: string): Promise<UserData> {
 
   if (user.state === 'suspended') {
     throw new Error('User account is suspended');
+  }
+
+  if (user.state === 'pending') {
+    throw new Error('User account is pending activation');
+  }
+
+  if (user.state !== 'active') {
+    throw new Error('User account is not active');
   }
 
   return mapUserToUserData(user);

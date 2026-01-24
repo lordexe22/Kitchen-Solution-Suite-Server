@@ -53,6 +53,13 @@ jest.mock('../../../db/init', () => {
         ...(() => {
           let inserted: any;
           if (table.name === 'users') {
+            // Simular UNIQUE constraint en email
+            const emailExists = mockStore.users.some((u) => u.email === data.email);
+            if (emailExists) {
+              const error: any = new Error('duplicate key value violates unique constraint');
+              error.code = '23505';
+              throw error;
+            }
             inserted = { id: mockStore.users.length + 1, ...data };
             mockStore.users.push(inserted);
           } else if (table.name === 'api_platforms') {
@@ -88,6 +95,10 @@ jest.mock('../../../db/init', () => {
         }
       },
     }),
+    transaction: async (callback: (tx: any) => Promise<any>) => {
+      // Mock de transacción: simplemente ejecuta el callback con el mismo db
+      return await callback(db);
+    },
     __store: mockStore,
   } as any;
 
@@ -95,7 +106,7 @@ jest.mock('../../../db/init', () => {
 });
 
 import { registerService } from './register.service';
-import type { RegisterPayload } from './types';
+import type { RegisterPayload } from '../types';
 import { db } from '../../../db/init';
 import { usersTable, apiPlatformsTable } from '../../../db/schema';
 import { eq } from 'drizzle-orm';
