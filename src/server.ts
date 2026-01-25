@@ -12,6 +12,7 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import cookieParser from 'cookie-parser';
 import { authRouter } from "./routes/auth.routes";
+import { companyRouter } from "./routes/company.routes";
 import devToolsRouter from "./routes/devTools.routes";
 import * as serverConfig from './config/server.config';
 import './db/init';
@@ -31,6 +32,7 @@ app.use(bodyParser.json());
 
 // #section Routes
 app.use('/api/auth', authRouter);
+app.use('/api/company', companyRouter);
 app.use('/api/devtools', devToolsRouter);
 // #end-section
 
