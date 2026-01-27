@@ -7,7 +7,7 @@
 
 import { db } from '../../../db/init';
 import { companiesTable } from '../../../db/schema';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql, desc } from 'drizzle-orm';
 import type { Company, CompanyState } from '../types';
 import { validateUserId, validatePagination, validateCompanyState } from '../utils/validators';
 import { mapToCompany } from '../utils/mappers';
@@ -79,7 +79,7 @@ export async function getAllCompaniesService(
     })
     .from(companiesTable)
     .where(and(...conditions))
-    .orderBy(companiesTable.createdAt)
+    .orderBy(desc(companiesTable.createdAt))
     .limit(limit)
     .offset(offset);
 

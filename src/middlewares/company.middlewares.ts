@@ -20,14 +20,15 @@ import { archiveCompanyService } from '../services/company/archiveCompany/archiv
 import { reactivateCompanyService } from '../services/company/reactivateCompany/reactivateCompany.service';
 import { checkNameAvailability } from '../services/company/checkNameAvailability/checkNameAvailability.service';
 import { checkCompanyPermissionService } from '../services/company/checkCompanyPermission/checkCompanyPermission.service';
+import type { AuthenticatedRequest } from './validators/validateJWT.types';
 // #end-section
 
 // #middleware createCompanyMiddleware
 /**
  * Middleware para crear una nueva compañía
- * POST /api/company
+ * POST /api/dashboard/company
  * Body: { name: string, description?: string, logoUrl?: string }
- * Headers: Requiere autenticación (userId extraído del JWT)
+ * Headers: Requiere autenticación JWT (validado por validateJWTMiddleware)
  */
 export const createCompanyMiddleware = async (
   req: Request,
@@ -35,13 +36,7 @@ export const createCompanyMiddleware = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    // TODO: Extraer userId del JWT cuando se implemente el middleware de autenticación
-    const userId = (req as any).user?.id || req.body.userId; // Temporal
-    
-    if (!userId) {
-      res.status(401).json({ success: false, error: 'Unauthorized: User ID is required' });
-      return;
-    }
+    const userId = (req as AuthenticatedRequest).user.id;
 
     const company = await createCompanyService(req.body, userId);
     res.status(201).json({ success: true, company });
@@ -55,9 +50,9 @@ export const createCompanyMiddleware = async (
 // #middleware getAllCompaniesMiddleware
 /**
  * Middleware para obtener todas las compañías del usuario
- * GET /api/company?state=active&page=1&limit=10
+ * GET /api/dashboard/company?state=active&page=1&limit=10
  * Query: { state?: 'active' | 'archived', page?: number, limit?: number }
- * Headers: Requiere autenticación (userId extraído del JWT)
+ * Headers: Requiere autenticación JWT (validado por validateJWTMiddleware)
  */
 export const getAllCompaniesMiddleware = async (
   req: Request,
@@ -65,13 +60,7 @@ export const getAllCompaniesMiddleware = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    // TODO: Extraer userId del JWT cuando se implemente el middleware de autenticación
-    const userId = (req as any).user?.id || parseInt(req.query.userId as string); // Temporal
-    
-    if (!userId) {
-      res.status(401).json({ success: false, error: 'Unauthorized: User ID is required' });
-      return;
-    }
+    const userId = (req as AuthenticatedRequest).user.id;
 
     const options = {
       state: req.query.state as 'active' | 'archived' | undefined,
@@ -91,9 +80,9 @@ export const getAllCompaniesMiddleware = async (
 // #middleware getCompanyMiddleware
 /**
  * Middleware para obtener una compañía específica
- * GET /api/company/:id
+ * GET /api/dashboard/company/:id
  * Params: { id: number }
- * Headers: Requiere autenticación (userId extraído del JWT)
+ * Headers: Requiere autenticación JWT (validado por validateJWTMiddleware)
  */
 export const getCompanyMiddleware = async (
   req: Request,
@@ -101,14 +90,8 @@ export const getCompanyMiddleware = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    // TODO: Extraer userId del JWT cuando se implemente el middleware de autenticación
-    const userId = (req as any).user?.id || parseInt(req.query.userId as string); // Temporal
+    const userId = (req as AuthenticatedRequest).user.id;
     const companyId = parseInt(req.params.id);
-    
-    if (!userId) {
-      res.status(401).json({ success: false, error: 'Unauthorized: User ID is required' });
-      return;
-    }
 
     const company = await getCompanyService(companyId, userId);
     res.status(200).json({ success: true, company });
@@ -123,10 +106,10 @@ export const getCompanyMiddleware = async (
 // #middleware updateCompanyMiddleware
 /**
  * Middleware para actualizar una compañía
- * PATCH /api/company/:id
+ * PATCH /api/dashboard/company/:id
  * Params: { id: number }
  * Body: { name?: string, description?: string, logoUrl?: string }
- * Headers: Requiere autenticación (userId extraído del JWT)
+ * Headers: Requiere autenticación JWT (validado por validateJWTMiddleware)
  */
 export const updateCompanyMiddleware = async (
   req: Request,
@@ -134,14 +117,8 @@ export const updateCompanyMiddleware = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    // TODO: Extraer userId del JWT cuando se implemente el middleware de autenticación
-    const userId = (req as any).user?.id || req.body.userId; // Temporal
+    const userId = (req as AuthenticatedRequest).user.id;
     const companyId = parseInt(req.params.id);
-    
-    if (!userId) {
-      res.status(401).json({ success: false, error: 'Unauthorized: User ID is required' });
-      return;
-    }
 
     const company = await updateCompanyService(companyId, userId, req.body);
     res.status(200).json({ success: true, company });
@@ -158,9 +135,9 @@ export const updateCompanyMiddleware = async (
 // #middleware deleteCompanyMiddleware
 /**
  * Middleware para eliminar una compañía
- * DELETE /api/company/:id
+ * DELETE /api/dashboard/company/:id
  * Params: { id: number }
- * Headers: Requiere autenticación (userId extraído del JWT)
+ * Headers: Requiere autenticación JWT (validado por validateJWTMiddleware)
  */
 export const deleteCompanyMiddleware = async (
   req: Request,
@@ -168,14 +145,8 @@ export const deleteCompanyMiddleware = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    // TODO: Extraer userId del JWT cuando se implemente el middleware de autenticación
-    const userId = (req as any).user?.id || parseInt(req.query.userId as string); // Temporal
+    const userId = (req as AuthenticatedRequest).user.id;
     const companyId = parseInt(req.params.id);
-    
-    if (!userId) {
-      res.status(401).json({ success: false, error: 'Unauthorized: User ID is required' });
-      return;
-    }
 
     await deleteCompanyService(companyId, userId);
     res.status(200).json({ success: true, message: 'Company deleted successfully' });
@@ -190,9 +161,9 @@ export const deleteCompanyMiddleware = async (
 // #middleware archiveCompanyMiddleware
 /**
  * Middleware para archivar una compañía
- * POST /api/company/:id/archive
+ * POST /api/dashboard/company/:id/archive
  * Params: { id: number }
- * Headers: Requiere autenticación (userId extraído del JWT)
+ * Headers: Requiere autenticación JWT (validado por validateJWTMiddleware)
  */
 export const archiveCompanyMiddleware = async (
   req: Request,
@@ -200,14 +171,8 @@ export const archiveCompanyMiddleware = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    // TODO: Extraer userId del JWT cuando se implemente el middleware de autenticación
-    const userId = (req as any).user?.id || req.body.userId; // Temporal
+    const userId = (req as AuthenticatedRequest).user.id;
     const companyId = parseInt(req.params.id);
-    
-    if (!userId) {
-      res.status(401).json({ success: false, error: 'Unauthorized: User ID is required' });
-      return;
-    }
 
     const company = await archiveCompanyService(companyId, userId);
     res.status(200).json({ success: true, company, message: 'Company archived successfully' });
@@ -224,9 +189,9 @@ export const archiveCompanyMiddleware = async (
 // #middleware reactivateCompanyMiddleware
 /**
  * Middleware para reactivar una compañía archivada
- * POST /api/company/:id/reactivate
+ * POST /api/dashboard/company/:id/reactivate
  * Params: { id: number }
- * Headers: Requiere autenticación (userId extraído del JWT)
+ * Headers: Requiere autenticación JWT (validado por validateJWTMiddleware)
  */
 export const reactivateCompanyMiddleware = async (
   req: Request,
@@ -234,14 +199,8 @@ export const reactivateCompanyMiddleware = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    // TODO: Extraer userId del JWT cuando se implemente el middleware de autenticación
-    const userId = (req as any).user?.id || req.body.userId; // Temporal
+    const userId = (req as AuthenticatedRequest).user.id;
     const companyId = parseInt(req.params.id);
-    
-    if (!userId) {
-      res.status(401).json({ success: false, error: 'Unauthorized: User ID is required' });
-      return;
-    }
 
     const company = await reactivateCompanyService(companyId, userId);
     res.status(200).json({ success: true, company, message: 'Company reactivated successfully' });
@@ -287,9 +246,9 @@ export const checkNameAvailabilityMiddleware = async (
 // #middleware checkCompanyPermissionMiddleware
 /**
  * Middleware para verificar permisos de usuario sobre una compañía
- * GET /api/company/:id/permission
+ * GET /api/dashboard/company/:id/permission
  * Params: { id: number }
- * Headers: Requiere autenticación (userId extraído del JWT)
+ * Headers: Requiere autenticación JWT (validado por validateJWTMiddleware)
  */
 export const checkCompanyPermissionMiddleware = async (
   req: Request,
@@ -297,14 +256,8 @@ export const checkCompanyPermissionMiddleware = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    // TODO: Extraer userId del JWT cuando se implemente el middleware de autenticación
-    const userId = (req as any).user?.id || parseInt(req.query.userId as string); // Temporal
+    const userId = (req as AuthenticatedRequest).user.id;
     const companyId = parseInt(req.params.id);
-    
-    if (!userId) {
-      res.status(401).json({ success: false, error: 'Unauthorized: User ID is required' });
-      return;
-    }
 
     const result = await checkCompanyPermissionService(companyId, userId);
     res.status(200).json({ success: true, ...result });

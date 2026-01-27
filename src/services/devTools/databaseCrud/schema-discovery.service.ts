@@ -11,6 +11,7 @@ import type { TableSchema } from './devTools.types';
 const TABLE_REGISTRY: Record<string, any> = {
   users: schema.usersTable,
   apiPlatforms: schema.apiPlatformsTable,
+  companies: schema.companiesTable,
 };
 // #end-constant
 

@@ -4,13 +4,14 @@
 import { Request, Response } from 'express';
 import * as devToolsService from '../services/devTools/databaseCrud';
 import { extractTableSchema, validateTableSchema } from '../services/devTools/databaseCrud/table-schema.service';
-import { usersTable, apiPlatformsTable } from '../db/schema';
+import { usersTable, apiPlatformsTable, companiesTable } from '../db/schema';
 // #end-section
 
 // #constant Mapeo de tablas disponibles
 const TABLE_MAP: Record<string, any> = {
   users: usersTable,
-  apiPlatforms: apiPlatformsTable
+  apiPlatforms: apiPlatformsTable,
+  companies: companiesTable
 };
 // #end-constant
 

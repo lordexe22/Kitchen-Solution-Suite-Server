@@ -102,11 +102,23 @@ export async function updateCompanyService(
       return mapToCompany(updatedCompany);
     });
   } catch (error: any) {
+    // Drizzle envuelve los errores de PostgreSQL en error.cause
+    const dbError = error.cause || error;
+    
     // Manejar unique constraint violation
-    if (error.code === '23505') {
-      throw new Error(`Company name is already taken`);
+    if (dbError.code === '23505' || 
+        dbError.constraint === 'companies_name_unique' ||
+        (dbError.message && dbError.message.includes('duplicate key')) ||
+        (dbError.message && dbError.message.includes('companies_name_unique'))) {
+      throw new Error('Nombre no disponible');
     }
-    handleDatabaseError(error, 'company update');
+    
+    // Si el error ya tiene un mensaje amigable, usarlo
+    if (error.message && !error.code && !error.cause) {
+      throw error;
+    }
+    
+    handleDatabaseError(dbError, 'company update');
   }
 }
 

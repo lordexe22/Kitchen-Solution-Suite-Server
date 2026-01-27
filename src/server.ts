@@ -14,6 +14,7 @@ import cookieParser from 'cookie-parser';
 import { authRouter } from "./routes/auth.routes";
 import { companyRouter } from "./routes/company.routes";
 import devToolsRouter from "./routes/devTools.routes";
+import { validateJWTMiddleware } from './middlewares/validators/validateJWT.middleware';
 import * as serverConfig from './config/server.config';
 import './db/init';
 // #end-section
@@ -31,9 +32,15 @@ app.use(bodyParser.json());
 // #end-section
 
 // #section Routes
+// Rutas públicas (sin JWT)
 app.use('/api/auth', authRouter);
-app.use('/api/company', companyRouter);
-app.use('/api/devtools', devToolsRouter);
+
+// Rutas protegidas (requieren JWT válido)
+const dashboardRouter = express.Router();
+dashboardRouter.use('/company', companyRouter);
+dashboardRouter.use('/devtools', devToolsRouter);
+
+app.use('/api/dashboard', validateJWTMiddleware, dashboardRouter);
 // #end-section
 
 app.get("/", (_req, res) => {

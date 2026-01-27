@@ -5,6 +5,9 @@
  * 
  * Define todos los endpoints relacionados con la gestión de compañías.
  * Sigue el patrón RESTful estándar.
+ * 
+ * Estas rutas son montadas en /api/dashboard/company y están protegidas por validateJWTMiddleware.
+ * Los middlewares reciben req.user con { id: number, state: string } del JWT.
  */
 
 // #section Imports
