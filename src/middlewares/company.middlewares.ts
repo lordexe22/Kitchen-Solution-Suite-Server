@@ -39,10 +39,10 @@ export const createCompanyMiddleware = async (
     const userId = (req as AuthenticatedRequest).user.id;
 
     const company = await createCompanyService(req.body, userId);
-    res.status(201).json({ success: true, company });
+    res.status(201).json({ data: company });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to create company';
-    res.status(400).json({ success: false, error: message });
+    res.status(400).json({ error: message });
   }
 };
 // #end-middleware
@@ -69,10 +69,10 @@ export const getAllCompaniesMiddleware = async (
     };
 
     const result = await getAllCompaniesService(userId, options);
-    res.status(200).json({ success: true, ...result });
+    res.status(200).json({ data: result });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to get companies';
-    res.status(400).json({ success: false, error: message });
+    res.status(400).json({ error: message });
   }
 };
 // #end-middleware
@@ -94,11 +94,11 @@ export const getCompanyMiddleware = async (
     const companyId = parseInt(req.params.id);
 
     const company = await getCompanyService(companyId, userId);
-    res.status(200).json({ success: true, company });
+    res.status(200).json({ data: company });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to get company';
     const status = message.includes('not found') ? 404 : message.includes('denied') ? 403 : 400;
-    res.status(status).json({ success: false, error: message });
+    res.status(status).json({ error: message });
   }
 };
 // #end-middleware
@@ -121,13 +121,13 @@ export const updateCompanyMiddleware = async (
     const companyId = parseInt(req.params.id);
 
     const company = await updateCompanyService(companyId, userId, req.body);
-    res.status(200).json({ success: true, company });
+    res.status(200).json({ data: company });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to update company';
     const status = message.includes('not found') ? 404 : 
                    message.includes('denied') ? 403 : 
                    message.includes('taken') ? 409 : 400;
-    res.status(status).json({ success: false, error: message });
+    res.status(status).json({ error: message });
   }
 };
 // #end-middleware
@@ -149,11 +149,11 @@ export const deleteCompanyMiddleware = async (
     const companyId = parseInt(req.params.id);
 
     await deleteCompanyService(companyId, userId);
-    res.status(200).json({ success: true, message: 'Company deleted successfully' });
+    res.status(200).json({ data: { message: 'Company deleted successfully' } });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to delete company';
     const status = message.includes('not found') ? 404 : message.includes('denied') ? 403 : 400;
-    res.status(status).json({ success: false, error: message });
+    res.status(status).json({ error: message });
   }
 };
 // #end-middleware
@@ -175,13 +175,13 @@ export const archiveCompanyMiddleware = async (
     const companyId = parseInt(req.params.id);
 
     const company = await archiveCompanyService(companyId, userId);
-    res.status(200).json({ success: true, company, message: 'Company archived successfully' });
+    res.status(200).json({ data: { company, message: 'Company archived successfully' } });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to archive company';
     const status = message.includes('not found') ? 404 : 
                    message.includes('denied') ? 403 : 
                    message.includes('already archived') ? 409 : 400;
-    res.status(status).json({ success: false, error: message });
+    res.status(status).json({ error: message });
   }
 };
 // #end-middleware
@@ -203,13 +203,13 @@ export const reactivateCompanyMiddleware = async (
     const companyId = parseInt(req.params.id);
 
     const company = await reactivateCompanyService(companyId, userId);
-    res.status(200).json({ success: true, company, message: 'Company reactivated successfully' });
+    res.status(200).json({ data: { company, message: 'Company reactivated successfully' } });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to reactivate company';
     const status = message.includes('not found') ? 404 : 
                    message.includes('denied') ? 403 : 
                    message.includes('not archived') ? 409 : 400;
-    res.status(status).json({ success: false, error: message });
+    res.status(status).json({ error: message });
   }
 };
 // #end-middleware
@@ -230,15 +230,15 @@ export const checkNameAvailabilityMiddleware = async (
     const name = req.query.name as string;
     
     if (!name) {
-      res.status(400).json({ success: false, error: 'Company name is required' });
+      res.status(400).json({ error: 'Company name is required' });
       return;
     }
 
     const isAvailable = await checkNameAvailability(name);
-    res.status(200).json({ success: true, available: isAvailable });
+    res.status(200).json({ data: { available: isAvailable } });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to check name availability';
-    res.status(400).json({ success: false, error: message });
+    res.status(400).json({ error: message });
   }
 };
 // #end-middleware
@@ -260,10 +260,10 @@ export const checkCompanyPermissionMiddleware = async (
     const companyId = parseInt(req.params.id);
 
     const result = await checkCompanyPermissionService(companyId, userId);
-    res.status(200).json({ success: true, ...result });
+    res.status(200).json({ data: result });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to check permission';
-    res.status(400).json({ success: false, error: message });
+    res.status(400).json({ error: message });
   }
 };
 // #end-middleware

@@ -52,10 +52,7 @@ export const validateJWTMiddleware = async (
     const token = getJWTFromCookie(req.cookies);
     
     if (!token) {
-      res.status(401).json({ 
-        success: false, 
-        error: 'Unauthorized: No authentication token provided' 
-      });
+      res.status(401).json({ error: 'Unauthorized: No authentication token provided' });
       return;
     }
     // #end-step
@@ -68,27 +65,18 @@ export const validateJWTMiddleware = async (
       const message = (err && err.message) || '';
       
       if (message.includes('expired')) {
-        res.status(401).json({ 
-          success: false, 
-          error: 'Unauthorized: Token expired' 
-        });
+        res.status(401).json({ error: 'Unauthorized: Token expired' });
         return;
       }
       
-      res.status(401).json({ 
-        success: false, 
-        error: 'Unauthorized: Invalid token' 
-      });
+      res.status(401).json({ error: 'Unauthorized: Invalid token' });
       return;
     }
     // #end-step
 
     // #step 3 - Validar estructura del payload
     if (!payload || typeof payload !== 'object') {
-      res.status(401).json({ 
-        success: false, 
-        error: 'Unauthorized: Invalid token payload' 
-      });
+      res.status(401).json({ error: 'Unauthorized: Invalid token payload' });
       return;
     }
 
@@ -96,28 +84,19 @@ export const validateJWTMiddleware = async (
     const userState = payload.state;
 
     if (!Number.isFinite(userId) || userId <= 0) {
-      res.status(401).json({ 
-        success: false, 
-        error: 'Unauthorized: Invalid user ID in token' 
-      });
+      res.status(401).json({ error: 'Unauthorized: Invalid user ID in token' });
       return;
     }
 
     if (!userState || !['pending', 'active', 'suspended'].includes(userState)) {
-      res.status(401).json({ 
-        success: false, 
-        error: 'Unauthorized: Invalid user state in token' 
-      });
+      res.status(401).json({ error: 'Unauthorized: Invalid user state in token' });
       return;
     }
     // #end-step
 
     // #step 4 - Verificar que el usuario no esté suspendido
     if (userState === 'suspended') {
-      res.status(403).json({ 
-        success: false, 
-        error: 'Forbidden: User account is suspended' 
-      });
+      res.status(403).json({ error: 'Forbidden: User account is suspended' });
       return;
     }
     // #end-step
@@ -135,9 +114,6 @@ export const validateJWTMiddleware = async (
 
   } catch (error) {
     console.error('Error in validateJWTMiddleware:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Internal server error during authentication' 
-    });
+    res.status(500).json({ error: 'Internal server error during authentication' });
   }
 };

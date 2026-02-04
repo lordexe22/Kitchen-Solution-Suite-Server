@@ -31,11 +31,11 @@ export const registerMiddleware = async (
     res.cookie(cookieData.name, cookieData.value, cookieData.options);
     // #end-step
     // #step 3 - Send response
-    res.json({ success: true, user });
+    res.json({ data: user });
     // #end-step
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Registration failed';
-    res.status(400).json({ success: false, error: message });
+    res.status(400).json({ error: message });
   }
 };
 // #end-middleware
@@ -53,7 +53,7 @@ export const loginMiddleware = async (
     res.cookie(cookieData.name, cookieData.value, cookieData.options);
     // #end-step
     // #step 3 - Send response
-    res.json({ success: true, user });
+    res.json({ data: user });
     // #end-step
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Login failed';
@@ -86,12 +86,12 @@ export const autoLoginMiddleware = async (
 
     // #step 3 - Send response based on result
     if (user) {
-      res.status(200).json({ success: true, user });
+      res.status(200).json({ data: user });
       return;
     }
 
     // No token or token expired/invalid: return null user with 200 status
-    res.status(200).json({ success: true, user: null });
+    res.status(200).json({ data: null });
     // #end-step
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Auto-login failed';
@@ -116,11 +116,11 @@ export const logoutMiddleware = async (
     // #end-step
 
     // #step 3 - Send response
-    res.json({ success: true, message: 'Logged out successfully' });
+    res.json({ data: { message: 'Logged out successfully' } });
     // #end-step
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Logout failed';
-    res.status(500).json({ success: false, error: message });
+    res.status(500).json({ error: message });
   }
 };
 // #end-middleware
