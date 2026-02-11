@@ -2,7 +2,6 @@
 // #section Imports
 import bcrypt from 'bcrypt';
 // #end-section
-
 // #function hashPassword - Genera un hash seguro para una contraseña.
 /**
  * Genera un hash seguro para una contraseña.
@@ -14,7 +13,6 @@ export const hashPassword = async (password: string): Promise<string> => {
   return await bcrypt.hash(password, saltRounds);
 };
 // #end-function
-
 // #function comparePassword - Compara una contraseña con su hash.
 /**
  * Compara una contraseña con su hash.
