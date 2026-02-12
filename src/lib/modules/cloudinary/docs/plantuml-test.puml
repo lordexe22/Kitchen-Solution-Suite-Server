@@ -1,0 +1,141 @@
+@startuml cloudinary-module
+top to bottom direction
+skinparam classAttributeIconSize 0
+skinparam nodesep 30
+skinparam ranksep 30
+
+class CloudinaryModule {
+  +createImage(image: ImageSource, options: CreateImageOptions, metadata?: ImageMetadata): CreateImageResponse
+  +getImage(publicId: PublicId): GetImageResult
+  +listImages(params: ListImagesParams): ListImagesResult
+  +deleteImage(publicId: PublicId): DeleteImageResponse
+  +replaceImage(params: ReplaceImageParams): ReplaceImageResponse
+  +renameImage(params: RenameImageParams): GetImageResult
+  +moveImage(params: MoveImageParams): GetImageResult
+  +changeImagePrefix(params: ChangeImagePrefixParams): GetImageResult
+}
+
+class ImageSource {
+  type: 'url' | 'file' | 'buffer'
+}
+
+class CreateImageOptions {
+  name: string
+  folder: string
+  prefix?: string
+  overwrite?: boolean
+}
+
+class ImageMetadata {
+  name?: string
+  folder?: string
+  prefix?: string
+  [key: string]: string | number | boolean
+}
+
+class CreateImageResponse {
+  publicId: string
+  url: string
+  width: number
+  height: number
+  format: string
+  size: number
+  metadata?: ImageMetadata
+  raw?: any
+}
+
+class GetImageResult {
+  publicId: string
+  url: string
+  secureUrl: string
+  width: number
+  height: number
+  format: string
+  bytes: number
+  metadata: ImageMetadata
+  raw: any
+}
+
+class DeleteImageResponse {
+  deleted: boolean
+}
+
+class ReplaceImageParams {
+  publicId: string
+  source: ImageSource
+  metadata?: any
+  overwrite?: boolean
+}
+
+class ReplaceImageResponse {
+  publicId: string
+  secureUrl: string
+  metadata: any
+  raw: any
+}
+
+class RenameImageParams {
+  publicId: string
+  newName: string
+}
+
+class MoveImageParams {
+  publicId: string
+  targetFolder: string
+}
+
+class ChangeImagePrefixParams {
+  publicId: string
+  prefix?: string
+  mode: 'replace' | 'append' | 'prepend'
+}
+
+class ListImagesParams {
+  folder: string
+  recursive?: boolean
+  limit?: number
+  cursor?: string
+}
+
+class ListImagesResult {
+  items: GetImageResult[]
+  nextCursor?: string
+}
+
+class PublicId {
+  value: string
+}
+
+' Layout helpers to spread contract classes across three columns.
+ImageSource -[hidden]down- CreateImageOptions
+CreateImageOptions -[hidden]down- ImageMetadata
+ImageMetadata -[hidden]down- CreateImageResponse
+CreateImageResponse -[hidden]down- GetImageResult
+
+DeleteImageResponse -[hidden]down- ReplaceImageParams
+ReplaceImageParams -[hidden]down- ReplaceImageResponse
+ReplaceImageResponse -[hidden]down- RenameImageParams
+RenameImageParams -[hidden]down- MoveImageParams
+
+ChangeImagePrefixParams -[hidden]down- ListImagesParams
+ListImagesParams -[hidden]down- ListImagesResult
+ListImagesResult -[hidden]down- PublicId
+
+ImageSource -[hidden]right- DeleteImageResponse
+DeleteImageResponse -[hidden]right- ChangeImagePrefixParams
+
+CloudinaryModule -right-> ImageSource
+CloudinaryModule -right-> CreateImageOptions
+CloudinaryModule -right-> ImageMetadata
+CloudinaryModule -right-> CreateImageResponse
+CloudinaryModule -right-> GetImageResult
+CloudinaryModule -right-> DeleteImageResponse
+CloudinaryModule -right-> ReplaceImageParams
+CloudinaryModule -right-> ReplaceImageResponse
+CloudinaryModule -right-> RenameImageParams
+CloudinaryModule -right-> MoveImageParams
+CloudinaryModule -right-> ChangeImagePrefixParams
+CloudinaryModule -right-> ListImagesParams
+CloudinaryModule -right-> ListImagesResult
+
+@enduml
