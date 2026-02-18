@@ -16,15 +16,12 @@ export const authRouter = Router();
 // #route POST /register - User registration
 authRouter.post('/register', registerMiddleware);
 // #end-route
-
 // #route POST /login - User login
 authRouter.post('/login', loginMiddleware);
 // #end-route
-
 // #route POST /auto-login - Auto login by JWT cookie
 authRouter.post('/auto-login', autoLoginMiddleware);
 // #end-route
-
 // #route POST /logout - User logout
 authRouter.post('/logout', logoutMiddleware);
 // #end-route

@@ -1,28 +1,22 @@
-// src\server.ts
+/* src\server.ts */
 // #section Imports
 import dotenv from 'dotenv';
 dotenv.config();
-
 // Validar variables de entorno críticas antes de cualquier otra cosa
 import { validateEnvironment } from './config/environment';
 validateEnvironment();
-
 import express from "express";
 import bodyParser from "body-parser";
 import cors from "cors";
 import cookieParser from 'cookie-parser';
-import { authRouter } from "./routes/auth.routes";
-import { companyRouter } from "./routes/company.routes";
-import devToolsRouter from "./routes/devTools.routes";
+import { publicRouter } from "./routes/public.routes";
+import { dashboardRouter } from "./routes/dashboard.routes";
 import { validateJWTMiddleware } from './middlewares/validators/validateJWT.middleware';
 import * as serverConfig from './config/server.config';
 import './db/init';
 // #end-section
-
-// #section Bootstrap
-const app = express();
-
 // #section Middlewares
+const app = express();
 app.use(cookieParser());
 app.use(cors({
   credentials: true,
@@ -33,13 +27,8 @@ app.use(bodyParser.json());
 
 // #section Routes
 // Rutas públicas (sin JWT)
-app.use('/api/auth', authRouter);
-
+app.use('/api/public', publicRouter);
 // Rutas protegidas (requieren JWT válido)
-const dashboardRouter = express.Router();
-dashboardRouter.use('/company', companyRouter);
-dashboardRouter.use('/devtools', devToolsRouter);
-
 app.use('/api/dashboard', validateJWTMiddleware, dashboardRouter);
 // #end-section
 

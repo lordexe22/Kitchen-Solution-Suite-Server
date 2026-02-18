@@ -46,7 +46,6 @@ export const createCompanyMiddleware = async (
   }
 };
 // #end-middleware
-
 // #middleware getAllCompaniesMiddleware
 /**
  * Middleware para obtener todas las compañías del usuario
@@ -76,7 +75,6 @@ export const getAllCompaniesMiddleware = async (
   }
 };
 // #end-middleware
-
 // #middleware getCompanyMiddleware
 /**
  * Middleware para obtener una compañía específica
@@ -102,7 +100,6 @@ export const getCompanyMiddleware = async (
   }
 };
 // #end-middleware
-
 // #middleware updateCompanyMiddleware
 /**
  * Middleware para actualizar una compañía
@@ -131,7 +128,6 @@ export const updateCompanyMiddleware = async (
   }
 };
 // #end-middleware
-
 // #middleware deleteCompanyMiddleware
 /**
  * Middleware para eliminar una compañía
@@ -157,7 +153,6 @@ export const deleteCompanyMiddleware = async (
   }
 };
 // #end-middleware
-
 // #middleware archiveCompanyMiddleware
 /**
  * Middleware para archivar una compañía
@@ -185,7 +180,6 @@ export const archiveCompanyMiddleware = async (
   }
 };
 // #end-middleware
-
 // #middleware reactivateCompanyMiddleware
 /**
  * Middleware para reactivar una compañía archivada
@@ -213,7 +207,6 @@ export const reactivateCompanyMiddleware = async (
   }
 };
 // #end-middleware
-
 // #middleware checkNameAvailabilityMiddleware
 /**
  * Middleware para verificar disponibilidad de nombre
@@ -242,7 +235,6 @@ export const checkNameAvailabilityMiddleware = async (
   }
 };
 // #end-middleware
-
 // #middleware checkCompanyPermissionMiddleware
 /**
  * Middleware para verificar permisos de usuario sobre una compañía

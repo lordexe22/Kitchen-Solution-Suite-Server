@@ -61,7 +61,6 @@ export const loginMiddleware = async (
   }
 };
 // #end-middleware
-
 // #middleware autoLoginMiddleware
 export const autoLoginMiddleware = async (
   req: Request,
@@ -99,7 +98,6 @@ export const autoLoginMiddleware = async (
   }
 };
 // #end-middleware
-
 // #middleware logoutMiddleware
 export const logoutMiddleware = async (
   req: Request,
