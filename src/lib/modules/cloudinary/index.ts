@@ -8,6 +8,7 @@ export { getImage } from './cloudinary';
 export { renameImage } from './cloudinary';
 export { moveImage } from './cloudinary';
 export { changeImagePrefix } from './cloudinary';
+export { getPublicIdFromUrl } from './cloudinary';
 export { getCloudinaryClient } from './cloudinary.config';
 export * from './cloudinary.types';
 export * from './cloudinary.errors';

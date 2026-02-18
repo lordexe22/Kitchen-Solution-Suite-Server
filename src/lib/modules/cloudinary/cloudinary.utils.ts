@@ -5,6 +5,7 @@ import type {
 	CreateImageResponse,
 	ImageMetadata,
 	ReplaceImageResponse,
+	GetPublicIdFromUrlResult,
 } from './cloudinary.types';
 import { ValidationError } from './cloudinary.errors';
 // #end-section
@@ -567,6 +568,121 @@ export const _normalizeGetImageResult = (
 		bytes: result.bytes ?? 0,
 		metadata,
 		raw: result,
+	};
+};
+// #end-function
+// #function _extractPublicIdFromCloudinaryUrl - Extrae el publicId de una URL de Cloudinary
+/**
+ * Extrae el publicId de una URL de Cloudinary.
+ * 
+ * Soporta URLs con los siguientes patrones:
+ * - https://res.cloudinary.com/{cloud}/image/upload/v{version}/{publicId}.{ext}
+ * - https://res.cloudinary.com/{cloud}/image/upload/{publicId}.{ext}
+ * - https://res.cloudinary.com/{cloud}/image/upload/{transformations}/{publicId}.{ext}
+ * 
+ * @param url URL completa de Cloudinary
+ * @returns GetPublicIdFromUrlResult con publicId, folder, fileName y format
+ * @throws ValidationError si la URL es vacía, no válida o no es de Cloudinary
+ * @internal
+ * @version 1.0.0
+ */
+export const _extractPublicIdFromCloudinaryUrl = (url: string): GetPublicIdFromUrlResult => {
+	// Validar entrada
+	if (!url || typeof url !== 'string' || !url.trim()) {
+		throw new ValidationError('La URL es requerida.');
+	}
+
+	const trimmedUrl = url.trim();
+
+	// Validar que sea una URL válida
+	let parsedUrl: URL;
+	try {
+		parsedUrl = new URL(trimmedUrl);
+	} catch {
+		throw new ValidationError('La URL proporcionada no tiene un formato válido.');
+	}
+
+	// Validar que sea una URL de Cloudinary
+	if (!parsedUrl.hostname.includes('cloudinary.com')) {
+		throw new ValidationError('La URL no pertenece a Cloudinary.');
+	}
+
+	// Extraer el path y buscar el segmento después de /upload/
+	const path = parsedUrl.pathname;
+	const uploadIndex = path.indexOf('/upload/');
+	if (uploadIndex === -1) {
+		throw new ValidationError('La URL no contiene un path de upload válido de Cloudinary.');
+	}
+
+	// Todo lo que viene después de /upload/
+	let afterUpload = path.slice(uploadIndex + '/upload/'.length);
+
+	// Remover segmento de versión si existe (v + dígitos seguido de /)
+	afterUpload = afterUpload.replace(/^v\d+\//, '');
+
+	// Remover transformaciones de Cloudinary
+	// Las transformaciones contienen patrones como: w_100,h_200/ o c_fill,g_face/ etc.
+	// Se detectan por segmentos que contienen al menos un underscore entre letras y valores
+	const segments = afterUpload.split('/');
+	const cleanSegments: string[] = [];
+
+	for (const segment of segments) {
+		// Saltar segmentos de versión (v + solo dígitos) que no estuvieran al inicio
+		if (/^v\d+$/.test(segment)) {
+			continue;
+		}
+		// Un segmento es transformación si contiene parámetros tipo key_value separados por comas
+		const isTransformation = /^[a-z]{1,3}_[^/]+/.test(segment) && segment.includes('_');
+		// Excepto el último segmento que es el filename
+		const isLastSegment = segment === segments[segments.length - 1];
+
+		if (isTransformation && !isLastSegment) {
+			continue; // Saltar transformaciones
+		}
+		cleanSegments.push(segment);
+	}
+
+	const cleanPath = cleanSegments.join('/');
+
+	if (!cleanPath) {
+		throw new ValidationError('No se pudo extraer el publicId de la URL proporcionada.');
+	}
+
+	// Separar extensión del archivo
+	const lastDotIndex = cleanPath.lastIndexOf('.');
+	let publicId: string;
+	let format: string;
+
+	if (lastDotIndex > 0 && lastDotIndex > cleanPath.lastIndexOf('/')) {
+		publicId = cleanPath.slice(0, lastDotIndex);
+		format = cleanPath.slice(lastDotIndex + 1);
+	} else {
+		publicId = cleanPath;
+		format = '';
+	}
+
+	if (!publicId) {
+		throw new ValidationError('No se pudo extraer el publicId de la URL proporcionada.');
+	}
+
+	// Separar folder y fileName
+	const lastSlashIndex = publicId.lastIndexOf('/');
+	let folder: string;
+	let fileName: string;
+
+	if (lastSlashIndex > -1) {
+		folder = publicId.slice(0, lastSlashIndex);
+		fileName = publicId.slice(lastSlashIndex + 1);
+	} else {
+		folder = '';
+		fileName = publicId;
+	}
+
+	return {
+		publicId,
+		folder,
+		fileName,
+		format,
 	};
 };
 // #end-function

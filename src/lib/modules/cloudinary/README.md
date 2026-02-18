@@ -25,6 +25,7 @@ cloudinary/
     ├── move-image.test.ts
     ├── change-image-prefix.test.ts
     ├── get-image.test.ts
+    ├── get-public-id-from-url.test.ts
     └── list-images.test.ts
 ```
 
@@ -62,6 +63,7 @@ El cliente se configura en cloudinary.config.ts con credenciales de entorno.
 - moveImage(params): GetImageResult - Mueve imagen a otra carpeta.
 - changeImagePrefix(params): GetImageResult - Ajusta prefijos con modos replace/append/prepend.
 - getImage(publicId): GetImageResult - Obtiene datos completos de una imagen.
+- getPublicIdFromUrl(url): GetPublicIdFromUrlResult - Extrae publicId, folder, fileName y format de una URL de Cloudinary.
 - listImages(params): ListImagesResult - Lista imagenes con paginacion.
 
 ## Examples
@@ -74,6 +76,15 @@ const result = await createImage(
   { name: 'profile', folder: 'users', prefix: 'avatar' },
   { source: 'upload', userId: '123' }
 );
+```
+
+```typescript
+import { getPublicIdFromUrl } from './cloudinary';
+
+const info = getPublicIdFromUrl(
+  'https://res.cloudinary.com/demo/image/upload/v1234567890/companies/acme/logo.webp'
+);
+// => { publicId: 'companies/acme/logo', folder: 'companies/acme', fileName: 'logo', format: 'webp' }
 ```
 
 ```typescript
@@ -117,6 +128,12 @@ Errores expuestos:
 - Agregar tests unitarios y documentar integracion.
 
 ## Changelog
+
+### v1.1.0
+- Agregada funcion `getPublicIdFromUrl` para extraer publicId desde URLs de Cloudinary.
+- Agregado tipo `GetPublicIdFromUrlResult`.
+- Agregada utilidad interna `_extractPublicIdFromCloudinaryUrl`.
+- Soporte para URLs con version, transformaciones y carpetas anidadas.
 
 ### v1.0.0
 - Version inicial del modulo Cloudinary.

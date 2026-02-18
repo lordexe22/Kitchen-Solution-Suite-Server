@@ -23,7 +23,7 @@ export class CloudinaryError extends Error {
 		this.code = code;
 		this.metadata = metadata;
 		this.originalError = originalError;
-    
+
 		if (Error.captureStackTrace) {
 			Error.captureStackTrace(this, this.constructor);
 		}

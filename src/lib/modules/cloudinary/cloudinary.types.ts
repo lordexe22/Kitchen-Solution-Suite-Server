@@ -169,3 +169,20 @@ export interface ListImagesResult {
 	nextCursor?: string;
 }
 // #end-interface
+
+// #interface GetPublicIdFromUrlResult
+/**
+ * Resultado de extraer el publicId de una URL de Cloudinary.
+ * @version 1.0.0
+ */
+export interface GetPublicIdFromUrlResult {
+	/** PublicId completo (incluye folder + fileName) */
+	publicId: string;
+	/** Carpeta contenedora (vacío si está en la raíz) */
+	folder: string;
+	/** Nombre del archivo sin extensión */
+	fileName: string;
+	/** Extensión/formato del archivo (vacío si no tiene) */
+	format: string;
+}
+// #end-interface

@@ -15,6 +15,7 @@ import type {
 	ListImagesParams,
 	ListImagesResult,
 	DeleteImageResponse,
+	GetPublicIdFromUrlResult,
 } from './cloudinary.types';
 import { getCloudinaryClient } from './cloudinary.config';
 import {
@@ -34,6 +35,7 @@ import {
 	_handleCloudinaryRenameError,
 	_handleCloudinaryFetchError,
 	_normalizeGetImageResult,
+	_extractPublicIdFromCloudinaryUrl,
 } from './cloudinary.utils';
 import {
 	UploadError,
@@ -663,5 +665,22 @@ export const listImages = async (params: ListImagesParams): Promise<ListImagesRe
 
 		throw _handleCloudinaryFetchError(error, { folder: params.folder });
 	}
+};
+// #end-function
+// #function getPublicIdFromUrl - Extrae el publicId de una URL de Cloudinary
+/**
+ * Extrae el publicId y metadatos de una URL de Cloudinary.
+ *
+ * Soporta URLs con versión, transformaciones y carpetas anidadas.
+ *
+ * @param url URL completa de Cloudinary
+ * @returns GetPublicIdFromUrlResult con publicId, folder, fileName y format
+ * @throws ValidationError si la URL es vacía, no válida o no es de Cloudinary
+ * @version 1.0.0
+ */
+export const getPublicIdFromUrl = (url: string): GetPublicIdFromUrlResult => {
+	// #step 1 - Delegar la extracción a la utilidad interna
+	return _extractPublicIdFromCloudinaryUrl(url);
+	// #end-step
 };
 // #end-function
