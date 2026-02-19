@@ -26,18 +26,29 @@ export interface Company {
 
 /**
  * Datos requeridos para crear una nueva compañía
+ *
+ * Campo logo:
+ * - string  → asigna una URL directamente
+ * - Buffer  → sube el archivo a Cloudinary y asigna la URL resultante
+ * - omitido → la compañía se crea sin logo
  */
 export interface CreateCompanyInput {
   name: string;
   description?: string;
-  logoUrl?: string;
+  logo?: string | Buffer;
 }
 
 /**
  * Datos que se pueden actualizar en una compañía
+ *
+ * Campo logo:
+ * - string  → asigna una URL directamente
+ * - Buffer  → sube el archivo a Cloudinary y asigna la URL resultante
+ * - null    → elimina el logo de Cloudinary y limpia logoUrl
+ * - omitido → no modifica el logo
  */
 export interface UpdateCompanyInput {
   name?: string;
   description?: string;
-  logoUrl?: string;
+  logo?: string | Buffer | null;
 }

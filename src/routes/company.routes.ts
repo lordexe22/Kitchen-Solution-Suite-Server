@@ -22,7 +22,14 @@ import {
   reactivateCompanyMiddleware,
   checkNameAvailabilityMiddleware,
   checkCompanyPermissionMiddleware,
+  uploadCompanyLogoMiddleware,
+  deleteCompanyLogoMiddleware,
 } from '../middlewares/company.middlewares';
+import {
+  uploadSingleFile,
+  validateFileExists,
+  handleFileUploadError,
+} from '../middlewares/fileUpload/fileUpload.middleware';
 // #end-section
 
 // #section Create companyRouter
@@ -36,9 +43,13 @@ companyRouter.get('/check-name', checkNameAvailabilityMiddleware);
 // #end-route
 
 // #route POST / - Crear nueva compañía
-// Body: { name: string, description?: string, logoUrl?: string }
-// Response: { success: boolean, company: Company }
-companyRouter.post('/', createCompanyMiddleware);
+// Body: multipart/form-data con campos { name, description?, logoUrl? } y/o campo 'logo' (imagen, max 5MB)
+// Response: { data: Company }
+companyRouter.post('/',
+  uploadSingleFile('logo'),
+  createCompanyMiddleware,
+  handleFileUploadError
+);
 // #end-route
 
 // #route GET / - Obtener todas las compañías del usuario
@@ -55,9 +66,13 @@ companyRouter.get('/:id', getCompanyMiddleware);
 
 // #route PATCH /:id - Actualizar compañía
 // Params: id (number)
-// Body: { name?: string, description?: string, logoUrl?: string }
-// Response: { success: boolean, company: Company }
-companyRouter.patch('/:id', updateCompanyMiddleware);
+// Body: multipart/form-data con campos { name?, description?, logoUrl?, removeLogo? } y/o campo 'logo' (imagen)
+// Response: { data: Company }
+companyRouter.patch('/:id',
+  uploadSingleFile('logo'),
+  updateCompanyMiddleware,
+  handleFileUploadError
+);
 // #end-route
 
 // #route DELETE /:id - Eliminar compañía
@@ -82,4 +97,23 @@ companyRouter.post('/:id/reactivate', reactivateCompanyMiddleware);
 // Params: id (number)
 // Response: { success: boolean, hasPermission: boolean, reason?: string }
 companyRouter.get('/:id/permission', checkCompanyPermissionMiddleware);
+// #end-route
+
+// #route POST /:id/logo - Subir o reemplazar logo de compañía
+// Params: id (number)
+// Body: multipart/form-data con campo 'logo' (imagen, max 5MB: jpeg, png, gif, webp)
+// Response: { data: { company: Company, cloudinary: { publicId, url }, message: string } }
+companyRouter.post(
+  '/:id/logo',
+  uploadSingleFile('logo'),
+  validateFileExists,
+  uploadCompanyLogoMiddleware,
+  handleFileUploadError
+);
+// #end-route
+
+// #route DELETE /:id/logo - Eliminar logo de compañía
+// Params: id (number)
+// Response: { data: { company: Company, message: string } }
+companyRouter.delete('/:id/logo', deleteCompanyLogoMiddleware);
 // #end-route

@@ -83,7 +83,7 @@ export const apiPlatformsTable = pgTable('api_platforms', {
  * Cada compañía tiene un dueño (ownership) que puede tener múltiples compañías.
  * 
  * @field id - Identificador único autoincremental
- * @field name - Nombre único de la compañía (normalizado para búsqueda)
+ * @field name - Nombre único de la compañía
  * @field description - Descripción de la compañía (opcional)
  * @field ownerId - FK a users (el propietario/ownership de la compañía)
  * @field logoUrl - URL del logo (Cloudinary, opcional)
@@ -94,7 +94,7 @@ export const apiPlatformsTable = pgTable('api_platforms', {
  */
 export const companiesTable = pgTable('companies', {
   id: serial('id').primaryKey(),
-  name: varchar('name', { length: 255 }).notNull().unique(),
+  name: varchar('name', { length: 255 }).notNull(),
   description: text('description'),
   ownerId: integer('owner_id').notNull().references(() => usersTable.id),
   logoUrl: text('logo_url'),

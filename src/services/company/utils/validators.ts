@@ -2,6 +2,8 @@
  * Validadores compartidos para servicios de Company
  */
 
+import { isImageBuffer } from '../../../lib/modules/cloudinary';
+
 /**
  * Valida que un ID de compañía sea válido
  */
@@ -55,16 +57,40 @@ export function validateCompanyDescription(description: string | null | undefine
 }
 
 /**
- * Valida la URL del logo (opcional)
+ * Tamaño máximo permitido para un logo (5 MB)
  */
-export function validateLogoUrl(logoUrl: string | null | undefined): void {
-  if (logoUrl === null || logoUrl === undefined) {
-    return; // Válido
+const MAX_LOGO_SIZE_BYTES = 5 * 1024 * 1024;
+
+/**
+ * Valida el campo logo (opcional).
+ *
+ * Valores válidos:
+ * - undefined / null → no logo o eliminar logo
+ * - string → URL (vacío se interpreta como "sin logo" en create, "eliminar" en update)
+ * - Buffer → archivo a subir (se valida tamaño y formato de imagen)
+ *
+ * La validación de formato de imagen delega al módulo de Cloudinary
+ * vía `isImageBuffer()`. Es un fail-fast local antes del upload.
+ */
+export function validateLogo(logo: unknown): void {
+  if (logo === undefined || logo === null) return;
+
+  if (Buffer.isBuffer(logo)) {
+    if (logo.length === 0) {
+      throw new Error('Logo file cannot be empty');
+    }
+    if (logo.length > MAX_LOGO_SIZE_BYTES) {
+      throw new Error(`Logo file exceeds maximum size of ${MAX_LOGO_SIZE_BYTES / (1024 * 1024)}MB`);
+    }
+    if (!isImageBuffer(logo)) {
+      throw new Error('Logo file is not a supported image format');
+    }
+    return;
   }
 
-  if (typeof logoUrl !== 'string') {
-    throw new Error('Logo URL must be a string');
-  }
+  if (typeof logo === 'string') return;
+
+  throw new Error('Logo must be a string URL, a file Buffer, or null');
 }
 
 /**

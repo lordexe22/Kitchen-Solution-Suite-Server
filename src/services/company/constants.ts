@@ -19,11 +19,20 @@ export function isValidCompanyState(value: unknown): value is 'active' | 'archiv
 }
 
 /**
- * Normalización de nombres de compañía para búsqueda
+ * Sanitiza el nombre de compañía para guardar en BD.
+ * Preserva el case original del usuario.
  * - Trim: elimina espacios al inicio y final
- * - Lowercase: convierte a minúsculas
  * - Múltiples espacios se reducen a uno
  */
-export function normalizeCompanyName(name: string): string {
+export function sanitizeCompanyName(name: string): string {
+  return name.trim().replace(/\s+/g, ' ');
+}
+
+/**
+ * Normaliza el nombre de compañía para comparaciones de unicidad.
+ * Solo para queries de búsqueda, NUNCA para guardar en BD.
+ * - Trim + lowercase + colapsar espacios
+ */
+export function normalizeForComparison(name: string): string {
   return name.trim().toLowerCase().replace(/\s+/g, ' ');
 }

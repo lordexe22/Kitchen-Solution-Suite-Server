@@ -8,17 +8,18 @@
 import { db } from '../../../db/init';
 import { companiesTable } from '../../../db/schema';
 import { eq } from 'drizzle-orm';
-import { normalizeCompanyName } from '../constants';
+import { sanitizeCompanyName } from '../constants';
 import type { Company, UpdateCompanyInput } from '../types';
 import {
   validateCompanyId,
   validateUserId,
   validateCompanyName,
   validateCompanyDescription,
-  validateLogoUrl,
+  validateLogo,
 } from '../utils/validators';
 import { mapToCompany } from '../utils/mappers';
 import { handleDatabaseError } from '../utils/error-handler';
+import { uploadCompanyLogo, deleteCompanyLogo } from '../utils/logo-operations';
 
 /**
  * Modifica una compañía existente
@@ -44,6 +45,7 @@ export async function updateCompanyService(
           id: companiesTable.id,
           name: companiesTable.name,
           ownerId: companiesTable.ownerId,
+          logoUrl: companiesTable.logoUrl,
         })
         .from(companiesTable)
         .where(eq(companiesTable.id, companyId))
@@ -61,10 +63,10 @@ export async function updateCompanyService(
       const updateData: Record<string, any> = {};
 
       if (input.name !== undefined) {
-        const normalizedNewName = normalizeCompanyName(input.name);
+        const sanitizedNewName = sanitizeCompanyName(input.name);
         // Solo actualizar si el nombre realmente cambió
-        if (normalizedNewName !== existingCompany.name) {
-          updateData.name = normalizedNewName;
+        if (sanitizedNewName !== existingCompany.name) {
+          updateData.name = sanitizedNewName;
         }
       }
 
@@ -72,8 +74,23 @@ export async function updateCompanyService(
         updateData.description = input.description;
       }
 
-      if (input.logoUrl !== undefined) {
-        updateData.logoUrl = input.logoUrl;
+      // Logo operations
+      if (input.logo !== undefined) {
+        if (Buffer.isBuffer(input.logo)) {
+          // Buffer → subir a Cloudinary
+          const logoName = updateData.name ?? existingCompany.name;
+          const newLogoUrl = await uploadCompanyLogo(companyId, logoName, input.logo);
+          updateData.logoUrl = newLogoUrl;
+        } else if (typeof input.logo === 'string' && input.logo.trim().length > 0) {
+          // String no vacío → URL directa
+          updateData.logoUrl = input.logo;
+        } else {
+          // null o string vacío → eliminar logo
+          if (existingCompany.logoUrl) {
+            await deleteCompanyLogo(companyId, existingCompany.name);
+          }
+          updateData.logoUrl = null;
+        }
       }
 
       // Si no hay cambios, obtener la compañía completa y retornar
@@ -141,9 +158,7 @@ function validateInput(companyId: number, userId: number, input: UpdateCompanyIn
     validateCompanyDescription(input.description);
   }
 
-  if (input.logoUrl !== undefined) {
-    validateLogoUrl(input.logoUrl);
-  }
+  validateLogo(input.logo);
 }
 
 export type { Company, UpdateCompanyInput } from '../types';

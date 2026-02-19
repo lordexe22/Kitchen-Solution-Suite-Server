@@ -7,17 +7,19 @@
 
 import { db } from '../../../db/init';
 import { companiesTable } from '../../../db/schema';
-import { normalizeCompanyName, COMPANY_STATES } from '../constants';
+import { eq } from 'drizzle-orm';
+import { sanitizeCompanyName, COMPANY_STATES } from '../constants';
 import type { Company, CreateCompanyInput } from '../types';
 import {
   validateUserId,
   validateCompanyName,
   validateCompanyDescription,
-  validateLogoUrl,
+  validateLogo,
 } from '../utils/validators';
 import { mapToCompany } from '../utils/mappers';
 import { handleDatabaseError } from '../utils/error-handler';
 import { countUserCompanies } from '../utils/db-operations';
+import { uploadCompanyLogo } from '../utils/logo-operations';
 
 // Límite de compañías por usuario para prevenir abuso
 const MAX_COMPANIES_PER_USER = 100;
@@ -44,17 +46,22 @@ export async function createCompanyService(input: CreateCompanyInput, userId: nu
     );
   }
 
-  const normalizedName = normalizeCompanyName(input.name);
+  const sanitizedName = sanitizeCompanyName(input.name);
 
   try {
-    // Intentar crear la compañía - La BD es el árbitro final para nombres únicos
+    // Determinar tipo de logo
+    const isBuffer = Buffer.isBuffer(input.logo);
+    const isUrl = typeof input.logo === 'string' && input.logo.trim().length > 0;
+
+    // Crear la compañía (si es buffer, logo se resuelve después del insert porque
+    // necesitamos el companyId para el naming determinístico en Cloudinary)
     const [createdCompany] = await db
       .insert(companiesTable)
       .values({
-        name: normalizedName,
+        name: sanitizedName,
         description: input.description || null,
         ownerId: userId,
-        logoUrl: input.logoUrl || null,
+        logoUrl: isUrl ? (input.logo as string) : null,
         state: COMPANY_STATES.ACTIVE,
         archivedAt: null,
       })
@@ -62,6 +69,17 @@ export async function createCompanyService(input: CreateCompanyInput, userId: nu
 
     if (!createdCompany) {
       throw new Error('Failed to create company');
+    }
+
+    // Si es buffer, subir a Cloudinary y actualizar el registro
+    if (isBuffer) {
+      const cloudinaryUrl = await uploadCompanyLogo(createdCompany.id, sanitizedName, input.logo as Buffer);
+      const [updatedCompany] = await db
+        .update(companiesTable)
+        .set({ logoUrl: cloudinaryUrl, updatedAt: new Date() })
+        .where(eq(companiesTable.id, createdCompany.id))
+        .returning();
+      return mapToCompany(updatedCompany);
     }
 
     return mapToCompany(createdCompany);
@@ -80,7 +98,7 @@ function validateInput(input: CreateCompanyInput): void {
 
   validateCompanyName(input.name);
   validateCompanyDescription(input.description);
-  validateLogoUrl(input.logoUrl);
+  validateLogo(input.logo);
 }
 
 export type { Company, CreateCompanyInput } from '../types';

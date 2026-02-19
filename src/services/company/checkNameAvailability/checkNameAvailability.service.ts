@@ -3,7 +3,7 @@
 import { db } from '../../../db/init';
 import { companiesTable } from '../../../db/schema';
 import { eq } from 'drizzle-orm';
-import { normalizeCompanyName } from '../constants';
+import { normalizeForComparison } from '../constants';
 
 /**
  * Verifica si un nombre de compañía está disponible para ser usado.
@@ -39,7 +39,7 @@ export async function checkNameAvailability(name: string): Promise<boolean> {
       throw new Error('El nombre debe ser un texto válido');
     }
 
-    const normalizedName = normalizeCompanyName(name);
+    const normalizedName = normalizeForComparison(name);
 
     if (normalizedName.length === 0) {
       throw new Error('El nombre no puede estar vacío');

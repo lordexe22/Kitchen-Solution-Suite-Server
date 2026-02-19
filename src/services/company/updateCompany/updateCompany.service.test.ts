@@ -15,7 +15,7 @@ const mockDb = db as jest.Mocked<typeof db>;
 describe('updateCompanyService', () => {
   const mockCompany = {
     id: 1,
-    name: 'tech solutions',
+    name: 'Tech Solutions',
     description: 'Original description',
     ownerId: 1,
     logoUrl: 'https://example.com/logo.png',
@@ -69,12 +69,12 @@ describe('updateCompanyService', () => {
       const result = await updateCompanyService(1, 1, updateInput);
 
       expect(result.description).toBe('Updated description');
-      expect(result.name).toBe('tech solutions');
+      expect(result.name).toBe('Tech Solutions');
     });
 
     it('should update only logo URL', async () => {
       const updateInput = {
-        logoUrl: 'https://example.com/new-logo.png',
+        logo: 'https://example.com/new-logo.png',
       };
 
       (mockDb.transaction as any).mockImplementation(async (callback: any) => {
@@ -122,7 +122,7 @@ describe('updateCompanyService', () => {
             set: jest.fn().mockReturnValue({
               where: jest.fn().mockReturnValue({
                 returning: jest.fn().mockResolvedValue([
-                  { ...mockCompany, name: 'new company name', updatedAt: new Date() },
+                  { ...mockCompany, name: 'New Company Name', updatedAt: new Date() },
                 ]),
               }),
             }),
@@ -133,12 +133,12 @@ describe('updateCompanyService', () => {
 
       const result = await updateCompanyService(1, 1, updateInput);
 
-      expect(result.name).toBe('new company name');
+      expect(result.name).toBe('New Company Name');
     });
 
     it('should not update if same name is provided', async () => {
       const updateInput = {
-        name: 'tech solutions', // Same as existing
+        name: 'Tech Solutions', // Same as existing
       };
 
       (mockDb.transaction as any).mockImplementation(async (callback: any) => {
@@ -279,7 +279,7 @@ describe('updateCompanyService', () => {
       });
 
       await expect(updateCompanyService(1, 1, updateInput)).rejects.toThrow(
-        'Company name is already taken'
+        'Nombre no disponible'
       );
     });
   });

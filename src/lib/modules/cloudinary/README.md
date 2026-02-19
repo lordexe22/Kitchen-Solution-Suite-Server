@@ -26,6 +26,7 @@ cloudinary/
     ├── change-image-prefix.test.ts
     ├── get-image.test.ts
     ├── get-public-id-from-url.test.ts
+    ├── is-image-buffer.test.ts
     └── list-images.test.ts
 ```
 
@@ -64,6 +65,7 @@ El cliente se configura en cloudinary.config.ts con credenciales de entorno.
 - changeImagePrefix(params): GetImageResult - Ajusta prefijos con modos replace/append/prepend.
 - getImage(publicId): GetImageResult - Obtiene datos completos de una imagen.
 - getPublicIdFromUrl(url): GetPublicIdFromUrlResult - Extrae publicId, folder, fileName y format de una URL de Cloudinary.
+- isImageBuffer(buffer): boolean - Detecta si un buffer es una imagen soportada (JPEG, PNG, GIF, WebP, BMP, ICO, TIFF, SVG).
 - listImages(params): ListImagesResult - Lista imagenes con paginacion.
 
 ## Examples
@@ -128,6 +130,11 @@ Errores expuestos:
 - Agregar tests unitarios y documentar integracion.
 
 ## Changelog
+
+### v1.2.0
+- Agregada funcion `isImageBuffer` para detectar formatos de imagen via magic bytes.
+- Soporta JPEG, PNG, GIF, WebP, BMP, ICO, TIFF y SVG.
+- Util para fail-fast antes de upload, evitando latencia de red con formatos invalidos.
 
 ### v1.1.0
 - Agregada funcion `getPublicIdFromUrl` para extraer publicId desde URLs de Cloudinary.

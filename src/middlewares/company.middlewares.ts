@@ -37,8 +37,9 @@ export const createCompanyMiddleware = async (
 ): Promise<void> => {
   try {
     const userId = (req as AuthenticatedRequest).user.id;
+    const input = { ...req.body, ...(req.file ? { logo: req.file.buffer } : {}) };
 
-    const company = await createCompanyService(req.body, userId);
+    const company = await createCompanyService(input, userId);
     res.status(201).json({ data: company });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to create company';
@@ -116,8 +117,9 @@ export const updateCompanyMiddleware = async (
   try {
     const userId = (req as AuthenticatedRequest).user.id;
     const companyId = parseInt(req.params.id);
+    const input = { ...req.body, ...(req.file ? { logo: req.file.buffer } : {}) };
 
-    const company = await updateCompanyService(companyId, userId, req.body);
+    const company = await updateCompanyService(companyId, userId, input);
     res.status(200).json({ data: company });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to update company';
@@ -256,6 +258,71 @@ export const checkCompanyPermissionMiddleware = async (
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to check permission';
     res.status(400).json({ error: message });
+  }
+};
+// #end-middleware
+// #middleware uploadCompanyLogoMiddleware
+/**
+ * Middleware para subir/reemplazar el logo de una compañía
+ * POST /api/dashboard/company/:id/logo
+ * Params: { id: number }
+ * Body: multipart/form-data con campo 'logo' (imagen, max 5MB)
+ * Headers: Requiere autenticación JWT (validado por validateJWTMiddleware)
+ * Prerequisitos en la cadena: uploadSingleFile('logo'), validateFileExists
+ */
+export const uploadCompanyLogoMiddleware = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = (req as AuthenticatedRequest).user.id;
+    const companyId = parseInt(req.params.id);
+
+    const company = await updateCompanyService(companyId, userId, { logo: req.file!.buffer });
+    res.status(200).json({
+      data: {
+        company,
+        message: 'Logo uploaded successfully',
+      },
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to upload logo';
+    const status = message.includes('not found') ? 404 :
+                   message.includes('denied') ? 403 : 400;
+    res.status(status).json({ error: message });
+  }
+};
+// #end-middleware
+// #middleware deleteCompanyLogoMiddleware
+/**
+ * Middleware para eliminar el logo de una compañía
+ * DELETE /api/dashboard/company/:id/logo
+ * Params: { id: number }
+ * Headers: Requiere autenticación JWT (validado por validateJWTMiddleware)
+ */
+export const deleteCompanyLogoMiddleware = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = (req as AuthenticatedRequest).user.id;
+    const companyId = parseInt(req.params.id);
+
+    const company = await updateCompanyService(companyId, userId, { logo: null });
+    res.status(200).json({
+      data: {
+        company,
+        message: 'Logo deleted successfully',
+      },
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to delete logo';
+    const status = message.includes('not found') ? 404 :
+                   message.includes('denied') ? 403 :
+                   message.includes('does not have a logo') ? 400 : 400;
+    res.status(status).json({ error: message });
   }
 };
 // #end-middleware

@@ -686,3 +686,45 @@ export const _extractPublicIdFromCloudinaryUrl = (url: string): GetPublicIdFromU
 	};
 };
 // #end-function
+// #function _isImageBuffer - Detecta si un buffer contiene una imagen válida
+/**
+ * Magic bytes de formatos de imagen soportados por Cloudinary.
+ * @internal
+ */
+const IMAGE_SIGNATURES: { bytes: number[]; offset?: number }[] = [
+	{ bytes: [0xFF, 0xD8, 0xFF] },                                     // JPEG
+	{ bytes: [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A] },     // PNG
+	{ bytes: [0x47, 0x49, 0x46, 0x38] },                               // GIF (87a / 89a)
+	{ bytes: [0x52, 0x49, 0x46, 0x46] },                               // WebP (RIFF container)
+	{ bytes: [0x42, 0x4D] },                                           // BMP
+	{ bytes: [0x00, 0x00, 0x01, 0x00] },                               // ICO
+	{ bytes: [0x49, 0x49, 0x2A, 0x00] },                               // TIFF (little-endian)
+	{ bytes: [0x4D, 0x4D, 0x00, 0x2A] },                               // TIFF (big-endian)
+];
+
+/**
+ * Verifica si un buffer corresponde a un formato de imagen conocido
+ * chequeando los magic bytes del encabezado.
+ *
+ * Soporta: JPEG, PNG, GIF, WebP, BMP, ICO, TIFF y SVG.
+ * SVG se detecta por su apertura de tag basada en texto.
+ *
+ * @param buffer Buffer a analizar
+ * @returns true si el buffer coincide con un formato de imagen soportado
+ * @internal
+ * @version 1.0.0
+ */
+export const _isImageBuffer = (buffer: Buffer): boolean => {
+	if (!Buffer.isBuffer(buffer) || buffer.length < 2) return false;
+
+	// SVG: formato basado en texto
+	const head = buffer.subarray(0, 256).toString('utf-8').trimStart();
+	if (head.startsWith('<svg') || head.startsWith('<?xml')) return true;
+
+	// Formatos binarios: comparar magic bytes
+	return IMAGE_SIGNATURES.some(({ bytes, offset = 0 }) => {
+		if (buffer.length < offset + bytes.length) return false;
+		return bytes.every((byte, i) => buffer[offset + i] === byte);
+	});
+};
+// #end-function

@@ -10,6 +10,7 @@ import { companiesTable } from '../../../db/schema';
 import { eq } from 'drizzle-orm';
 import { validateCompanyId, validateUserId } from '../utils/validators';
 import { handleDatabaseError } from '../utils/error-handler';
+import { deleteCompanyLogo } from '../utils/logo-operations';
 
 /**
  * Elimina una compañía de la BD
@@ -28,8 +29,10 @@ export async function deleteCompanyService(companyId: number, userId: number): P
       const [existingCompany] = await tx
         .select({
           id: companiesTable.id,
+          name: companiesTable.name,
           ownerId: companiesTable.ownerId,
           state: companiesTable.state,
+          logoUrl: companiesTable.logoUrl,
         })
         .from(companiesTable)
         .where(eq(companiesTable.id, companyId))
@@ -41,6 +44,11 @@ export async function deleteCompanyService(companyId: number, userId: number): P
 
       if (existingCompany.ownerId !== userId) {
         throw new Error('Access denied');
+      }
+
+      // Limpiar logo de Cloudinary si existe
+      if (existingCompany.logoUrl) {
+        await deleteCompanyLogo(companyId, existingCompany.name);
       }
 
       // TODO: Cuando se agreguen tablas relacionadas (branches, products, etc.),

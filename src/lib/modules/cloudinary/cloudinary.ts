@@ -36,6 +36,7 @@ import {
 	_handleCloudinaryFetchError,
 	_normalizeGetImageResult,
 	_extractPublicIdFromCloudinaryUrl,
+	_isImageBuffer,
 } from './cloudinary.utils';
 import {
 	UploadError,
@@ -682,5 +683,23 @@ export const getPublicIdFromUrl = (url: string): GetPublicIdFromUrlResult => {
 	// #step 1 - Delegar la extracción a la utilidad interna
 	return _extractPublicIdFromCloudinaryUrl(url);
 	// #end-step
+};
+// #end-function
+// #function isImageBuffer - Verifica si un buffer es una imagen soportada
+/**
+ * Verifica si un buffer corresponde a un formato de imagen conocido.
+ *
+ * Detecta el formato analizando los magic bytes del encabezado.
+ * Soporta: JPEG, PNG, GIF, WebP, BMP, ICO, TIFF y SVG.
+ *
+ * Útil para fail-fast antes de intentar un upload a Cloudinary,
+ * evitando la latencia de red cuando el formato es claramente inválido.
+ *
+ * @param buffer Buffer a analizar
+ * @returns true si el buffer coincide con un formato de imagen soportado
+ * @version 1.0.0
+ */
+export const isImageBuffer = (buffer: Buffer): boolean => {
+	return _isImageBuffer(buffer);
 };
 // #end-function

@@ -24,7 +24,7 @@ describe('createCompanyService', () => {
       const input = {
         name: 'Tech Solutions Inc',
         description: 'A leading tech company',
-        logoUrl: 'https://example.com/logo.png',
+        logo: 'https://example.com/logo.png',
       };
 
       // Mock countUserCompanies
@@ -195,13 +195,13 @@ describe('createCompanyService', () => {
       } as any);
 
       await expect(createCompanyService(input, userId)).rejects.toThrow(
-        'Company name is already taken'
+        'Nombre no disponible'
       );
     });
   });
 
-  describe('Normalización de Nombre', () => {
-    it('should normalize company name', async () => {
+  describe('Sanitización de Nombre', () => {
+    it('should sanitize company name preserving original case', async () => {
       const userId = 1;
       const input = {
         name: '  TeCh   SoLuTiOnS  ',
@@ -218,7 +218,7 @@ describe('createCompanyService', () => {
           returning: jest.fn().mockResolvedValue([
             {
               id: 1,
-              name: 'tech solutions',
+              name: 'TeCh SoLuTiOnS',
               description: null,
               ownerId: userId,
               logoUrl: null,
@@ -233,7 +233,7 @@ describe('createCompanyService', () => {
 
       const result = await createCompanyService(input, userId);
 
-      expect(result.name).toBe('tech solutions');
+      expect(result.name).toBe('TeCh SoLuTiOnS');
     });
   });
 
