@@ -21,6 +21,7 @@ import { reactivateCompanyService } from '../services/company/reactivateCompany/
 import { checkNameAvailability } from '../services/company/checkNameAvailability/checkNameAvailability.service';
 import { checkCompanyPermissionService } from '../services/company/checkCompanyPermission/checkCompanyPermission.service';
 import type { AuthenticatedRequest } from './validators/validateJWT.types';
+import { uploadSingleFile } from '../middlewares/fileUpload/fileUpload.middleware';
 // #end-section
 
 // #middleware createCompanyMiddleware
@@ -270,29 +271,33 @@ export const checkCompanyPermissionMiddleware = async (
  * Headers: Requiere autenticación JWT (validado por validateJWTMiddleware)
  * Prerequisitos en la cadena: uploadSingleFile('logo'), validateFileExists
  */
-export const uploadCompanyLogoMiddleware = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const userId = (req as AuthenticatedRequest).user.id;
-    const companyId = parseInt(req.params.id);
+export const uploadCompanyLogoMiddleware = [
+  uploadSingleFile('logo'), // Middleware de multer para manejar el archivo
+  async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const userId = (req as AuthenticatedRequest).user.id;
+      const companyId = parseInt(req.params.id);
 
-    const company = await updateCompanyService(companyId, userId, { logo: req.file!.buffer });
-    res.status(200).json({
-      data: {
-        company,
-        message: 'Logo uploaded successfully',
-      },
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to upload logo';
-    const status = message.includes('not found') ? 404 :
-                   message.includes('denied') ? 403 : 400;
-    res.status(status).json({ error: message });
-  }
-};
+      const company = await updateCompanyService(companyId, userId, { logo: req.file!.buffer });
+      res.status(200).json({
+        data: {
+          company,
+          message: 'Logo uploaded successfully',
+        },
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to upload logo';
+      const status = message.includes('not found') ? 404 :
+                     message.includes('denied') ? 403 : 400;
+      res.status(status).json({ error: message });
+    }
+  },
+];
+
 // #end-middleware
 // #middleware deleteCompanyLogoMiddleware
 /**
