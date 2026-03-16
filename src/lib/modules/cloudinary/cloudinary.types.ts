@@ -21,7 +21,6 @@ export type ImageSource =
 	| { type: 'file'; filePath: string }
 	| { type: 'buffer'; buffer: Buffer };
 // #end-type
-
 // #interface CreateImageOptions - Opciones para crear una imagen en Cloudinary
 /**
  * @description
@@ -56,7 +55,6 @@ export interface CreateImageOptions {
 	// #end-v-field
 }
 // #end-interface
-
 // #interface ImageMetadata - Metadata personalizada para una imagen en Cloudinary
 /**
  * @description
@@ -88,7 +86,6 @@ export interface ImageMetadata {
 	[key: string]: string | number | boolean | undefined;
 }
 // #end-interface
-
 // #interface ReplaceImageOptions - Opciones para reemplazar una imagen existente
 /**
  * @description
@@ -111,7 +108,6 @@ export interface ReplaceImageOptions {
 	// #end-v-field
 }
 // #end-interface
-
 // #interface ReplaceImageParams - Parámetros para reemplazar una imagen existente
 /**
  * @description
@@ -146,7 +142,6 @@ export interface ReplaceImageParams {
 	// #end-v-field
 }
 // #end-interface
-
 // #interface RenameImageParams - Parámetros para renombrar una imagen
 /**
  * @description
@@ -173,7 +168,6 @@ export interface RenameImageParams {
 	// #end-v-field
 }
 // #end-interface
-
 // #interface MoveImageParams - Parámetros para mover una imagen a otra carpeta
 /**
  * @description
@@ -200,7 +194,6 @@ export interface MoveImageParams {
 	// #end-v-field
 }
 // #end-interface
-
 // #interface ChangeImagePrefixParams - Parámetros para cambiar el prefijo de una imagen
 /**
  * @description
@@ -231,7 +224,6 @@ export interface ChangeImagePrefixParams {
 	// #end-v-field
 }
 // #end-interface
-
 // #interface CreateImageResponse - Respuesta normalizada luego del upload
 /**
  * @description
@@ -282,7 +274,6 @@ export interface CreateImageResponse {
 	// #end-v-field
 }
 // #end-interface
-
 // #interface ReplaceImageResponse - Respuesta al reemplazar una imagen
 /**
  * @description
@@ -317,7 +308,6 @@ export interface ReplaceImageResponse {
 	// #end-v-field
 }
 // #end-interface
-
 // #interface DeleteImageResponse - Respuesta al eliminar una imagen
 /**
  * @description
@@ -340,7 +330,6 @@ export interface DeleteImageResponse {
 	// #end-v-field
 }
 // #end-interface
-
 // #interface GetImageResult
 /**
  * Respuesta al obtener una imagen.
@@ -358,7 +347,6 @@ export interface GetImageResult {
 	raw: Record<string, any>;
 }
 // #end-interface
-
 // #interface ListImagesParams
 /**
  * Parámetros para listar imágenes en una carpeta.
@@ -371,7 +359,6 @@ export interface ListImagesParams {
 	cursor?: string;
 }
 // #end-interface
-
 // #interface ListImagesResult
 /**
  * Resultado de listar imágenes.
@@ -382,7 +369,6 @@ export interface ListImagesResult {
 	nextCursor?: string;
 }
 // #end-interface
-
 // #interface GetPublicIdFromUrlResult
 /**
  * Resultado de extraer el publicId de una URL de Cloudinary.

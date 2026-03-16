@@ -3,7 +3,6 @@
 // #section Imports
 import type { SignOptions } from "jsonwebtoken";
 // #end-section
-
 // #type JwtPayload - Estructura genérica del payload JWT
 /**
  * @description
@@ -21,7 +20,6 @@ import type { SignOptions } from "jsonwebtoken";
  */
 export type JwtPayload = Record<string, unknown>;
 // #end-type
-
 // #type SignJwtOptions - Opciones para la firma de tokens JWT
 /**
  * @description
@@ -39,7 +37,6 @@ export type JwtPayload = Record<string, unknown>;
  */
 export type SignJwtOptions = SignOptions;
 // #end-type
-
 // #section Cookie Types
 
 // #type CookieConfig - Opciones de configuración para cookies JWT
@@ -61,21 +58,32 @@ export type SignJwtOptions = SignOptions;
  * @author Walter Ezequiel Puig
  */
 export type CookieConfig = {
+  // #v-field maxAge - tiempo de vida de la cookie
   /** tiempo de vida de la cookie en milisegundos */
   maxAge?: number;
+  // #end-v-field
+  // #v-field path - ruta de alcance de la cookie
   /** ruta de alcance de la cookie */
   path?: string;
+  // #end-v-field
+  // #v-field domain - dominio de alcance de la cookie
   /** dominio de alcance de la cookie */
   domain?: string;
+  // #end-v-field
+  // #v-field secure - indica si la cookie solo se transmite por HTTPS
   /** indica si la cookie solo se transmite por HTTPS */
   secure?: boolean;
+  // #end-v-field
+  // #v-field httpOnly - siempre forzado a true internamente por seguridad
   /** siempre forzado a true internamente por seguridad */
   httpOnly?: boolean;
+  // #end-v-field
+  // #v-field sameSite - política de envío entre sitios
   /** política de envío entre sitios */
   sameSite?: "strict" | "lax" | "none";
+  // #end-v-field
 };
 // #end-type
-
 // #type CookieData - Datos de cookie listos para ser enviados en la respuesta
 /**
  * @description
@@ -92,13 +100,18 @@ export type CookieConfig = {
  * @author Walter Ezequiel Puig
  */
 export type CookieData = {
+  // #v-field name - nombre de la cookie
   /** nombre de la cookie */
   name: string;
+  // #end-v-field
+  // #v-field value - valor de la cookie
   /** valor de la cookie (token JWT serializado) */
   value: string;
+  // #end-v-field
+  // #v-field options - opciones de configuración de la cookie
   /** opciones de configuración de la cookie */
   options: CookieConfig;
+  // #end-v-field
 };
 // #end-type
-
 // #end-section

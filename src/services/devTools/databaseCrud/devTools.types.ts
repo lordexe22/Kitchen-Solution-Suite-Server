@@ -43,7 +43,6 @@ export interface DevToolsResponse<T = unknown> {
   // #end-v-field
 }
 // #end-interface
-
 // #type FilterConditions - Condiciones de filtro para búsquedas
 /**
  * @description
@@ -66,7 +65,6 @@ export interface DevToolsResponse<T = unknown> {
  */
 export type FilterConditions = Record<string, unknown>;
 // #end-type
-
 // #interface DataGeneratorOptions - Opciones para generar datos aleatorios en batch creation
 /**
  * @description
@@ -93,7 +91,6 @@ export interface DataGeneratorOptions {
   // #end-v-field
 }
 // #end-interface
-
 // #interface CRUDOperation - Configuración de una operación CRUD
 /**
  * @description
@@ -128,7 +125,6 @@ export interface CRUDOperation {
   // #end-v-field
 }
 // #end-interface
-
 // #interface TableFieldInfo - Información de un campo de una tabla extraída del schema de Drizzle
 /**
  * @description
@@ -180,7 +176,6 @@ export interface TableFieldInfo {
   // #end-v-field
 }
 // #end-interface
-
 // #interface TableSchema - Esquema completo de una tabla con info para operaciones CRUD
 /**
  * @description
@@ -215,7 +210,6 @@ export interface TableSchema {
   // #end-v-field
 }
 // #end-interface
-
 // #enum CRUDOperationType - Tipos de operaciones CRUD soportadas
 /**
  * @description

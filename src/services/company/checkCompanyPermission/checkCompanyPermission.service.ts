@@ -8,14 +8,7 @@
 import { db } from '../../../db/init';
 import { companiesTable } from '../../../db/schema';
 import { eq } from 'drizzle-orm';
-
-/**
- * Resultado de verificación de permisos
- */
-export interface PermissionCheckResult {
-  hasPermission: boolean;
-  reason?: string;
-}
+import type { PermissionCheckResult } from './checkCompanyPermission.types';
 
 /**
  * Verifica si un usuario tiene permiso sobre una compañía

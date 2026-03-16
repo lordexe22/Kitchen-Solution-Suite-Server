@@ -3,7 +3,6 @@
 // #section Imports
 import type { Request } from 'express';
 // #end-section
-
 // #interface JWTPayload - Payload del JWT decodificado
 /**
  * @description
@@ -30,7 +29,6 @@ export interface JWTPayload {
   // #end-v-field
 }
 // #end-interface
-
 // #interface AuthUser - Datos del usuario autenticado adjuntos al request
 /**
  * @description
@@ -57,7 +55,6 @@ export interface AuthUser {
   // #end-v-field
 }
 // #end-interface
-
 // #interface AuthenticatedRequest - Request de Express con usuario autenticado
 /**
  * @description

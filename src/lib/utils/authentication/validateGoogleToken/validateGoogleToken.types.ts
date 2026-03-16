@@ -62,7 +62,6 @@ export interface GooglePayload {
   // #end-v-field
 }
 // #end-interface
-
 // #interface ValidateGoogleTokenOptions - Opciones para la validación del token de Google
 /**
  * @description
