@@ -1,119 +1,235 @@
 /* src/services/devTools/devTools.types.ts */
 
-// #section Tipos Base para DevTools
-
+// #interface DevToolsResponse - Respuesta estándar de todas las operaciones del servicio DevTools
 /**
+ * @description
  * Respuesta estándar de todas las operaciones del servicio DevTools.
- * Proporciona un contrato consistente para que los controladores sepan qué esperar.
+ *
+ * @purpose
+ * Proveer un contrato consistente para que los controladores sepan qué esperar de cualquier operación del servicio.
+ *
+ * @context
+ * Retornado por todas las funciones del servicio DevTools y consumido por los controladores correspondientes.
+ *
+ * @template T Tipo de los datos retornados en caso de éxito
+ *
+ * @since 1.0.0
+ *
+ * @author Walter Ezequiel Puig
  */
-export interface DevToolsResponse<T = any> {
-  /** Indica si la operación fue exitosa */
+export interface DevToolsResponse<T = unknown> {
+  // #v-field success - Indica si la operación fue exitosa
+  /** indica si la operación fue exitosa */
   success: boolean;
-  /** Datos retornados (si la operación fue exitosa) */
+  // #end-v-field
+  // #v-field data - Datos retornados de la operación
+  /** datos retornados si la operación fue exitosa */
   data?: T;
-  /** Mensaje de error (si la operación falló) */
+  // #end-v-field
+  // #v-field error - Mensaje de error
+  /** mensaje de error si la operación falló */
   error?: string;
-  /** Información adicional útil para debugging */
+  // #end-v-field
+  // #v-field metadata - Información adicional de la operación
+  /** información adicional útil para debugging */
   metadata?: {
-    /** Cantidad de registros afectados */
+    /** cantidad de registros afectados */
     recordsAffected?: number;
-    /** Timestamp de la operación */
+    /** timestamp de la operación */
     timestamp?: Date;
-    /** Query ejecutada (solo en desarrollo) */
+    /** query ejecutada (solo en desarrollo) */
     executedQuery?: string;
   };
+  // #end-v-field
 }
+// #end-interface
 
+// #type FilterConditions - Condiciones de filtro para búsquedas
 /**
- * Condiciones de filtro para búsquedas.
- * Soporta filtros simples de igualdad para la Fase 1.
- * 
- * Ejemplo:
- * {
- *   type: 'admin',
- *   isActive: true,
- *   state: 'active'
- * }
+ * @description
+ * Condiciones de filtro para búsquedas dentro del servicio DevTools.
+ *
+ * @purpose
+ * Permitir filtros simples de igualdad en las operaciones de lectura y eliminación de registros.
+ *
+ * @context
+ * Utilizado por las operaciones de lectura y búsqueda del servicio DevTools.
+ *
+ * @example
+ * ```ts
+ * const filters: FilterConditions = { type: 'admin', state: 'active' };
+ * ```
+ *
+ * @since 1.0.0
+ *
+ * @author Walter Ezequiel Puig
  */
-export type FilterConditions = Record<string, any>;
+export type FilterConditions = Record<string, unknown>;
+// #end-type
 
+// #interface DataGeneratorOptions - Opciones para generar datos aleatorios en batch creation
 /**
- * Opciones para generar datos aleatorios en batch creation.
- * Define cómo se generan registros de prueba.
+ * @description
+ * Opciones para generar datos aleatorios en operaciones de creación batch.
+ *
+ * @purpose
+ * Definir cómo se generan registros de prueba al ejecutar operaciones de creación masiva en DevTools.
+ *
+ * @context
+ * Utilizado por las funciones de creación batch del servicio DevTools.
+ *
+ * @since 1.0.0
+ *
+ * @author Walter Ezequiel Puig
  */
 export interface DataGeneratorOptions {
-  /** Función personalizada para generar datos aleatorios */
-  customGenerator?: (index: number) => Record<string, any>;
-  /** Si false, usa valores por defecto para cada tipo de campo */
+  // #f-field customGenerator - Generador personalizado de datos
+  /** función personalizada para generar datos aleatorios por índice */
+  customGenerator?: (index: number) => Record<string, unknown>;
+  // #end-f-field
+  // #v-field useRandomData - Usa valores aleatorios
+  /** si false, usa valores por defecto para cada tipo de campo */
   useRandomData?: boolean;
+  // #end-v-field
 }
+// #end-interface
 
+// #interface CRUDOperation - Configuración de una operación CRUD
 /**
- * Configuración de una operación CRUD.
- * Encapsula los parámetros comunes para todas las operaciones.
+ * @description
+ * Configuración de una operación CRUD del servicio DevTools.
+ *
+ * @purpose
+ * Encapsular los parámetros comunes para todas las operaciones CRUD en una estructura reutilizable.
+ *
+ * @context
+ * Utilizado por las funciones del servicio DevTools para ejecutar operaciones sobre la base de datos.
+ *
+ * @since 1.0.0
+ *
+ * @author Walter Ezequiel Puig
  */
 export interface CRUDOperation {
-  /** Nombre de la tabla (ej: 'users', 'apiPlatforms') */
+  // #v-field tableName - Nombre de la tabla objetivo
+  /** nombre de la tabla sobre la que se ejecuta la operación (ej: 'users', 'apiPlatforms') */
   tableName: string;
-  /** Datos a procesar (para create/update) */
-  data?: Record<string, any>;
-  /** Filtros a aplicar (para read/delete/update) */
+  // #end-v-field
+  // #v-field data - Datos de la operación
+  /** datos a procesar en operaciones de creación o actualización */
+  data?: Record<string, unknown>;
+  // #end-v-field
+  // #v-field filters - Condiciones de filtro
+  /** filtros a aplicar en operaciones de lectura, eliminación o actualización */
   filters?: FilterConditions;
-  /** Identificador único (para operaciones de un solo registro) */
+  // #end-v-field
+  // #v-field id - Identificador único del registro
+  /** identificador único del registro para operaciones sobre un solo elemento */
   id?: number | string;
+  // #end-v-field
 }
+// #end-interface
 
-// #end-section
-
-// #section Interfaces para Descubrimiento de Schema
-
+// #interface TableFieldInfo - Información de un campo de una tabla extraída del schema de Drizzle
 /**
- * Información de un campo dentro de una tabla.
- * Se extrae automáticamente del schema de Drizzle.
+ * @description
+ * Información detallada de un campo dentro de una tabla, extraída del schema de Drizzle.
+ *
+ * @purpose
+ * Describir la estructura de un campo de tabla para habilitar operaciones CRUD dinámicas sin conocer el schema en tiempo de compilación.
+ *
+ * @context
+ * Utilizado por el servicio DevTools para introspeccionar el schema y generar operaciones CRUD automáticas.
+ *
+ * @since 1.0.0
+ *
+ * @author Walter Ezequiel Puig
  */
 export interface TableFieldInfo {
-  /** Nombre del campo */
+  // #v-field name - Nombre del campo
+  /** nombre del campo en la tabla */
   name: string;
-  /** Tipo de dato (string, number, boolean, date, etc.) */
+  // #end-v-field
+  // #v-field type - Tipo de dato del campo
+  /** tipo de dato del campo (string, number, boolean, date, etc.) */
   type: string;
-  /** Si el campo es obligatorio */
+  // #end-v-field
+  // #v-field isRequired - Indica si el campo es obligatorio
+  /** indica si el campo es obligatorio */
   isRequired: boolean;
-  /** Si el campo es única */
+  // #end-v-field
+  // #v-field isUnique - Indica si el campo es único
+  /** indica si el campo tiene restricción de unicidad */
   isUnique: boolean;
-  /** Si es clave primaria */
+  // #end-v-field
+  // #v-field isPrimaryKey - Indica si es clave primaria
+  /** indica si el campo es clave primaria */
   isPrimaryKey: boolean;
-  /** Si tiene valor por defecto */
+  // #end-v-field
+  // #v-field hasDefault - Indica si tiene valor por defecto
+  /** indica si el campo tiene un valor por defecto definido */
   hasDefault: boolean;
-  /** Información de FK si aplica */
+  // #end-v-field
+  // #v-field foreignKey - Información de clave foránea
+  /** información de la clave foránea si el campo referencia otra tabla */
   foreignKey?: {
-    /** Tabla a la que apunta */
+    /** tabla a la que apunta la clave foránea */
     referencesTable: string;
-    /** Campo al que apunta */
+    /** campo al que apunta la clave foránea */
     referencesField: string;
   };
+  // #end-v-field
 }
+// #end-interface
 
+// #interface TableSchema - Esquema completo de una tabla con info para operaciones CRUD
 /**
- * Esquema completo de una tabla.
- * Contiene toda la información necesaria para realizar operaciones CRUD.
+ * @description
+ * Esquema completo de una tabla con toda la información para realizar operaciones CRUD.
+ *
+ * @purpose
+ * Centralizar la descripción estructural de una tabla para habilitar introspección y operaciones dinámicas.
+ *
+ * @context
+ * Utilizado por el servicio DevTools para construir y ejecutar operaciones CRUD sobre cualquier tabla.
+ *
+ * @since 1.0.0
+ *
+ * @author Walter Ezequiel Puig
  */
 export interface TableSchema {
-  /** Nombre de la tabla */
+  // #v-field tableName - Nombre de la tabla
+  /** nombre de la tabla */
   tableName: string;
-  /** Descripción de la tabla (extraída de comentarios si existe) */
+  // #end-v-field
+  // #v-field description - Descripción de la tabla
+  /** descripción de la tabla extraída de comentarios si existe */
   description?: string;
-  /** Listado de campos con su información */
+  // #end-v-field
+  // #v-field fields - Campos de la tabla
+  /** listado de campos con su información detallada */
   fields: TableFieldInfo[];
-  /** Campos que son clave primaria */
+  // #end-v-field
+  // #v-field primaryKeys - Claves primarias de la tabla
+  /** campos que actúan como claves primarias */
   primaryKeys?: string[];
+  // #end-v-field
 }
+// #end-interface
 
-// #end-section
-
-// #section Enums para Operaciones
-
+// #enum CRUDOperationType - Tipos de operaciones CRUD soportadas
 /**
- * Tipos de operaciones CRUD soportadas.
+ * @description
+ * Enumeración de los tipos de operaciones CRUD soportadas por el servicio DevTools.
+ *
+ * @purpose
+ * Tipar explícitamente las operaciones disponibles para evitar errores por cadenas arbitrarias.
+ *
+ * @context
+ * Utilizado por el servicio DevTools y los controladores al identificar el tipo de operación a ejecutar.
+ *
+ * @since 1.0.0
+ *
+ * @author Walter Ezequiel Puig
  */
 export enum CRUDOperationType {
   CREATE = 'CREATE',
@@ -124,5 +240,4 @@ export enum CRUDOperationType {
   CREATE_BATCH = 'CREATE_BATCH',
   SEARCH = 'SEARCH'
 }
-
-// #end-section
+// #end-enum
