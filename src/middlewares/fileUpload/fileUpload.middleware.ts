@@ -75,25 +75,46 @@ const uploadExcel = multer({
 
 // --- Exports ---
 
+// #function uploadSingleFile - Retorna un middleware multer configurado para subir una sola imagen
 /**
- * Middleware multer para subir una sola imagen.
- * @param fieldName Nombre del campo en el form (default: 'file')
+ * @description Función de fábrica que crea un middleware de multer para subir una imagen.
+ * @purpose Encapsular la configuración de multer permitiendo especificar el nombre del campo del form.
+ * @context Utilizado en las rutas que requieren subida de imágenes como avatar o logo de compañía.
+ * @param fieldName nombre del campo en el formulario multipart (default: 'file')
+ * @returns middleware de multer configurado para procesar el archivo del campo especificado
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const uploadSingleFile = (fieldName: string = 'file') => {
   return uploadImage.single(fieldName);
 };
+// #end-function
 
+// #function uploadExcelFile - Retorna un middleware multer configurado para subir un archivo Excel
 /**
- * Middleware multer para subir un solo archivo Excel.
- * @param fieldName Nombre del campo en el form (default: 'file')
+ * @description Función de fábrica que crea un middleware de multer para subir un archivo .xlsx.
+ * @purpose Encapsular la configuración de multer con validación de tipo Excel y tamaño máximo.
+ * @context Utilizado en rutas de importación de datos que reciben archivos Excel.
+ * @param fieldName nombre del campo en el formulario multipart (default: 'file')
+ * @returns middleware de multer configurado para procesar archivos .xlsx
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const uploadExcelFile = (fieldName: string = 'file') => {
   return uploadExcel.single(fieldName);
 };
+// #end-function
 
+// #middleware validateFileExists - Verifica que un archivo fue subido correctamente en la petición
 /**
- * Middleware que valida que un archivo fue subido correctamente.
- * Debe ir DESPUÉS de uploadSingleFile/uploadExcelFile en la cadena.
+ * @description Middleware que valida que req.file esté presente tras el procesamiento de multer.
+ * @purpose Garantizar que el archivo requerido existe antes de que los handlers posteriores lo procesen.
+ * @context Utilizado después de uploadSingleFile o uploadExcelFile en la cadena de middlewares.
+ * @param req petición HTTP tras el procesamiento de multer
+ * @param res respuesta HTTP
+ * @param next función de Express para continuar si el archivo existe
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const validateFileExists = (req: Request, res: Response, next: NextFunction): void => {
   if (!req.file) {
@@ -102,10 +123,19 @@ export const validateFileExists = (req: Request, res: Response, next: NextFuncti
   }
   next();
 };
+// #end-middleware
 
+// #middleware handleFileUploadError - Maneja errores de multer devolviendo respuestas HTTP apropiadas
 /**
- * Error handler para errores de multer.
- * Debe ir AL FINAL de la cadena de middlewares de upload.
+ * @description Middleware de manejo de errores que intercepta y procesa los errores lanzados por multer.
+ * @purpose Proporcionar respuestas de error estructuradas ante fallos en la subida de archivos.
+ * @context Debe ubicarse al final de la cadena de middlewares de upload para capturar errores de multer.
+ * @param err error capturado, puede ser un MulterError u otro tipo de error
+ * @param _req petición HTTP (no utilizada en el error handler)
+ * @param res respuesta HTTP donde se envía el mensaje de error
+ * @param next función de Express para continuar si no hay error
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const handleFileUploadError = (
   err: any,
@@ -133,3 +163,4 @@ export const handleFileUploadError = (
 
   next();
 };
+// #end-middleware

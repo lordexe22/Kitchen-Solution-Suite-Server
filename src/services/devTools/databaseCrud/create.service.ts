@@ -23,7 +23,7 @@ import type { DevToolsResponse } from './devTools.types';
  */
 // #end-info
 
-// #function createRecord
+// #function createRecord - Crea un nuevo registro en la tabla especificada
 /**
  * @description Crea un nuevo registro en la tabla especificada.
  * @purpose Proveer la operación de INSERT de datos de prueba agnóstica de tabla para el sistema devTools.
@@ -87,7 +87,7 @@ export async function createRecord(
 }
 // #end-function
 
-// #function createRecordBatch
+// #function createRecordBatch - Crea múltiples registros en la tabla en operación de batch
 /**
  * @description Crea múltiples registros en la tabla especificada en una operación de batch.
  * @purpose Proveer la operación de INSERT masivo para generar grandes volúmenes de datos de prueba eficientemente.

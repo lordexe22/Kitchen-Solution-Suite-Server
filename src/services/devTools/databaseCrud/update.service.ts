@@ -22,7 +22,7 @@ import type { DevToolsResponse } from './devTools.types';
  */
 // #end-info
 
-// #function updateRecord
+// #function updateRecord - Actualiza un registro específico en la tabla
 /**
  * @description Actualiza un registro específico en la tabla con los campos proporcionados.
  * @purpose Proveer la operación de UPDATE agnóstica de tabla para modificar datos de prueba en el sistema devTools.
@@ -111,7 +111,7 @@ export async function updateRecord(
 }
 // #end-function
 
-// #function updateRecordBatch
+// #function updateRecordBatch - Actualiza múltiples registros en la tabla en operación de batch
 /**
  * @description Actualiza múltiples registros en la tabla de forma secuencial en una operación de batch.
  * @purpose Proveer la operación de UPDATE masivo para modificar grandes volúmenes de datos de prueba.

@@ -23,7 +23,7 @@ import type { DevToolsResponse } from './devTools.types';
  */
 // #end-info
 
-// #function deleteRecord
+// #function deleteRecord - Elimina un registro específico de la tabla por ID
 /**
  * @description Elimina físicamente un registro específico de la tabla por ID (hard delete).
  * @purpose Proveer la operación de DELETE para limpiar registros de prueba en el sistema devTools.
@@ -97,7 +97,7 @@ export async function deleteRecord(
 }
 // #end-function
 
-// #function deleteRecordBatch
+// #function deleteRecordBatch - Elimina múltiples registros de la tabla por sus IDs
 /**
  * @description Elimina múltiples registros de la tabla por sus IDs en una operación de batch.
  * @purpose Proveer la operación de DELETE masivo para limpiar grandes volúmenes de datos de prueba.

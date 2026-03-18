@@ -24,12 +24,16 @@ import type { AuthenticatedRequest } from './validators/validateJWT.types';
 import { uploadSingleFile } from '../middlewares/fileUpload/fileUpload.middleware';
 // #end-section
 
-// #middleware createCompanyMiddleware
+// #middleware createCompanyMiddleware - Crea una nueva compañía asociada al usuario autenticado
 /**
- * Middleware para crear una nueva compañía
- * POST /api/dashboard/company
- * Body: { name: string, description?: string, logoUrl?: string }
- * Headers: Requiere autenticación JWT (validado por validateJWTMiddleware)
+ * @description Middleware que procesa la creación de una nueva compañía.
+ * @purpose Orquestar el servicio de creación de compañías y manejar la respuesta HTTP.
+ * @context Utilizado en la ruta POST /api/dashboard/company como handler principal.
+ * @param req petición con los datos de la compañía en el body y opcionalmente el logo como archivo
+ * @param res respuesta HTTP con la compañía recién creada
+ * @param next función de Express para continuar la cadena de middlewares
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const createCompanyMiddleware = async (
   req: Request,
@@ -48,12 +52,16 @@ export const createCompanyMiddleware = async (
   }
 };
 // #end-middleware
-// #middleware getAllCompaniesMiddleware
+// #middleware getAllCompaniesMiddleware - Obtiene todas las compañías del usuario con filtrado y paginación
 /**
- * Middleware para obtener todas las compañías del usuario
- * GET /api/dashboard/company?state=active&page=1&limit=10
- * Query: { state?: 'active' | 'archived', page?: number, limit?: number }
- * Headers: Requiere autenticación JWT (validado por validateJWTMiddleware)
+ * @description Middleware que procesa la obtención de todas las compañías del usuario autenticado.
+ * @purpose Orquestar el servicio de listado de compañías con soporte para filtros y paginación.
+ * @context Utilizado en la ruta GET /api/dashboard/company como handler principal.
+ * @param req petición con parámetros opcionales de filtrado por estado y paginación en query
+ * @param res respuesta HTTP con la lista de compañías y metadatos de paginación
+ * @param next función de Express para continuar la cadena de middlewares
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const getAllCompaniesMiddleware = async (
   req: Request,
@@ -77,12 +85,16 @@ export const getAllCompaniesMiddleware = async (
   }
 };
 // #end-middleware
-// #middleware getCompanyMiddleware
+// #middleware getCompanyMiddleware - Obtiene una compañía específica del usuario autenticado
 /**
- * Middleware para obtener una compañía específica
- * GET /api/dashboard/company/:id
- * Params: { id: number }
- * Headers: Requiere autenticación JWT (validado por validateJWTMiddleware)
+ * @description Middleware que procesa la obtención de una compañía individual por su ID.
+ * @purpose Orquestar el servicio de consulta de compañía validando que pertenezca al usuario.
+ * @context Utilizado en la ruta GET /api/dashboard/company/:id como handler principal.
+ * @param req petición con el ID de la compañía en los parámetros de ruta
+ * @param res respuesta HTTP con los datos de la compañía solicitada
+ * @param next función de Express para continuar la cadena de middlewares
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const getCompanyMiddleware = async (
   req: Request,
@@ -102,13 +114,16 @@ export const getCompanyMiddleware = async (
   }
 };
 // #end-middleware
-// #middleware updateCompanyMiddleware
+// #middleware updateCompanyMiddleware - Actualiza los datos de una compañía existente
 /**
- * Middleware para actualizar una compañía
- * PATCH /api/dashboard/company/:id
- * Params: { id: number }
- * Body: { name?: string, description?: string, logoUrl?: string }
- * Headers: Requiere autenticación JWT (validado por validateJWTMiddleware)
+ * @description Middleware que procesa la actualización parcial de una compañía.
+ * @purpose Orquestar el servicio de actualización de compañías y manejar la respuesta HTTP.
+ * @context Utilizado en la ruta PATCH /api/dashboard/company/:id como handler principal.
+ * @param req petición con el ID en ruta y los campos a actualizar en el body
+ * @param res respuesta HTTP con la compañía actualizada
+ * @param next función de Express para continuar la cadena de middlewares
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const updateCompanyMiddleware = async (
   req: Request,
@@ -131,12 +146,16 @@ export const updateCompanyMiddleware = async (
   }
 };
 // #end-middleware
-// #middleware deleteCompanyMiddleware
+// #middleware deleteCompanyMiddleware - Elimina permanentemente una compañía del usuario autenticado
 /**
- * Middleware para eliminar una compañía
- * DELETE /api/dashboard/company/:id
- * Params: { id: number }
- * Headers: Requiere autenticación JWT (validado por validateJWTMiddleware)
+ * @description Middleware que procesa la eliminación definitiva de una compañía.
+ * @purpose Orquestar el servicio de eliminación de compañías y manejar la respuesta HTTP.
+ * @context Utilizado en la ruta DELETE /api/dashboard/company/:id como handler principal.
+ * @param req petición con el ID de la compañía a eliminar en los parámetros de ruta
+ * @param res respuesta HTTP confirmando la eliminación exitosa
+ * @param next función de Express para continuar la cadena de middlewares
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const deleteCompanyMiddleware = async (
   req: Request,
@@ -156,12 +175,16 @@ export const deleteCompanyMiddleware = async (
   }
 };
 // #end-middleware
-// #middleware archiveCompanyMiddleware
+// #middleware archiveCompanyMiddleware - Archiva una compañía ocultándola de las listas activas
 /**
- * Middleware para archivar una compañía
- * POST /api/dashboard/company/:id/archive
- * Params: { id: number }
- * Headers: Requiere autenticación JWT (validado por validateJWTMiddleware)
+ * @description Middleware que procesa el archivado de una compañía sin eliminarla.
+ * @purpose Orquestar el servicio de archivado de compañías y manejar la respuesta HTTP.
+ * @context Utilizado en la ruta POST /api/dashboard/company/:id/archive como handler principal.
+ * @param req petición con el ID de la compañía a archivar en los parámetros de ruta
+ * @param res respuesta HTTP con la compañía archivada y el mensaje de confirmación
+ * @param next función de Express para continuar la cadena de middlewares
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const archiveCompanyMiddleware = async (
   req: Request,
@@ -183,12 +206,16 @@ export const archiveCompanyMiddleware = async (
   }
 };
 // #end-middleware
-// #middleware reactivateCompanyMiddleware
+// #middleware reactivateCompanyMiddleware - Reactiva una compañía previamente archivada
 /**
- * Middleware para reactivar una compañía archivada
- * POST /api/dashboard/company/:id/reactivate
- * Params: { id: number }
- * Headers: Requiere autenticación JWT (validado por validateJWTMiddleware)
+ * @description Middleware que procesa la reactivación de una compañía archivada.
+ * @purpose Orquestar el servicio de reactivación de compañías y manejar la respuesta HTTP.
+ * @context Utilizado en la ruta POST /api/dashboard/company/:id/reactivate como handler principal.
+ * @param req petición con el ID de la compañía a reactivar en los parámetros de ruta
+ * @param res respuesta HTTP con la compañía reactivada y el mensaje de confirmación
+ * @param next función de Express para continuar la cadena de middlewares
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const reactivateCompanyMiddleware = async (
   req: Request,
@@ -210,12 +237,16 @@ export const reactivateCompanyMiddleware = async (
   }
 };
 // #end-middleware
-// #middleware checkNameAvailabilityMiddleware
+// #middleware checkNameAvailabilityMiddleware - Verifica si un nombre de compañía está disponible
 /**
- * Middleware para verificar disponibilidad de nombre
- * GET /api/company/check-name?name=MyCompany
- * Query: { name: string }
- * Headers: No requiere autenticación (es público para UX)
+ * @description Middleware que comprueba la disponibilidad de un nombre de compañía.
+ * @purpose Orquestar el servicio de verificación de nombre y devolver el resultado al cliente.
+ * @context Utilizado en la ruta GET /api/company/check-name como handler principal.
+ * @param req petición con el nombre a verificar en el query string
+ * @param res respuesta HTTP indicando si el nombre está disponible o no
+ * @param next función de Express para continuar la cadena de middlewares
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const checkNameAvailabilityMiddleware = async (
   req: Request,
@@ -238,12 +269,16 @@ export const checkNameAvailabilityMiddleware = async (
   }
 };
 // #end-middleware
-// #middleware checkCompanyPermissionMiddleware
+// #middleware checkCompanyPermissionMiddleware - Verifica los permisos del usuario sobre una compañía
 /**
- * Middleware para verificar permisos de usuario sobre una compañía
- * GET /api/dashboard/company/:id/permission
- * Params: { id: number }
- * Headers: Requiere autenticación JWT (validado por validateJWTMiddleware)
+ * @description Middleware que comprueba los permisos del usuario autenticado sobre una compañía específica.
+ * @purpose Orquestar el servicio de verificación de permisos y devolver el resultado al cliente.
+ * @context Utilizado en la ruta GET /api/dashboard/company/:id/permission como handler principal.
+ * @param req petición con el ID de la compañía en los parámetros de ruta
+ * @param res respuesta HTTP con los permisos disponibles del usuario sobre la compañía
+ * @param next función de Express para continuar la cadena de middlewares
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const checkCompanyPermissionMiddleware = async (
   req: Request,
@@ -262,14 +297,16 @@ export const checkCompanyPermissionMiddleware = async (
   }
 };
 // #end-middleware
-// #middleware uploadCompanyLogoMiddleware
+// #middleware uploadCompanyLogoMiddleware - Sube o reemplaza el logo de una compañía
 /**
- * Middleware para subir/reemplazar el logo de una compañía
- * POST /api/dashboard/company/:id/logo
- * Params: { id: number }
- * Body: multipart/form-data con campo 'logo' (imagen, max 5MB)
- * Headers: Requiere autenticación JWT (validado por validateJWTMiddleware)
- * Prerequisitos en la cadena: uploadSingleFile('logo'), validateFileExists
+ * @description Middleware compuesto que gestiona la subida del logo de una compañía.
+ * @purpose Orquestar el procesamiento del archivo de imagen y su persistencia mediante el servicio de actualización.
+ * @context Utilizado en la ruta POST /api/dashboard/company/:id/logo como array de middlewares.
+ * @param req petición con el ID en ruta y el archivo de imagen en multipart/form-data
+ * @param res respuesta HTTP con la compañía actualizada y mensaje de confirmación
+ * @param next función de Express para continuar la cadena de middlewares
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const uploadCompanyLogoMiddleware = [
   uploadSingleFile('logo'), // Middleware de multer para manejar el archivo
@@ -299,12 +336,16 @@ export const uploadCompanyLogoMiddleware = [
 ];
 
 // #end-middleware
-// #middleware deleteCompanyLogoMiddleware
+// #middleware deleteCompanyLogoMiddleware - Elimina el logo de una compañía
 /**
- * Middleware para eliminar el logo de una compañía
- * DELETE /api/dashboard/company/:id/logo
- * Params: { id: number }
- * Headers: Requiere autenticación JWT (validado por validateJWTMiddleware)
+ * @description Middleware que procesa la eliminación del logo de una compañía.
+ * @purpose Orquestar el servicio de eliminación del logo y manejar la respuesta HTTP.
+ * @context Utilizado en la ruta DELETE /api/dashboard/company/:id/logo como handler principal.
+ * @param req petición con el ID de la compañía en los parámetros de ruta
+ * @param res respuesta HTTP con la compañía actualizada sin logo y el mensaje de confirmación
+ * @param next función de Express para continuar la cadena de middlewares
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const deleteCompanyLogoMiddleware = async (
   req: Request,

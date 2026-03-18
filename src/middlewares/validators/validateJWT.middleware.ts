@@ -16,31 +16,18 @@ import { getJWTFromCookie, decodeJWT } from '../../lib/modules/jwtCookieManager'
 import type { AuthenticatedRequest, JWTPayload } from './validateJWT.types';
 // #end-section
 
+// #middleware validateJWTMiddleware - Valida el JWT de la cookie y agrega req.user al request
 /**
- * Middleware que valida el JWT de la cookie y agrega req.user
- * 
- * @param req - Request de Express
- * @param res - Response de Express
- * @param next - Función next de Express
- * 
- * Flujo:
- * 1. Extrae JWT de cookie
- * 2. Decodifica y valida el token
- * 3. Valida que el payload tenga userId y state
- * 4. Verifica que el usuario no esté suspendido
- * 5. Agrega req.user = { id, state }
- * 6. Continúa a la siguiente operación
- * 
- * Respuestas de error:
- * - 401: Token ausente, inválido o expirado
- * - 403: Usuario suspendido
- * 
- * @example
- * // En server.ts
- * app.use('/api/dashboard', validateJWTMiddleware, dashboardRouter);
- * 
- * // En un middleware posterior
- * const userId = (req as AuthenticatedRequest).user.id;
+ * @description Middleware que valida el token JWT extraído de la cookie de la petición.
+ * @purpose Proteger rutas sensibles garantizando que solo usuarios autenticados accedan al sistema.
+ * @context Utilizado como middleware de autenticación en todas las rutas que requieren usuario autenticado.
+ * @param req petición HTTP con la cookie que contiene el JWT
+ * @param res respuesta HTTP para enviar errores de autenticación
+ * @param next función de Express para continuar si el token es válido
+ * @throws 401 si el token está ausente, expirado o es inválido
+ * @throws 403 si el usuario está suspendido
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const validateJWTMiddleware = async (
   req: Request,
@@ -117,3 +104,4 @@ export const validateJWTMiddleware = async (
     res.status(500).json({ error: 'Internal server error during authentication' });
   }
 };
+// #end-middleware

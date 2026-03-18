@@ -20,7 +20,7 @@ import type { DataGeneratorOptions } from './devTools.types';
  */
 // #end-info
 
-// #function generateRandomData
+// #function generateRandomData - Genera datos aleatorios para una tabla basándose en el schema
 /**
  * @description Genera un conjunto de datos aleatorios para una tabla basándose en el schema de sus campos.
  * @purpose Facilitar la generación rápida de datos de prueba realistas para cualquier tabla del schema.
@@ -72,7 +72,7 @@ export function generateRandomData(
 }
 // #end-function
 
-// #function generateValueByType
+// #function generateValueByType - Genera un valor aleatorio basado en el tipo de dato del campo
 /**
  * @description Genera un valor aleatorio basado en el tipo de dato del campo.
  * @purpose Centralizar la lógica de generación de valores por tipo para usar en generateRandomData.
@@ -110,7 +110,7 @@ function generateValueByType(type: string, fieldName: string, index: number): an
 }
 // #end-function
 
-// #function generateRandomString
+// #function generateRandomString - Genera un string aleatorio contextual al nombre del campo
 /**
  * @description Genera un string aleatorio contextual al nombre del campo.
  * @purpose Producir strings realistas y con significado que faciliten la identificación de datos de prueba.
@@ -167,7 +167,7 @@ function generateRandomString(fieldName: string, index: number): string {
 }
 // #end-function
 
-// #function generateRandomNumber
+// #function generateRandomNumber - Genera un número entero aleatorio entre 1 y 1000
 /**
  * @description Genera un número entero aleatorio entre 1 y 1000.
  * @purpose Proveer valores numéricos de prueba para campos de tipo number.
@@ -181,7 +181,7 @@ function generateRandomNumber(): number {
 }
 // #end-function
 
-// #function generateUUID
+// #function generateUUID - Genera un UUID v4 aleatorio
 /**
  * @description Genera un UUID v4 aleatorio.
  * @purpose Proveer UUIDs válidos para campos de tipo uuid en datos de prueba.
@@ -199,7 +199,7 @@ function generateUUID(): string {
 }
 // #end-function
 
-// #function validateGeneratedData
+// #function validateGeneratedData - Valida que los datos generados cumplan con el schema de la tabla
 /**
  * @description Valida que los datos generados cumplan con los requisitos básicos del schema de la tabla.
  * @purpose Verificar la integridad de los datos generados antes de insertarlos en la base de datos.

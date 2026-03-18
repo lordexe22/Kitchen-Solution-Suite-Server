@@ -23,7 +23,7 @@ import type { DevToolsResponse, FilterConditions } from './devTools.types';
  */
 // #end-info
 
-// #function readRecords
+// #function readRecords - Lee registros de una tabla con filtros opcionales
 /**
  * @description Lee registros de una tabla con filtros opcionales de igualdad.
  * @purpose Proveer la operación de SELECT agnóstica de tabla para consulta de datos en el sistema devTools.
@@ -95,7 +95,7 @@ export async function readRecords(
 }
 // #end-function
 
-// #function readRecordById
+// #function readRecordById - Lee un registro específico de la tabla por su ID
 /**
  * @description Lee un registro específico de la tabla por su ID.
  * @purpose Proveer la operación de SELECT by ID agnóstica de tabla para el sistema devTools.
@@ -159,7 +159,7 @@ export async function readRecordById(
 }
 // #end-function
 
-// #function buildWhereConditions
+// #function buildWhereConditions - Construye condiciones WHERE de Drizzle a partir de filtros simples
 /**
  * @description Construye una condición WHERE de Drizzle a partir de filtros simples combinados con AND.
  * @purpose Encapsular la construcción de condiciones de filtrado para readRecords.
