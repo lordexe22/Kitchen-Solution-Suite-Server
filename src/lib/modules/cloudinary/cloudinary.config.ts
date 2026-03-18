@@ -10,10 +10,13 @@ let cachedClient: typeof cloudinary | null = null;
 let cachedConfigKey: string | null = null;
 // #function getCloudinaryClient - Obtiene una instancia configurada del cliente de Cloudinary
 /**
- * Obtiene una instancia configurada del cliente de Cloudinary.
- * @returns Cliente de Cloudinary configurado
- * @throws ConfigurationError si faltan credenciales
- * @version 1.0.0
+ * @description Obtiene una instancia configurada del cliente de Cloudinary usando caché en memoria.
+ * @purpose Reutilizar la configuración del SDK de Cloudinary entre llamadas sin reconfigurar repetidamente.
+ * @context Utilizado por todas las funciones del módulo cloudinary.ts. Requiere las variables de entorno CLOUDINARY_*.
+ * @returns cliente de Cloudinary configurado y listo para usar
+ * @throws ConfigurationError si faltan las credenciales de entorno
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const getCloudinaryClient = (): typeof cloudinary => {
 	// #step 1 - Leer credenciales desde variables de entorno

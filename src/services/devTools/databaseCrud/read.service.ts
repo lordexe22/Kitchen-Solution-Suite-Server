@@ -25,25 +25,14 @@ import type { DevToolsResponse, FilterConditions } from './devTools.types';
 
 // #function readRecords
 /**
- * Lee registros de una tabla con filtros opcionales.
- * 
- * Soporta filtros simples (igualdad). Ejemplo:
- * {
- *   type: 'admin',
- *   isActive: true,
- *   state: 'active'
- * }
- * 
- * @param tableName - Nombre de la tabla a leer
- * @param filters - Condiciones de filtro (opcional)
- * @returns Respuesta con array de registros
- * 
- * @example
- * // Obtener todos los usuarios
- * await readRecords('users');
- * 
- * // Obtener usuarios activos de tipo admin
- * await readRecords('users', { isActive: true, type: 'admin' });
+ * @description Lee registros de una tabla con filtros opcionales de igualdad.
+ * @purpose Proveer la operación de SELECT agnóstica de tabla para consulta de datos en el sistema devTools.
+ * @context Utilizado por el devTools del servidor para consultar registros de cualquier tabla del schema.
+ * @param tableName nombre de la tabla a leer
+ * @param filters condiciones de filtro opcionales (igualdad simple: { campo: valor })
+ * @returns respuesta con array de registros que cumplen los filtros
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export async function readRecords(
   tableName: string,
@@ -108,15 +97,14 @@ export async function readRecords(
 
 // #function readRecordById
 /**
- * Lee un registro específico por su ID.
- * 
- * @param tableName - Nombre de la tabla
- * @param id - Identificador del registro
- * @returns Respuesta con un registro o null
- * 
- * @example
- * await readRecordById('users', 5);
- * // Retorna el usuario con ID 5
+ * @description Lee un registro específico de la tabla por su ID.
+ * @purpose Proveer la operación de SELECT by ID agnóstica de tabla para el sistema devTools.
+ * @context Utilizado por el devTools del servidor para recuperar un registro puntual por su clave primaria.
+ * @param tableName nombre de la tabla
+ * @param id identificador del registro a leer
+ * @returns respuesta con el registro encontrado o null si no existe
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export async function readRecordById(
   tableName: string,
@@ -173,13 +161,14 @@ export async function readRecordById(
 
 // #function buildWhereConditions
 /**
- * Construye una condición WHERE para Drizzle a partir de filtros simples.
- * 
- * Combina múltiples filtros con AND.
- * 
- * @param tableObj - Objeto de tabla de Drizzle
- * @param filters - Condiciones a aplicar
- * @returns Condición WHERE o undefined si no hay filtros
+ * @description Construye una condición WHERE de Drizzle a partir de filtros simples combinados con AND.
+ * @purpose Encapsular la construcción de condiciones de filtrado para readRecords.
+ * @context Utilizado internamente por readRecords para aplicar filtros de igualdad a las queries.
+ * @param tableObj objeto de tabla de Drizzle con las columnas disponibles
+ * @param filters condiciones de filtro a aplicar (campo: valor)
+ * @returns condición WHERE de Drizzle, o undefined si no hay filtros
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 function buildWhereConditions(tableObj: any, filters: FilterConditions): any {
   const filterEntries = Object.entries(filters);

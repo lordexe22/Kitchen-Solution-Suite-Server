@@ -10,9 +10,13 @@ import { validateGoogleTokenConfig } from "./validateGoogleToken.config";
 const clients = new Map<string, OAuth2Client>();
 // #function getClient - Returns (and caches) an OAuth2Client instance
 /**
- * Returns a cached OAuth2Client for the given clientId or creates and stores a new one.
- * @param clientId Google OAuth client ID
- * @returns OAuth2Client instance bound to the provided clientId
+ * @description Retorna una instancia de OAuth2Client cacheada para el clientId dado, creándola si no existe.
+ * @purpose Reutilizar instancias de OAuth2Client evitando crearlas repetidamente por cada validación.
+ * @context Utilizado por validateGoogleToken internamente para obtener el cliente de Google Auth.
+ * @param clientId Google OAuth client ID al que se vinculará el cliente OAuth2
+ * @returns instancia de OAuth2Client vinculada al clientId
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 function getClient(clientId: string): OAuth2Client {
   const cached = clients.get(clientId);
@@ -26,12 +30,16 @@ function getClient(clientId: string): OAuth2Client {
 // #section Internal helpers
 // #function ensurePayload - Validates and normalizes the token payload
 /**
- * Validates the ID token payload against issuer, audience, expiration and required claims.
- * @param payload Raw payload returned by Google verification
- * @param clientId Expected audience (your Google client ID)
- * @param expectedIssuer Expected issuer (defaults to https://accounts.google.com)
- * @throws GoogleTokenError with detailed code/status when validation fails
- * @returns Normalized GooglePayload
+ * @description Valida y normaliza el payload de un token de Google contra issuer, audience, expiración y claims requeridos.
+ * @purpose Centralizar las validaciones del payload JWT de Google para garantizar su integridad.
+ * @context Utilizado internamente por validateGoogleToken tras la verificación criptográfica del token.
+ * @param payload payload crudo retornado por la verificación de Google
+ * @param clientId audience esperado (Google client ID del proyecto)
+ * @param expectedIssuer issuer esperado (por defecto https://accounts.google.com)
+ * @returns payload normalizado como GooglePayload
+ * @throws GoogleTokenError con código y status HTTP cuando la validación falla
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 function ensurePayload(payload: any, clientId: string, expectedIssuer: string): GooglePayload {
   if (!payload) {
@@ -75,11 +83,15 @@ function ensurePayload(payload: any, clientId: string, expectedIssuer: string): 
 // #end-section
 // #function validateGoogleToken - Verifies a Google ID token and returns its payload
 /**
- * Verifies a Google ID token against the provided client ID and issuer.
- * @param idToken Raw ID token string received from the client
- * @param options Optional overrides (clientId, expectedIssuer)
- * @throws GoogleTokenError with machine-friendly `code` and HTTP `status`
- * @returns Normalized GooglePayload ready for backend use
+ * @description Verifica un Google ID token contra el client ID e issuer configurados.
+ * @purpose Proveer la validación completa del token de Google con errores descriptivos para el consumidor.
+ * @context Utilizado por el middleware de autenticación de Google en el servidor para validar tokens de login.
+ * @param idToken string del ID token recibido del cliente de Google OAuth
+ * @param options opciones opcionales de sobreescritura (clientId, expectedIssuer)
+ * @returns payload de Google normalizado y listo para uso en el backend
+ * @throws GoogleTokenError con code y status HTTP descriptivos si la validación falla
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export async function validateGoogleToken(
   idToken: unknown,

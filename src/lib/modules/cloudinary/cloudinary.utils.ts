@@ -11,11 +11,13 @@ import { ValidationError } from './cloudinary.errors';
 // #end-section
 // #function _normalizePublicIdPart - Normaliza un segmento de publicId
 /**
- * Normaliza un segmento de publicId (lowercase, sin espacios, sin caracteres inválidos).
- * @param value Segmento original
- * @returns Segmento normalizado
- * @internal
- * @version 1.0.0
+ * @description Normaliza un segmento de publicId (lowercase, sin espacios, sin caracteres inválidos).
+ * @purpose Asegurar que cada parte del publicId sea compatible con las restricciones de Cloudinary.
+ * @context Utilizado por _buildPublicId y _normalizeFolder para garantizar segmentos válidos.
+ * @param value segmento original del publicId
+ * @returns segmento normalizado en minúsculas con guiones como separadores
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const _normalizePublicIdPart = (value: string): string =>
 	value
@@ -28,11 +30,13 @@ export const _normalizePublicIdPart = (value: string): string =>
 // #end-function
 // #function _normalizeFolder - Normaliza el nombre de carpeta
 /**
- * Normaliza el nombre de carpeta removiendo slashes innecesarios.
- * @param folder Carpeta original
- * @returns Carpeta normalizada
- * @internal
- * @version 1.0.0
+ * @description Normaliza el nombre de una carpeta removiendo slashes innecesarios y normalizando cada segmento.
+ * @purpose Garantizar que las rutas de carpeta sean válidas y consistentes para Cloudinary.
+ * @context Utilizado por _buildPublicId al preparar la carpeta de destino antes de un upload.
+ * @param folder carpeta original posiblemente con slashes al inicio/final o dobles
+ * @returns carpeta normalizada sin slashes innecesarios con cada segmento en minúsculas
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const _normalizeFolder = (folder: string): string =>
 	folder
@@ -46,11 +50,13 @@ export const _normalizeFolder = (folder: string): string =>
 // #end-function
 // #function _toContextMetadata - Convierte metadata a context válido
 /**
- * Convierte metadata a un objeto de strings compatible con Cloudinary.
- * @param metadata Metadata custom
- * @returns Context metadata listo para Cloudinary
- * @internal
- * @version 1.0.0
+ * @description Convierte metadata custom a un objeto de strings compatible con el campo context de Cloudinary.
+ * @purpose Asegurar que la metadata se serialice correctamente antes de enviarse al SDK de Cloudinary.
+ * @context Utilizado por createImage, replaceImage y otras operaciones que guardan metadata en el contexto del recurso.
+ * @param metadata metadata custom del recurso de imagen
+ * @returns objeto de strings compatible con Cloudinary context, o undefined si no hay metadata
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const _toContextMetadata = (
 	metadata?: ImageMetadata
@@ -63,11 +69,13 @@ export const _toContextMetadata = (
 // #end-function
 // #function _isPlainObject - Valida si es objeto plano
 /**
- * Valida si el valor es un objeto plano.
- * @param value Valor a validar
- * @returns boolean
- * @internal
- * @version 1.0.0
+ * @description Valida si un valor es un objeto plano (no array ni instancia de clase).
+ * @purpose Garantizar que solo se acepten objetos planos como metadata, evitando estructuras no serializables.
+ * @context Utilizado por replaceImage para validar la metadata del usuario antes de procesarla.
+ * @param value valor a validar
+ * @returns true si el valor es un objeto plano
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const _isPlainObject = (value: unknown): boolean => {
 	if (!value || typeof value !== 'object') return false;
@@ -78,11 +86,13 @@ export const _isPlainObject = (value: unknown): boolean => {
 // #end-function
 // #function _hasNonSerializableValue - Detecta valores no serializables
 /**
- * Detecta valores no serializables dentro de un objeto.
- * @param value Valor a inspeccionar
- * @returns boolean
- * @internal
- * @version 1.0.0
+ * @description Detecta si un objeto contiene valores no serializables como funciones o símbolos.
+ * @purpose Prevenir errores al serializar metadata antes de enviarla a Cloudinary.
+ * @context Utilizado por replaceImage para validar la metadata del usuario antes de procesarla.
+ * @param value valor a inspeccionar recursivamente
+ * @returns true si el objeto contiene al menos un valor no serializable
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const _hasNonSerializableValue = (value: unknown): boolean => {
 	const visited = new Set<unknown>();
@@ -110,14 +120,16 @@ export const _hasNonSerializableValue = (value: unknown): boolean => {
 // #end-function
 // #function _buildPublicId - Construye publicId desde folder/prefix/name
 /**
- * Construye publicId normalizado para Cloudinary.
- * @param folder Carpeta destino
- * @param name Nombre base
- * @param prefix Prefijo opcional
- * @returns Objeto con folder y publicId normalizados
- * @throws ValidationError si el resultado queda vacío
- * @internal
- * @version 1.0.0
+ * @description Construye el publicId normalizado para Cloudinary a partir de folder, nombre y prefijo opcionales.
+ * @purpose Centralizar la lógica de construcción del publicId garantizando rutas consistentes.
+ * @context Utilizado por createImage para calcular el publicId del recurso antes de subirlo.
+ * @param folder carpeta destino del recurso
+ * @param name nombre base del recurso
+ * @param prefix prefijo opcional que se antepone al nombre con separador '--'
+ * @returns objeto con folder, publicId, name y prefix normalizados
+ * @throws ValidationError si el resultado queda vacío tras normalización
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const _buildPublicId = (
 	folder: string,
@@ -145,11 +157,13 @@ export const _buildPublicId = (
 // #end-function
 // #function _buildPublicIdFromIdentity - Construye publicId desde metadata
 /**
- * Construye publicId desde metadata almacenada (folder, name, prefix).
- * @param identity Identidad almacenada en metadata
- * @returns publicId
- * @internal
- * @version 1.0.0
+ * @description Construye el publicId a partir de la identidad almacenada en la metadata del recurso.
+ * @purpose Reconstruir el publicId de un recurso para operaciones de rename/move/changePrefix.
+ * @context Utilizado por renameImage, moveImage y changeImagePrefix para calcular el nuevo publicId objetivo.
+ * @param identity identidad almacenada en metadata con folder, name y prefix opcionales
+ * @returns publicId resultante en formato folder/prefix--name
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const _buildPublicIdFromIdentity = (identity: {
 	folder: string;
@@ -165,12 +179,15 @@ export const _buildPublicIdFromIdentity = (identity: {
 // #end-function
 // #function _getStoredIdentity - Extrae identidad desde metadata
 /**
- * Extrae identidad (name, folder, prefix) desde metadata.
- * @param metadata Metadata custom
- * @param publicId PublicId del recurso
- * @throws ValidationError si falta metadata requerida
- * @internal
- * @version 1.0.0
+ * @description Extrae y valida la identidad (name, folder, prefix) desde la metadata almacenada del recurso.
+ * @purpose Garantizar que la metadata sea completa y válida antes de operaciones de edición.
+ * @context Utilizado por renameImage, moveImage y changeImagePrefix para recuperar el estado actual del recurso.
+ * @param metadata metadata custom del recurso de imagen
+ * @param publicId publicId del recurso para mensajes de error descriptivos
+ * @returns objeto con name, folder y prefix opcional del recurso
+ * @throws ValidationError si falta metadata requerida o tiene formato inválido
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const _getStoredIdentity = (
 	metadata: Record<string, any>,
@@ -210,11 +227,13 @@ export const _getStoredIdentity = (
 // #end-function
 // #function _validatePublicId - Valida formato de publicId
 /**
- * Valida formato del publicId para eliminar recursos.
+ * @description Valida el formato del publicId para operaciones de Cloudinary.
+ * @purpose Prevenir llamadas al SDK con publicIds inválidos que causarían errores en tiempo de ejecución.
+ * @context Utilizado al inicio de todas las operaciones del módulo que reciben un publicId.
  * @param publicId Public ID a validar
- * @throws ValidationError si el formato es inválido
- * @internal
- * @version 1.0.0
+ * @throws ValidationError si el formato del publicId es inválido
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const _validatePublicId = (publicId: string): void => {
 	if (!publicId || !publicId.trim()) {
@@ -236,12 +255,14 @@ export const _validatePublicId = (publicId: string): void => {
 // #end-function
 // #function _validateNameSegment - Valida nombre sin slashes
 /**
- * Valida un segmento de nombre (sin slashes).
- * @param value Nombre a validar
- * @param label Etiqueta para el mensaje de error
- * @throws ValidationError si el formato es inválido
- * @internal
- * @version 1.0.0
+ * @description Valida que un segmento de nombre sea correcto (sin slashes ni caracteres inválidos).
+ * @purpose Prevenir nombres con formato inválido antes de construir publicIds.
+ * @context Utilizado por _buildPublicId, renameImage y changeImagePrefix al validar nombres y prefijos.
+ * @param value nombre a validar
+ * @param label etiqueta descriptiva para mensajes de error
+ * @throws ValidationError si el formato del nombre es inválido
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const _validateNameSegment = (value: string, label = 'nombre'): void => {
 	if (!value || !value.trim()) {
@@ -263,11 +284,13 @@ export const _validateNameSegment = (value: string, label = 'nombre'): void => {
 // #end-function
 // #function _validateFolderPath - Valida ruta de carpeta
 /**
- * Valida el formato de una carpeta sin normalizarla.
- * @param folder Carpeta a validar
- * @throws ValidationError si el formato es inválido
- * @internal
- * @version 1.0.0
+ * @description Valida el formato de una ruta de carpeta sin normalizarla.
+ * @purpose Prevenir rutas inválidas de carpeta antes de operaciones de listado o construcción de publicIds.
+ * @context Utilizado por listImages, moveImage y otras operaciones que aceptan rutas de carpeta.
+ * @param folder carpeta a validar
+ * @throws ValidationError si el formato de la carpeta es inválido
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const _validateFolderPath = (folder: string): void => {
 	if (!folder || !folder.trim()) {
@@ -289,11 +312,13 @@ export const _validateFolderPath = (folder: string): void => {
 // #end-function
 // #function _splitPublicId - Separa folder y nombre
 /**
- * Separa un publicId en folder y nombre.
- * @param publicId Public ID completo
- * @returns folder y name
- * @internal
- * @version 1.0.0
+ * @description Separa un publicId en sus componentes de carpeta y nombre.
+ * @purpose Facilitar la extracción de folder y filename de un publicId compuesto.
+ * @context Utilizado internamente para descomponer publicIds en operaciones de gestión de recursos.
+ * @param publicId publicId completo en formato folder/name o solo name
+ * @returns objeto con folder y name del recurso
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const _splitPublicId = (
 	publicId: string
@@ -311,12 +336,14 @@ export const _splitPublicId = (
 // #end-function
 // #function _normalizeCreateImageResponse - Normaliza la respuesta raw del SDK
 /**
- * Normaliza la respuesta raw de Cloudinary a CreateImageResponse.
- * @param raw Respuesta raw del SDK
- * @param fallbackMetadata Metadata enviada en el upload
- * @returns CreateImageResponse normalizado
- * @internal
- * @version 1.0.0
+ * @description Normaliza la respuesta raw del SDK de Cloudinary tras crear una imagen.
+ * @purpose Abstraer la estructura interna del SDK y retornar un formato consistente al consumidor.
+ * @context Utilizado por createImage para retornar CreateImageResponse al finalizarse el upload.
+ * @param raw respuesta raw del SDK de Cloudinary
+ * @param fallbackMetadata metadata enviada en el upload como respaldo si no está en la respuesta
+ * @returns respuesta normalizada con los campos útiles del recurso creado
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const _normalizeCreateImageResponse = (
 	raw: Record<string, unknown>,
@@ -339,12 +366,14 @@ export const _normalizeCreateImageResponse = (
 // #end-function
 // #function _normalizeReplaceImageResponse - Normaliza respuesta de replaceImage
 /**
- * Normaliza la respuesta raw de Cloudinary para replaceImage.
- * @param raw Respuesta raw del SDK
- * @param metadata Metadata enviada en el replace
- * @returns ReplaceImageResponse normalizado
- * @internal
- * @version 1.0.0
+ * @description Normaliza la respuesta raw del SDK de Cloudinary tras reemplazar una imagen.
+ * @purpose Abstraer la estructura interna del SDK y retornar un formato consistente al consumidor.
+ * @context Utilizado por replaceImage para retornar ReplaceImageResponse al finalizar el reemplazo.
+ * @param raw respuesta raw del SDK de Cloudinary
+ * @param metadata metadata del recurso enviada en el replace
+ * @returns respuesta normalizada con el publicId, URL y metadata actualizados
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const _normalizeReplaceImageResponse = (
 	raw: Record<string, unknown>,
@@ -361,12 +390,13 @@ export const _normalizeReplaceImageResponse = (
 // #end-function
 // #function _normalizeListImageResult - Normaliza un recurso de listado
 /**
- * Normaliza un recurso raw de Cloudinary a GetImageResult.
- * Filtra recursos incompletos (campos obligatorios faltantes).
- * @param raw Recurso raw del SDK
- * @returns GetImageResult normalizado o null si está incompleto
- * @internal
- * @version 1.0.0
+ * @description Normaliza un recurso raw del listado de Cloudinary a GetImageResult.
+ * @purpose Abstraer la estructura interna del SDK para el listado de recursos y filtrar resultados incompletos.
+ * @context Utilizado por listImages al procesar cada recurso del array de resultados del SDK.
+ * @param raw recurso raw de la respuesta del SDK de Cloudinary
+ * @returns GetImageResult normalizado, o null si el recurso está incompleto
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const _normalizeListImageResult = (
 	raw: Record<string, any>
@@ -395,11 +425,13 @@ export const _normalizeListImageResult = (
 // #end-function
 // #function _validateImageSource - Valida fuente de imagen
 /**
- * Valida una fuente de imagen (url, file o buffer).
- * @param source Fuente de imagen a validar
- * @throws ValidationError si la fuente es inválida
- * @internal
- * @version 1.0.0
+ * @description Valida la fuente de imagen (tipo url, file o buffer) antes de una operación de upload.
+ * @purpose Prevenir uploads con datos de entrada inválidos antes de llamar al SDK de Cloudinary.
+ * @context Utilizado por createImage y replaceImage al inicio de la operación de upload.
+ * @param source fuente de imagen a validar (puede ser url, filePath o buffer)
+ * @throws ValidationError si la fuente es inválida, el archivo no existe o el buffer está vacío
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const _validateImageSource = (source: any): void => {
 	if (!source) {
@@ -433,15 +465,17 @@ export const _validateImageSource = (source: any): void => {
 // #end-function
 // #function _handleCloudinaryRenameError - Maneja errores de rename/move
 /**
- * Mapea errores de Cloudinary rename a errores específicos del módulo.
- * @param error Error capturado
- * @param ErrorClass Clase de error a usar (RenameImageError o MoveImageError)
- * @param publicId PublicId original
- * @param targetPublicId PublicId destino
- * @throws NotFoundError si 404
- * @throws ErrorClass con mensaje apropiado
- * @internal
- * @version 1.0.0
+ * @description Mapea los errores del SDK de Cloudinary durante rename a errores específicos del módulo.
+ * @purpose Centralizar el manejo de errores de la operación rename para rename y move.
+ * @context Utilizado por renameImage, moveImage y changeImagePrefix al capturar errores del SDK.
+ * @param error error capturado del SDK de Cloudinary
+ * @param ErrorClass clase de error a instanciar (RenameImageError o MoveImageError)
+ * @param publicId publicId original del recurso
+ * @param targetPublicId publicId destino de la operación
+ * @throws NotFoundError si el recurso no existe (HTTP 404)
+ * @throws ErrorClass con mensaje apropiado según el tipo de error
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const _handleCloudinaryRenameError = (
 	error: any,
@@ -471,12 +505,14 @@ export const _handleCloudinaryRenameError = (
 // #end-function
 // #function _handleCloudinaryFetchError - Maneja errores de fetch/list
 /**
- * Mapea errores HTTP de Cloudinary a FetchImageError con mensajes específicos.
- * @param error Error capturado
- * @param context Contexto adicional (publicId, folder, etc)
- * @throws FetchImageError con mensaje apropiado
- * @internal
- * @version 1.0.0
+ * @description Mapea errores HTTP del SDK de Cloudinary durante fetch/list a FetchImageError con mensajes específicos.
+ * @purpose Centralizar el manejo de errores de consulta para getImage y listImages.
+ * @context Utilizado por getImage y listImages al capturar errores del SDK de Cloudinary.
+ * @param error error capturado del SDK de Cloudinary
+ * @param context contexto adicional (publicId, folder, etc.) para incluir en el error
+ * @throws FetchImageError con mensaje apropiado según el tipo de error HTTP
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const _handleCloudinaryFetchError = (
 	error: any,
@@ -511,13 +547,15 @@ export const _handleCloudinaryFetchError = (
 // #end-function
 // #function _normalizeGetImageResult - Normaliza resultado de getImage desde api.resource
 /**
- * Normaliza la respuesta de api.resource a GetImageResult.
- * @param result Respuesta raw de api.resource
- * @param publicId PublicId consultado
- * @returns GetImageResult normalizado
- * @throws FetchImageError si la respuesta es inválida
- * @internal
- * @version 1.0.0
+ * @description Normaliza la respuesta de api.resource a GetImageResult.
+ * @purpose Abstraer la estructura interna del SDK de Cloudinary tras obtener un recurso individual.
+ * @context Utilizado por getImage para retornar una respuesta consistente al consumidor.
+ * @param result respuesta raw de api.resource de Cloudinary
+ * @param publicId publicId consultado para contexto en mensajes de error
+ * @returns datos normalizados del recurso de imagen
+ * @throws FetchImageError si la respuesta es inválida o incompleta
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const _normalizeGetImageResult = (
 	result: any,
@@ -573,18 +611,14 @@ export const _normalizeGetImageResult = (
 // #end-function
 // #function _extractPublicIdFromCloudinaryUrl - Extrae el publicId de una URL de Cloudinary
 /**
- * Extrae el publicId de una URL de Cloudinary.
- * 
- * Soporta URLs con los siguientes patrones:
- * - https://res.cloudinary.com/{cloud}/image/upload/v{version}/{publicId}.{ext}
- * - https://res.cloudinary.com/{cloud}/image/upload/{publicId}.{ext}
- * - https://res.cloudinary.com/{cloud}/image/upload/{transformations}/{publicId}.{ext}
- * 
- * @param url URL completa de Cloudinary
- * @returns GetPublicIdFromUrlResult con publicId, folder, fileName y format
+ * @description Extrae el publicId y metadatos de una URL de Cloudinary.
+ * @purpose Permitir obtener el publicId a partir de la URL del recurso cuando el ID no está disponible directamente.
+ * @context Utilizado por getPublicIdFromUrl (cloudinary.ts) como delegado de la extracción.
+ * @param url URL completa de Cloudinary (soporta versiones, transformaciones y carpetas anidadas)
+ * @returns objeto con publicId, folder, fileName y format extraïdos de la URL
  * @throws ValidationError si la URL es vacía, no válida o no es de Cloudinary
- * @internal
- * @version 1.0.0
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const _extractPublicIdFromCloudinaryUrl = (url: string): GetPublicIdFromUrlResult => {
 	// Validar entrada
@@ -703,16 +737,13 @@ const IMAGE_SIGNATURES: { bytes: number[]; offset?: number }[] = [
 ];
 
 /**
- * Verifica si un buffer corresponde a un formato de imagen conocido
- * chequeando los magic bytes del encabezado.
- *
- * Soporta: JPEG, PNG, GIF, WebP, BMP, ICO, TIFF y SVG.
- * SVG se detecta por su apertura de tag basada en texto.
- *
- * @param buffer Buffer a analizar
- * @returns true si el buffer coincide con un formato de imagen soportado
- * @internal
- * @version 1.0.0
+ * @description Verifica si un buffer corresponde a un formato de imagen conocido analizando sus magic bytes.
+ * @purpose Detectar el formato de imagen para fail-fast sin red antes de intento de upload.
+ * @context Utilizado por isImageBuffer (función pública de cloudinary.ts) como implementación de la detección.
+ * @param buffer Buffer a analizar (se comparan los primeros bytes con firmas conocidas)
+ * @returns true si el buffer coincide con un formato soportado (JPEG, PNG, GIF, WebP, BMP, ICO, TIFF, SVG)
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const _isImageBuffer = (buffer: Buffer): boolean => {
 	if (!Buffer.isBuffer(buffer) || buffer.length < 2) return false;

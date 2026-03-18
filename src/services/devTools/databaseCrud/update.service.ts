@@ -24,22 +24,15 @@ import type { DevToolsResponse } from './devTools.types';
 
 // #function updateRecord
 /**
- * Actualiza un registro específico en la tabla.
- * 
- * Actualiza solo los campos especificados en data.
- * Los campos timestamp como updatedAt se actualizan automáticamente
- * si están definidos en el schema.
- * 
- * @param tableName - Nombre de la tabla
- * @param id - ID del registro a actualizar
- * @param data - Objeto con los campos a actualizar
- * @returns Respuesta con el registro actualizado
- * 
- * @example
- * await updateRecord('users', 5, {
- *   isActive: true,
- *   state: 'active'
- * });
+ * @description Actualiza un registro específico en la tabla con los campos proporcionados.
+ * @purpose Proveer la operación de UPDATE agnóstica de tabla para modificar datos de prueba en el sistema devTools.
+ * @context Utilizado por el devTools del servidor para actualizar registros de cualquier tabla del schema.
+ * @param tableName nombre de la tabla
+ * @param id ID del registro a actualizar
+ * @param data objeto con los campos a actualizar (updatedAt se establece automáticamente si existe)
+ * @returns respuesta con el registro actualizado o error descriptivo
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export async function updateRecord(
   tableName: string,
@@ -120,20 +113,14 @@ export async function updateRecord(
 
 // #function updateRecordBatch
 /**
- * Actualiza múltiples registros en la tabla.
- * 
- * Cada item del array debe contener el ID y los campos a actualizar.
- * 
- * @param tableName - Nombre de la tabla
- * @param updates - Array de objetos { id, ...fieldsToUpdate }
- * @returns Respuesta con array de registros actualizados
- * 
- * @example
- * await updateRecordBatch('users', [
- *   { id: 1, isActive: true },
- *   { id: 2, state: 'suspended' },
- *   { id: 3, isActive: false }
- * ]);
+ * @description Actualiza múltiples registros en la tabla de forma secuencial en una operación de batch.
+ * @purpose Proveer la operación de UPDATE masivo para modificar grandes volúmenes de datos de prueba.
+ * @context Utilizado por el devTools del servidor para actualizar múltiples registros de cualquier tabla.
+ * @param tableName nombre de la tabla
+ * @param updates array de objetos con id y los campos a actualizar por cada registro
+ * @returns respuesta con los registros actualizados o error descriptivo
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export async function updateRecordBatch(
   tableName: string,

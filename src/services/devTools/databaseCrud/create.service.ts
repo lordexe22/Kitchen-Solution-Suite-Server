@@ -25,20 +25,14 @@ import type { DevToolsResponse } from './devTools.types';
 
 // #function createRecord
 /**
- * Crea un nuevo registro en la tabla especificada.
- * 
- * @param tableName - Nombre de la tabla donde insertar
- * @param data - Objeto con los datos a insertar
- * @returns Respuesta con el registro creado
- * 
- * @example
- * await createRecord('users', {
- *   firstName: 'Juan',
- *   lastName: 'Pérez',
- *   email: 'juan@example.com',
- *   passwordHash: 'hash...',
- *   type: 'admin'
- * });
+ * @description Crea un nuevo registro en la tabla especificada.
+ * @purpose Proveer la operación de INSERT de datos de prueba agnóstica de tabla para el sistema devTools.
+ * @context Utilizado por el devTools del servidor para insertar registros de prueba en cualquier tabla del schema.
+ * @param tableName nombre de la tabla donde insertar el registro
+ * @param data objeto con los campos y valores a insertar
+ * @returns respuesta con el registro creado o error descriptivo
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export async function createRecord(
   tableName: string,
@@ -95,19 +89,14 @@ export async function createRecord(
 
 // #function createRecordBatch
 /**
- * Crea múltiples registros en la tabla especificada.
- * 
- * Útil para insertar muchos registros de una vez (ej: datos de prueba).
- * 
- * @param tableName - Nombre de la tabla
- * @param dataArray - Array de objetos con los datos a insertar
- * @returns Respuesta con los registros creados
- * 
- * @example
- * await createRecordBatch('users', [
- *   { firstName: 'Juan', lastName: 'Pérez', email: 'juan@example.com', ... },
- *   { firstName: 'María', lastName: 'García', email: 'maria@example.com', ... },
- * ]);
+ * @description Crea múltiples registros en la tabla especificada en una operación de batch.
+ * @purpose Proveer la operación de INSERT masivo para generar grandes volúmenes de datos de prueba eficientemente.
+ * @context Utilizado por el devTools del servidor para poblar tablas con múltiples registros de prueba a la vez.
+ * @param tableName nombre de la tabla donde insertar los registros
+ * @param dataArray array de objetos con los datos a insertar
+ * @returns respuesta con los registros creados o error descriptivo
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export async function createRecordBatch(
   tableName: string,

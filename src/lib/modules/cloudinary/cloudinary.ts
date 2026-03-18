@@ -51,14 +51,17 @@ import {
 // #end-section
 // #function createImage - Sube una imagen a Cloudinary y retorna datos normalizados
 /**
- * Sube una imagen a Cloudinary y retorna la respuesta normalizada.
- * @param image Fuente de la imagen (url, filePath o buffer)
- * @param options Opciones de creación (nombre, carpeta, prefix, overwrite)
- * @param metadata Metadatos custom que se guardan como context
- * @returns CreateImageResponse con datos útiles y el raw de Cloudinary
+ * @description Sube una imagen a Cloudinary y retorna la respuesta normalizada.
+ * @purpose Proveer una interfaz unificada para subir imágenes desde URL, archivo o buffer con soporte de metadata.
+ * @context Utilizado por los servicios del servidor que necesiten crear imágenes en Cloudinary (avatares, logos, etc.).
+ * @param image fuente de la imagen (url, filePath o buffer)
+ * @param options opciones de creación (nombre, carpeta, prefix, overwrite)
+ * @param metadata metadatos custom que se guardan como context en el recurso
+ * @returns respuesta normalizada con datos útiles y el raw de Cloudinary
  * @throws ValidationError si la entrada no es válida
  * @throws UploadError si el upload falla
- * @version 1.0.0
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const createImage = async (
 	image: ImageSource,
@@ -139,13 +142,16 @@ export const createImage = async (
 // #end-function
 // #function deleteImage - Elimina una imagen por publicId
 /**
- * Elimina una imagen en Cloudinary por su publicId.
- * @param publicId Public ID del recurso
- * @returns DeleteImageResponse con deleted true si se eliminó
+ * @description Elimina una imagen de Cloudinary por su publicId.
+ * @purpose Proveer la operación de borrado de recursos en Cloudinary para el ciclo de vida de imágenes.
+ * @context Utilizado al eliminar avatares de usuario, logos de compañía u otros recursos de imagen.
+ * @param publicId Public ID del recurso a eliminar
+ * @returns respuesta con deleted=true si se eliminó correctamente
  * @throws ValidationError si el publicId es inválido
  * @throws NotFoundError si el recurso no existe
  * @throws DeleteError si falla la eliminación
- * @version 1.0.0
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const deleteImage = async (publicId: string): Promise<DeleteImageResponse> => {
 	// #step 1 - Validar publicId
@@ -184,15 +190,18 @@ export const deleteImage = async (publicId: string): Promise<DeleteImageResponse
 // #end-function
 // #function replaceImage - Reemplaza el binario de una imagen existente
 /**
- * Reemplaza el binario de una imagen existente sin cambiar su publicId.
+ * @description Reemplaza el binario de una imagen existente sin cambiar su publicId.
+ * @purpose Actualizar el contenido visual de una imagen manteniendo su identificador y metadata.
+ * @context Utilizado cuando el usuario actualiza su foto de perfil o logo sin cambiar su ruta en Cloudinary.
  * @param publicId Public ID del recurso a reemplazar
- * @param image Fuente de la nueva imagen (url, filePath o buffer)
- * @param options Opciones (overwrite siempre true internamente)
- * @param metadata Metadata opcional para reemplazar context
- * @returns CreateImageResponse normalizado
+ * @param image fuente de la nueva imagen (url, filePath o buffer)
+ * @param options opciones de reemplazo (overwrite siempre true internamente)
+ * @param metadata metadata opcional para reemplazar el context del recurso
+ * @returns respuesta normalizada con los nuevos datos del recurso
  * @throws ValidationError si la entrada no es válida
  * @throws UploadError si falla el reemplazo
- * @version 1.0.0
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const replaceImage = async (
 	params: ReplaceImageParams
@@ -296,13 +305,16 @@ export const replaceImage = async (
 // #end-function
 // #function renameImage - Renombra una imagen sin reupload
 /**
- * Renombra una imagen existente sin cambiar su contenido.
- * @param params Parámetros con publicId y newName
- * @returns GetImageResult normalizado
+ * @description Renombra una imagen existente en Cloudinary sin resubir su contenido.
+ * @purpose Actualizar el nombre del recurso y su publicId cuando el usuario cambia el nombre del activo.
+ * @context Utilizado para operaciones de renombre en la gestión de activos de imagen del servidor.
+ * @param params parámetros con publicId y newName del recurso
+ * @returns datos normalizados del recurso renombrado
  * @throws ValidationError si la entrada no es válida
  * @throws NotFoundError si el recurso no existe
  * @throws RenameImageError si falla el renombre
- * @version 1.0.0
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const renameImage = async (
 	params: RenameImageParams
@@ -365,13 +377,16 @@ export const renameImage = async (
 // #end-function
 // #function moveImage - Mueve una imagen a otra carpeta
 /**
- * Mueve una imagen existente a otra carpeta sin reupload.
- * @param params Parámetros con publicId y targetFolder
- * @returns GetImageResult normalizado
+ * @description Mueve una imagen existente a otra carpeta de Cloudinary sin resubir su contenido.
+ * @purpose Reorganizar recursos de imagen entre carpetas del sistema de archivos de Cloudinary.
+ * @context Utilizado para mover activos entre carpetas de usuario, compañía u otras categorías.
+ * @param params parámetros con publicId y targetFolder de destino
+ * @returns datos normalizados del recurso movido con la nueva ruta
  * @throws ValidationError si la entrada no es válida
  * @throws NotFoundError si el recurso no existe
- * @throws MoveImageError si falla el move
- * @version 1.0.0
+ * @throws MoveImageError si falla el movimiento
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const moveImage = async (
 	params: MoveImageParams
@@ -434,11 +449,14 @@ export const moveImage = async (
 // #end-function
 // #function changeImagePrefix - Cambia el prefijo de una imagen
 /**
- * Cambia el prefijo del nombre y delega en renameImage.
- * @param params Parámetros de cambio de prefijo
- * @returns GetImageResult normalizado
+ * @description Cambia el prefijo del nombre de una imagen delegando en renameImage.
+ * @purpose Gestionar prefijos identificadores en los nombres de recursos para organizar activos por categoría.
+ * @context Utilizado para añadir, reemplazar o anteponer prefijos a imágenes existentes en Cloudinary.
+ * @param params parámetros de cambio de prefijo (publicId, prefix, mode)
+ * @returns datos normalizados del recurso con el nuevo nombre
  * @throws ValidationError si la entrada no es válida
- * @version 1.0.0
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const changeImagePrefix = async (
 	params: ChangeImagePrefixParams
@@ -542,14 +560,17 @@ export const changeImagePrefix = async (
 // #end-function
 // #function getImage - Obtiene una imagen por publicId
 /**
- * Obtiene una imagen desde Cloudinary.
- * @param publicId Public ID del recurso
- * @returns GetImageResult normalizado
+ * @description Obtiene los datos de una imagen desde Cloudinary por su publicId.
+ * @purpose Recuperar metadatos y URL de un recurso de imagen para uso en el servidor o cliente.
+ * @context Utilizado por otros servicios que necesitan acceder a un recurso específico sin listar.
+ * @param publicId Public ID del recurso a consultar
+ * @returns datos normalizados del recurso de imagen
  * @throws ValidationError si el publicId es inválido
  * @throws NotFoundError si el recurso no existe
  * @throws ConfigurationError si el cliente no está configurado
  * @throws FetchImageError si falla la consulta
- * @version 1.0.0
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const getImage = async (publicId: string): Promise<GetImageResult> => {
 	// #step 1 - Validar publicId
@@ -580,12 +601,15 @@ export const getImage = async (publicId: string): Promise<GetImageResult> => {
 // #end-function
 // #function listImages - Lista imágenes en una carpeta
 /**
- * Lista imágenes en una carpeta de Cloudinary con paginación.
- * @param params Parámetros de listado (folder, recursive, limit, cursor)
- * @returns ListImagesResult con items normalizados y nextCursor
- * @throws ValidationError si el folder es inválido
+ * @description Lista imágenes en una carpeta de Cloudinary con paginación y filtrado opcional por subdirectorios.
+ * @purpose Proveer una vista paginada de los recursos de imagen para gestión de activos en el servidor.
+ * @context Utilizado por endpoints de listado de imágenes, paneles de administración y galerías de activos.
+ * @param params parámetros de listado (folder, recursive, limit, cursor)
+ * @returns lista de imágenes normalizadas con cursor de paginación
+ * @throws ValidationError si el folder es inválido o el limit está fuera de rango
  * @throws FetchImageError si falla la consulta a Cloudinary
- * @version 1.0.0
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const listImages = async (params: ListImagesParams): Promise<ListImagesResult> => {
 	// Validar folder
@@ -670,14 +694,14 @@ export const listImages = async (params: ListImagesParams): Promise<ListImagesRe
 // #end-function
 // #function getPublicIdFromUrl - Extrae el publicId de una URL de Cloudinary
 /**
- * Extrae el publicId y metadatos de una URL de Cloudinary.
- *
- * Soporta URLs con versión, transformaciones y carpetas anidadas.
- *
- * @param url URL completa de Cloudinary
- * @returns GetPublicIdFromUrlResult con publicId, folder, fileName y format
+ * @description Extrae el publicId y metadatos de una URL completa de Cloudinary.
+ * @purpose Permitir obtener el publicId a partir de la URL almacenada cuando no se tiene el ID directamente.
+ * @context Utilizado al procesar URLs de imágenes almacenadas en la base de datos para operaciones sobre el recurso.
+ * @param url URL completa de Cloudinary (soporta versiones, transformaciones y carpetas anidadas)
+ * @returns objeto con publicId, folder, fileName y format extraídos de la URL
  * @throws ValidationError si la URL es vacía, no válida o no es de Cloudinary
- * @version 1.0.0
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const getPublicIdFromUrl = (url: string): GetPublicIdFromUrlResult => {
 	// #step 1 - Delegar la extracción a la utilidad interna
@@ -687,17 +711,13 @@ export const getPublicIdFromUrl = (url: string): GetPublicIdFromUrlResult => {
 // #end-function
 // #function isImageBuffer - Verifica si un buffer es una imagen soportada
 /**
- * Verifica si un buffer corresponde a un formato de imagen conocido.
- *
- * Detecta el formato analizando los magic bytes del encabezado.
- * Soporta: JPEG, PNG, GIF, WebP, BMP, ICO, TIFF y SVG.
- *
- * Útil para fail-fast antes de intentar un upload a Cloudinary,
- * evitando la latencia de red cuando el formato es claramente inválido.
- *
- * @param buffer Buffer a analizar
- * @returns true si el buffer coincide con un formato de imagen soportado
- * @version 1.0.0
+ * @description Verifica si un buffer corresponde a un formato de imagen conocido analizando sus magic bytes.
+ * @purpose Fail-fast antes de intentar un upload a Cloudinary cuando el formato es claramente inválido.
+ * @context Utilizado en validaciones previas al upload para evitar peticiones innecesarias a la red.
+ * @param buffer Buffer a analizar (debe tener al menos los primeros bytes del archivo)
+ * @returns true si el buffer coincide con un formato de imagen soportado (JPEG, PNG, GIF, WebP, BMP, ICO, TIFF, SVG)
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export const isImageBuffer = (buffer: Buffer): boolean => {
 	return _isImageBuffer(buffer);

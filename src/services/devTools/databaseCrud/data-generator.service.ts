@@ -22,19 +22,15 @@ import type { DataGeneratorOptions } from './devTools.types';
 
 // #function generateRandomData
 /**
- * Genera un conjunto de datos aleatorios para una tabla.
- * 
- * Genera valores por defecto para cada tipo de dato.
- * No genera datos para campos PK (se auto-generan).
- * 
- * @param tableName - Nombre de la tabla
- * @param count - Cantidad de registros a generar
- * @param options - Opciones de generación (custom generator, etc.)
- * @returns Array de objetos con datos aleatorios
- * 
- * @example
- * const testUsers = await generateRandomData('users', 5);
- * // Genera 5 usuarios con datos plausibles
+ * @description Genera un conjunto de datos aleatorios para una tabla basándose en el schema de sus campos.
+ * @purpose Facilitar la generación rápida de datos de prueba realistas para cualquier tabla del schema.
+ * @context Utilizado por el devTools del servidor para poblar tablas con datos de prueba en entornos de desarrollo.
+ * @param tableName nombre de la tabla para la que se generan los datos
+ * @param count cantidad de registros a generar (por defecto 1)
+ * @param options opciones de generación (customGenerator para sobreescribir el generador por defecto)
+ * @returns array de objetos con datos aleatorios listos para insertar
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export function generateRandomData(
   tableName: string,
@@ -78,12 +74,15 @@ export function generateRandomData(
 
 // #function generateValueByType
 /**
- * Genera un valor aleatorio basado en el tipo de dato.
- * 
- * @param type - Tipo de dato (string, number, boolean, date, etc.)
- * @param fieldName - Nombre del campo (para generar valores contextuales)
- * @param index - Índice del registro (para unicidad)
- * @returns Valor aleatorio del tipo especificado
+ * @description Genera un valor aleatorio basado en el tipo de dato del campo.
+ * @purpose Centralizar la lógica de generación de valores por tipo para usar en generateRandomData.
+ * @context Utilizado internamente por generateRandomData para generar el valor de cada campo del schema.
+ * @param type tipo de dato del campo (string, number, boolean, date, decimal, uuid)
+ * @param fieldName nombre del campo para generar valores contextuales más realistas
+ * @param index índice del registro para garantizar unicidad
+ * @returns valor aleatorio compatible con el tipo especificado
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 function generateValueByType(type: string, fieldName: string, index: number): any {
   switch (type) {
@@ -113,11 +112,14 @@ function generateValueByType(type: string, fieldName: string, index: number): an
 
 // #function generateRandomString
 /**
- * Genera un string aleatorio contextual al nombre del campo.
- * 
- * @param fieldName - Nombre del campo
- * @param index - Índice para unicidad
- * @returns String aleatorio
+ * @description Genera un string aleatorio contextual al nombre del campo.
+ * @purpose Producir strings realistas y con significado que faciliten la identificación de datos de prueba.
+ * @context Utilizado internamente por generateValueByType para campos de tipo string.
+ * @param fieldName nombre del campo para detectar el contexto (firstName, email, url, etc.)
+ * @param index índice del registro para garantizar unicidad en emails y otros campos únicos
+ * @returns string aleatorio contextualizado al nombre del campo
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 function generateRandomString(fieldName: string, index: number): string {
   const firstName = [
@@ -167,9 +169,12 @@ function generateRandomString(fieldName: string, index: number): string {
 
 // #function generateRandomNumber
 /**
- * Genera un número aleatorio entre 1 y 1000.
- * 
- * @returns Número aleatorio
+ * @description Genera un número entero aleatorio entre 1 y 1000.
+ * @purpose Proveer valores numéricos de prueba para campos de tipo number.
+ * @context Utilizado internamente por generateValueByType para campos de tipo number.
+ * @returns número aleatorio entre 1 y 1000
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 function generateRandomNumber(): number {
   return Math.floor(Math.random() * 1000) + 1;
@@ -178,9 +183,12 @@ function generateRandomNumber(): number {
 
 // #function generateUUID
 /**
- * Genera un UUID v4 aleatorio.
- * 
- * @returns UUID v4
+ * @description Genera un UUID v4 aleatorio.
+ * @purpose Proveer UUIDs válidos para campos de tipo uuid en datos de prueba.
+ * @context Utilizado internamente por generateValueByType para campos de tipo uuid.
+ * @returns string UUID v4 aleatorio con formato xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 function generateUUID(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -193,13 +201,14 @@ function generateUUID(): string {
 
 // #function validateGeneratedData
 /**
- * Valida que los datos generados cumplan con requisitos básicos.
- * 
- * Utilidad para testing del generador.
- * 
- * @param tableName - Nombre de la tabla
- * @param data - Datos generados a validar
- * @returns true si son válidos, false en caso contrario
+ * @description Valida que los datos generados cumplan con los requisitos básicos del schema de la tabla.
+ * @purpose Verificar la integridad de los datos generados antes de insertarlos en la base de datos.
+ * @context Utilizado para testing del generador de datos en el sistema devTools.
+ * @param tableName nombre de la tabla cuyo schema se usa para validar
+ * @param data datos generados a validar contra el schema
+ * @returns true si los datos son válidos según el schema, false en caso contrario
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export function validateGeneratedData(tableName: string, data: Record<string, any>): boolean {
   const schema = getTableSchema(tableName);

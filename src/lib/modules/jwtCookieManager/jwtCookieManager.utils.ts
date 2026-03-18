@@ -8,13 +8,14 @@ import { config } from "./jwtCookieManager.config";
 // #section INTERNAL VALIDATORS (not exported, used by public functions)
 // #function _validatePayloadStructure - Validates payload structure (internal)
 /**
- * Validates that the payload is a non-null object (not an array).
- * Does NOT validate business logic.
- * @internal
- * @param payload - Value to validate as a JWT payload object
- * @returns void - Uses TypeScript assertion signature to narrow the type
- * @throws {JwtPayloadError} If payload is null, not an object, or is an array
- * @version 1.0.0
+ * @description Valida que el payload sea un objeto no nulo (no array) antes de crear un JWT.
+ * @purpose Prevenir firmas JWT con payloads inválidos que causarían errores en tiempo de ejecución.
+ * @context Utilizado internamente por createJWT y refreshJWT antes de firmar tokens.
+ * @param payload valor a validar como objeto de payload JWT
+ * @returns void (usa assertion signature de TypeScript para narrowing de tipos)
+ * @throws JwtPayloadError si el payload es null, no es un objeto o es un array
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 function _validatePayloadStructure(payload: unknown): asserts payload is JwtPayload {
   // #step 1 - Ensure payload is a non-null object
@@ -28,12 +29,12 @@ function _validatePayloadStructure(payload: unknown): asserts payload is JwtPayl
 // #end-function
 // #function _validateSecret - Validates JWT_SECRET presence (internal)
 /**
- * Validates that the JWT_SECRET environment variable is configured.
- * This is used internally before signing or verifying JWT tokens.
- * @internal
- * @returns void
- * @throws {JwtConfigurationError} If JWT_SECRET is not defined
- * @version 1.0.0
+ * @description Valida que la variable de entorno JWT_SECRET esté configurada.
+ * @purpose Prevenir firmas JWT sin secreto configurado que producirían tokens inseguros.
+ * @context Utilizado internamente antes de firmar o verificar tokens JWT.
+ * @throws JwtConfigurationError si JWT_SECRET no está definido
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 function _validateSecret(): void {
   // #step 1 - Ensure JWT_SECRET exists
@@ -47,12 +48,12 @@ function _validateSecret(): void {
 // #end-function
 // #function _validateAbsoluteSessionMs - Validates absolute session lifetime presence (internal)
 /**
- * Validates that the absolute session lifetime is configured.
- * Uses JWT_ABSOLUTE_SESSION_MS from environment or defaults.
- * @internal
- * @returns void
- * @throws {JwtConfigurationError} If absoluteSessionMs is not defined or invalid
- * @version 1.0.0
+ * @description Valida que la duración absoluta de sesión esté configurada y sea un número positivo.
+ * @purpose Prevenir configuraciones inválidas de sesión que producirían tokens con expiración incorrecta.
+ * @context Utilizado internamente por createJWT y refreshJWT para validar la configuración de sesión.
+ * @throws JwtConfigurationError si absoluteSessionMs no está definido o no es un número positivo
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 function _validateAbsoluteSessionMs(): void {
   if (!Number.isFinite(config.absoluteSessionMs) || config.absoluteSessionMs <= 0) {
@@ -62,12 +63,12 @@ function _validateAbsoluteSessionMs(): void {
 // #end-function
 // #function _validateCookieName - Validates JWT_COOKIE_NAME presence (internal)
 /**
- * Validates that the JWT_COOKIE_NAME environment variable is configured.
- * This is used internally before setting, getting, or clearing JWT cookies.
- * @internal
- * @returns void
- * @throws {JwtConfigurationError} If JWT_COOKIE_NAME is not defined
- * @version 1.0.0
+ * @description Valida que la variable de entorno JWT_COOKIE_NAME esté configurada.
+ * @purpose Prevenir operaciones de cookie sin nombre configurado que causarían errores en tiempo de ejecución.
+ * @context Utilizado internamente antes de setear, obtener o limpiar cookies JWT.
+ * @throws JwtConfigurationError si JWT_COOKIE_NAME no está definido
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 function _validateCookieName(): void {
   // #step 1 - Ensure JWT_COOKIE_NAME exists
@@ -81,13 +82,12 @@ function _validateCookieName(): void {
 // #end-function
 // #function _validateEnvironmentConfig - Validates all required env vars (internal)
 /**
- * Validates that all required JWT environment variables are configured.
- * Collects all missing variables and throws a single error listing them.
- * This provides a better developer experience than failing on the first missing var.
- * @internal
- * @returns void
- * @throws JwtConfigurationError If any required environment variable is missing
- * @version 1.0.0
+ * @description Valida que todas las variables de entorno JWT requeridas estén configuradas.
+ * @purpose Unificar la validación de configuración y devolver un solo error con todas las variables faltantes.
+ * @context Utilizado por validateEnvironmentVariables para validar la configuración al iniciar la aplicación.
+ * @throws JwtConfigurationError si alguna variable de entorno requerida falta
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 function _validateEnvironmentConfig(): void {
   // #step 1 - Collect missing variables
@@ -121,13 +121,14 @@ function _validateEnvironmentConfig(): void {
 // #end-function
 // #function _validateTokenFormat - Validates token format (internal)
 /**
- * Validates that a token is a non-empty string.
- * Uses TypeScript's assertion signature to narrow the type.
- * @internal
- * @param token - Value to validate as a JWT token string
- * @returns void - Uses TypeScript assertion signature to narrow the type
- * @throws {JwtPayloadError} If token is not a non-empty string
- * @version 1.0.0
+ * @description Valida que un token sea un string no vacío antes de verificarlo.
+ * @purpose Prevenir llamadas al SDK de JWT con tokens inválidos que producirían errores.
+ * @context Utilizado internamente por decodeJWT y refreshJWT antes de verificar tokens.
+ * @param token valor a validar como string de token JWT
+ * @returns void (usa assertion signature de TypeScript para narrowing de tipos)
+ * @throws JwtPayloadError si el token no es un string no vacío
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 function _validateTokenFormat(token: unknown): asserts token is string {
   // #step 1 - Ensure token is a non-empty string
@@ -143,12 +144,13 @@ function _validateTokenFormat(token: unknown): asserts token is string {
 // #section INTERNAL HELPERS (not exported, used by public functions)
 // #function _buildDefaultCookieOptions - Builds default cookie options (internal)
 /**
- * Builds secure default options for JWT cookies.
- * Sets httpOnly=true (always), sameSite=strict, path=/, and secure based on NODE_ENV.
- * @internal
- * @param maxAge - Optional maximum age in milliseconds for the cookie
- * @returns Cookie configuration object with secure defaults
- * @version 1.0.0
+ * @description Construye las opciones seguras por defecto para cookies JWT.
+ * @purpose Centralizar la configuración de cookies con valores seguros (httpOnly, sameSite, secure según NODE_ENV).
+ * @context Utilizado por setJWTCookie y clearJWTCookie para obtener la configuración base de la cookie.
+ * @param maxAge edad máxima de la cookie en milisegundos
+ * @returns configuración de cookie con valores seguros por defecto
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 function _buildDefaultCookieOptions(maxAge?: number): CookieConfig {
   // #step 1 - Determine if secure based on NODE_ENV
@@ -171,12 +173,14 @@ function _buildDefaultCookieOptions(maxAge?: number): CookieConfig {
 // #section PUBLIC VALIDATORS (exported wrappers)
 // #function validatePayload - Public wrapper for payload validation
 /**
- * Validates that the payload is a valid object for JWT creation.
- * This is a public wrapper around the internal validation logic.
- * @param payload - Value to validate as a JWT payload object
- * @returns void - Uses TypeScript assertion signature to narrow the type
- * @throws {JwtPayloadError} If payload is null, not an object, or is an array
- * @version 1.0.0
+ * @description Valida que el payload sea un objeto válido para la creación de JWT.
+ * @purpose Exponer la validación interna de payload como API pública del módulo.
+ * @context Utilizado por consumidores del módulo antes de llamar a createJWT.
+ * @param payload valor a validar como objeto de payload JWT
+ * @returns void (usa assertion signature de TypeScript para narrowing de tipos)
+ * @throws JwtPayloadError si el payload es null, no es un objeto o es un array
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export function validatePayload(payload: unknown): asserts payload is JwtPayload {
   _validatePayloadStructure(payload);
@@ -184,12 +188,12 @@ export function validatePayload(payload: unknown): asserts payload is JwtPayload
 // #end-function
 // #function validateEnvironmentVariables - Public wrapper for env validation
 /**
- * Validates that required JWT environment variables are configured.
- * This is a public wrapper that checks all required environment variables at once.
- * Useful for validating configuration at application startup.
- * @returns void
- * @throws {JwtConfigurationError} If any required environment variable is missing
- * @version 1.0.0
+ * @description Valida que las variables de entorno JWT requeridas estén configuradas.
+ * @purpose Permitir a los consumidores verificar la configuración del módulo al inicio de la aplicación.
+ * @context Utilizado en el startup del servidor para detectar configuraciones faltantes antes de procesar requests.
+ * @throws JwtConfigurationError si alguna variable de entorno requerida falta
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export function validateEnvironmentVariables(): void {
   _validateEnvironmentConfig();
@@ -198,10 +202,12 @@ export function validateEnvironmentVariables(): void {
 
 // #function getConfiguredRefreshMs - Returns configured refresh window
 /**
- * Returns the configured time window before expiration to allow token refresh.
- * This value is read from JWT_REFRESH_MS environment variable or defaults to 60000ms (1 minute).
- * @returns Refresh window in milliseconds
- * @version 1.0.0
+ * @description Retorna la ventana de tiempo configurada antes de la expiración para permitir el refresh del token.
+ * @purpose Exponer la configuración de refresh window para que los middlewares calculen elegibilidad de refresh.
+ * @context Utilizado por middlewares de autenticación para determinar si un token está dentro de la ventana de refresh.
+ * @returns ventana de refresh en milisegundos (por defecto 60000ms / 1 minuto)
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export function getConfiguredRefreshMs(): number {
   return config.refreshMs;
@@ -210,10 +216,12 @@ export function getConfiguredRefreshMs(): number {
 
 // #function getConfiguredAbsoluteSessionMs - Returns configured absolute session lifetime
 /**
- * Returns the configured maximum absolute session lifetime.
- * This value is read from JWT_ABSOLUTE_SESSION_MS environment variable or defaults to 604800000ms (7 days).
- * @returns Absolute session lifetime in milliseconds
- * @version 1.0.0
+ * @description Retorna la duración máxima absoluta de sesión configurada.
+ * @purpose Exponer la configuración de sesión absoluta para cálculos de expiración en middlewares.
+ * @context Utilizado por middlewares de autenticación para verificar si una sesión ha superado su tiempo máximo.
+ * @returns duración absoluta de sesión en milisegundos (por defecto 604800000ms / 7 días)
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export function getConfiguredAbsoluteSessionMs(): number {
   return config.absoluteSessionMs;
@@ -223,13 +231,16 @@ export function getConfiguredAbsoluteSessionMs(): number {
 // #section CORE JWT FUNCTIONS (public)
 // #function createJWT - Creates a signed JWT token from a given payload and return it
 /**
- * Creates a signed JWT token from a given payload.
- * @param payload The data to encode in the JWT (must be a non-null object)
- * @returns A signed JWT token as a string
- * @throws JwtPayloadError If payload is not a valid object
- * @throws JwtConfigurationError If JWT_SECRET or JWT_ABSOLUTE_SESSION_MS are not configured
- * @throws JwtSignError If JWT signing fails for any other reason
- * @version 1.0.0
+ * @description Crea un token JWT firmado a partir de un payload, incluyendo originalIat para control de sesión absoluta.
+ * @purpose Proveer la operación de firma de JWT con validaciones y configuración centralizada.
+ * @context Utilizado por el middleware de autenticación al crear tokens en login/registro.
+ * @param payload datos a codificar en el JWT (debe ser un objeto no nulo)
+ * @returns token JWT firmado como string
+ * @throws JwtPayloadError si el payload no es un objeto válido
+ * @throws JwtConfigurationError si JWT_SECRET o JWT_ABSOLUTE_SESSION_MS no están configurados
+ * @throws JwtSignError si la firma del JWT falla por cualquier otra razón
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export function createJWT(payload: JwtPayload): string {
   // #step 1 - Validate payload structure
@@ -265,15 +276,16 @@ export function createJWT(payload: JwtPayload): string {
 // #end-function
 // #function refreshJWT - Re-signs an existing JWT payload into a fresh token
 /**
- * Re-signs an existing JWT token to extend its expiration.
- * Verifies the token, preserves custom claims and originalIat, and generates a new token with fresh expiration.
- * Does not evaluate refresh eligibility or update cookies; only returns the newly signed token.
- * @param token Existing JWT token (must be a valid, non-empty string)
- * @returns New JWT token with fresh expiration based on absoluteSessionMs
- * @throws JwtPayloadError If token is not a valid string
- * @throws JwtConfigurationError If JWT_SECRET or JWT_ABSOLUTE_SESSION_MS are not configured
- * @throws JwtSignError If token verification or signing fails
- * @version 1.0.0
+ * @description Re-firma un token JWT existente extendiendo su expiración, preservando claims y originalIat.
+ * @purpose Extender la sesión del usuario sin reautenticación cuando el token está próximo a expirar.
+ * @context Utilizado por el middleware de autenticación al detectar tokens dentro de la ventana de refresh.
+ * @param token token JWT existente a renovar (debe ser un string válido y no expirado)
+ * @returns nuevo token JWT con expiración renovada basada en absoluteSessionMs
+ * @throws JwtPayloadError si el token no es un string válido
+ * @throws JwtConfigurationError si JWT_SECRET o JWT_ABSOLUTE_SESSION_MS no están configurados
+ * @throws JwtSignError si la verificación o firma del token falla
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export function refreshJWT(token: unknown): string {
   // #step 1 - Validate token format and configuration
@@ -319,13 +331,16 @@ export function refreshJWT(token: unknown): string {
 // #end-function
 // #function decodeJWT - Decodes and verifies a JWT token
 /**
- * Decodes and verifies a JWT token, returning the payload if valid.
- * @param token The JWT token to decode (must be a valid JWT string)
- * @returns The decoded payload object
- * @throws JwtPayloadError If token is not a valid string
- * @throws JwtConfigurationError If JWT_SECRET is not configured
- * @throws JwtSignError If JWT verification fails (invalid signature, expired, etc.)
- * @version 1.0.0
+ * @description Decodifica y verifica un token JWT, retornando el payload si es válido.
+ * @purpose Proveer la operación de verificación de JWT con validaciones y configuración centralizada.
+ * @context Utilizado por middlewares de autenticación para verificar tokens en cada request.
+ * @param token token JWT a decodificar (debe ser un string JWT válido)
+ * @returns payload decodificado del token
+ * @throws JwtPayloadError si el token no es un string válido
+ * @throws JwtConfigurationError si JWT_SECRET no está configurado
+ * @throws JwtSignError si la verificación del JWT falla (firma inválida, expirado, etc.)
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export function decodeJWT(token: unknown): JwtPayload {
   // #step 1 - Validate token format
@@ -351,14 +366,16 @@ export function decodeJWT(token: unknown): JwtPayload {
 // #section COOKIE FUNCTIONS (public)
 // #function setJWTCookie - Prepares cookie data for setting JWT token
 /**
- * Generates cookie data for setting a JWT token.
- * Returns framework-agnostic cookie configuration ready to be set.
- * @param token JWT token to store in the cookie
- * @param options Optional cookie configuration overrides
- * @returns Object containing cookie name, value, and options
- * @throws JwtPayloadError If token is not a valid string
- * @throws JwtConfigurationError If JWT_COOKIE_NAME is not configured
- * @version 1.0.0
+ * @description Genera los datos de cookie para almacenar un token JWT con opciones seguras por defecto.
+ * @purpose Centralizar la creación de datos de cookie JWT framework-agnostic con valores seguros.
+ * @context Utilizado por el middleware de autenticación tras crear o renovar un JWT para enviarlo al cliente.
+ * @param token token JWT a almacenar en la cookie
+ * @param options opciones de cookie opcionales que sobreescriben los valores por defecto
+ * @returns objeto con nombre, valor y opciones de cookie listo para usar
+ * @throws JwtPayloadError si el token no es un string válido
+ * @throws JwtConfigurationError si JWT_COOKIE_NAME no está configurado
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export function setJWTCookie(
   token: string,
@@ -391,12 +408,14 @@ export function setJWTCookie(
 // #end-function
 // #function getJWTFromCookie - Extracts JWT from cookies object
 /**
- * Extracts JWT token from a cookies object using the configured cookie name.
- * Returns null if cookie not found. Accepts null/undefined cookies safely.
- * @param cookies Object containing cookie key-value pairs (e.g., from Express, Next.js)
- * @returns JWT token if found, null otherwise
- * @throws JwtConfigurationError If JWT_COOKIE_NAME is not configured
- * @version 1.0.0
+ * @description Extrae el token JWT de un objeto de cookies usando el nombre de cookie configurado.
+ * @purpose Centralizar la lectura del token desde las cookies de la request de forma segura.
+ * @context Utilizado por el middleware de autenticación al inicio del pipeline de autenticación.
+ * @param cookies objeto con pares clave-valor de cookies (ej: de Express, Next.js)
+ * @returns token JWT si se encontró, null en caso contrario
+ * @throws JwtConfigurationError si JWT_COOKIE_NAME no está configurado
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export function getJWTFromCookie(
   cookies: Record<string, string> | null | undefined
@@ -417,12 +436,14 @@ export function getJWTFromCookie(
 // #end-function
 // #function clearJWTCookie - Prepares cookie data for clearing JWT cookie
 /**
- * Generates cookie data for clearing/removing a JWT cookie.
- * Returns framework-agnostic cookie configuration ready to be set.
- * @param options Optional cookie configuration overrides
- * @returns Object containing cookie name, empty value, and clearing options
- * @throws JwtConfigurationError If JWT_COOKIE_NAME is not configured
- * @version 1.0.0
+ * @description Genera los datos de cookie para limpiar/eliminar la cookie de JWT.
+ * @purpose Centralizar la creación de datos de cookie de limpieza con maxAge=0 para invalidar el token del cliente.
+ * @context Utilizado por el middleware de autenticación al procesar el logout del usuario.
+ * @param options opciones de cookie opcionales que sobreescriben los valores por defecto
+ * @returns objeto con nombre, valor vacío y opciones de borrado listo para usar
+ * @throws JwtConfigurationError si JWT_COOKIE_NAME no está configurado
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export function clearJWTCookie(
   options?: Partial<CookieConfig>

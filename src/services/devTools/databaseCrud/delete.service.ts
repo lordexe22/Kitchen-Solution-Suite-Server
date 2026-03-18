@@ -25,18 +25,14 @@ import type { DevToolsResponse } from './devTools.types';
 
 // #function deleteRecord
 /**
- * Elimina un registro específico de la tabla.
- * 
- * Nota: Esta es una eliminación FÍSICA (hard delete).
- * En el futuro se puede implementar soft-delete.
- * 
- * @param tableName - Nombre de la tabla
- * @param id - ID del registro a eliminar
- * @returns Respuesta confirmando la eliminación
- * 
- * @example
- * await deleteRecord('users', 5);
- * // Elimina el usuario con ID 5
+ * @description Elimina físicamente un registro específico de la tabla por ID (hard delete).
+ * @purpose Proveer la operación de DELETE para limpiar registros de prueba en el sistema devTools.
+ * @context Utilizado por el devTools del servidor para eliminar registros de prueba de cualquier tabla del schema.
+ * @param tableName nombre de la tabla
+ * @param id ID del registro a eliminar
+ * @returns respuesta confirmando la eliminación o error descriptivo
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export async function deleteRecord(
   tableName: string,
@@ -103,17 +99,14 @@ export async function deleteRecord(
 
 // #function deleteRecordBatch
 /**
- * Elimina múltiples registros de la tabla.
- * 
- * Recibe un array de IDs a eliminar.
- * 
- * @param tableName - Nombre de la tabla
- * @param ids - Array de IDs a eliminar
- * @returns Respuesta con array de registros eliminados
- * 
- * @example
- * await deleteRecordBatch('users', [1, 2, 3, 5, 7]);
- * // Elimina usuarios con IDs 1, 2, 3, 5 y 7
+ * @description Elimina múltiples registros de la tabla por sus IDs en una operación de batch.
+ * @purpose Proveer la operación de DELETE masivo para limpiar grandes volúmenes de datos de prueba.
+ * @context Utilizado por el devTools del servidor para eliminar múltiples registros de prueba a la vez.
+ * @param tableName nombre de la tabla
+ * @param ids array de IDs a eliminar
+ * @returns respuesta con los registros eliminados o error descriptivo
+ * @since 1.0.0
+ * @author Walter Ezequiel Puig
  */
 export async function deleteRecordBatch(
   tableName: string,
